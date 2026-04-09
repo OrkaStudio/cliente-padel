@@ -22,16 +22,23 @@ export const marcarEnVivoAction = createServerAction()
 
 export const actualizarResultadoAction = createServerAction()
   .input(z.object({
-    partidoId:    z.string().uuid(),
-    sets_pareja1: z.number().int().min(0).max(3),
-    sets_pareja2: z.number().int().min(0).max(3),
+    partidoId: z.string().uuid(),
+    sets: z.array(z.object({
+      p1: z.number().int().min(0).max(99),
+      p2: z.number().int().min(0).max(99),
+    })).min(1).max(3),
   }))
   .handler(async ({ input }) => {
+    const sets_pareja1 = input.sets.filter(s => s.p1 > s.p2).length
+    const sets_pareja2 = input.sets.filter(s => s.p2 > s.p1).length
+
+    if (sets_pareja1 === sets_pareja2) throw new Error("No puede terminar empatado")
+
     const supabase = await createClient()
     const { error } = await supabase
       .from("partidos")
       .update({
-        resultado: { sets_pareja1: input.sets_pareja1, sets_pareja2: input.sets_pareja2 },
+        resultado: { sets_pareja1, sets_pareja2, sets: input.sets },
         estado: "finalizado",
       })
       .eq("id", input.partidoId)

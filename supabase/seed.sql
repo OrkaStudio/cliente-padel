@@ -258,28 +258,34 @@ begin
     -- 5ta Cabs en Voleando (3 matches)
     ('ffffffff-0000-0000-0000-000000000001', v_torneo, v_5ta, v_vol, 1,
      '2026-04-17 09:00:00-03', v_p01, v_p02,
-     '{"sets_pareja1": 2, "sets_pareja2": 1}', 'finalizado', 'grupo', null),
+     '{"sets_pareja1":2,"sets_pareja2":1,"sets":[{"p1":6,"p2":3},{"p1":4,"p2":6},{"p1":10,"p2":7}]}',
+     'finalizado', 'grupo', null),
 
     ('ffffffff-0000-0000-0000-000000000002', v_torneo, v_5ta, v_vol, 2,
      '2026-04-17 10:30:00-03', v_p02, v_p03,
-     '{"sets_pareja1": 1, "sets_pareja2": 2}', 'finalizado', 'grupo', null),
+     '{"sets_pareja1":1,"sets_pareja2":2,"sets":[{"p1":3,"p2":6},{"p1":6,"p2":4},{"p1":7,"p2":10}]}',
+     'finalizado', 'grupo', null),
 
     ('ffffffff-0000-0000-0000-000000000003', v_torneo, v_5ta, v_vol, 1,
      '2026-04-17 12:00:00-03', v_p01, v_p03,
-     '{"sets_pareja1": 2, "sets_pareja2": 0}', 'finalizado', 'grupo', null),
+     '{"sets_pareja1":2,"sets_pareja2":0,"sets":[{"p1":6,"p2":2},{"p1":6,"p2":1}]}',
+     'finalizado', 'grupo', null),
 
     -- 4ta Cabs en Más Pádel (3 matches)
     ('ffffffff-0000-0000-0000-000000000004', v_torneo, v_4ta, v_mas, 1,
      '2026-04-17 09:00:00-03', v_p04, v_p05,
-     '{"sets_pareja1": 2, "sets_pareja2": 0}', 'finalizado', 'grupo', null),
+     '{"sets_pareja1":2,"sets_pareja2":0,"sets":[{"p1":6,"p2":0},{"p1":6,"p2":3}]}',
+     'finalizado', 'grupo', null),
 
     ('ffffffff-0000-0000-0000-000000000005', v_torneo, v_4ta, v_mas, 2,
      '2026-04-17 10:30:00-03', v_p05, v_p06,
-     '{"sets_pareja1": 2, "sets_pareja2": 1}', 'finalizado', 'grupo', null),
+     '{"sets_pareja1":2,"sets_pareja2":1,"sets":[{"p1":7,"p2":5},{"p1":4,"p2":6},{"p1":10,"p2":6}]}',
+     'finalizado', 'grupo', null),
 
     ('ffffffff-0000-0000-0000-000000000006', v_torneo, v_4ta, v_mas, 1,
      '2026-04-17 12:00:00-03', v_p04, v_p06,
-     '{"sets_pareja1": 2, "sets_pareja2": 0}', 'finalizado', 'grupo', null),
+     '{"sets_pareja1":2,"sets_pareja2":0,"sets":[{"p1":6,"p2":4},{"p1":6,"p2":2}]}',
+     'finalizado', 'grupo', null),
 
     -- ══════════════════════════════
     -- DÍA 2 — 18/04 — GRUPOS
@@ -288,11 +294,13 @@ begin
     -- Damas en Voleando (3 matches: 2 finalizados + 1 EN VIVO)
     ('ffffffff-0000-0000-0000-000000000007', v_torneo, v_damas, v_vol, 3,
      '2026-04-18 09:00:00-03', v_p07, v_p08,
-     '{"sets_pareja1": 2, "sets_pareja2": 1}', 'finalizado', 'grupo', null),
+     '{"sets_pareja1":2,"sets_pareja2":1,"sets":[{"p1":6,"p2":4},{"p1":3,"p2":6},{"p1":10,"p2":5}]}',
+     'finalizado', 'grupo', null),
 
     ('ffffffff-0000-0000-0000-000000000008', v_torneo, v_damas, v_vol, 4,
      '2026-04-18 10:30:00-03', v_p08, v_p09,
-     '{"sets_pareja1": 0, "sets_pareja2": 2}', 'finalizado', 'grupo', null),
+     '{"sets_pareja1":0,"sets_pareja2":2,"sets":[{"p1":2,"p2":6},{"p1":4,"p2":6}]}',
+     'finalizado', 'grupo', null),
 
     ('ffffffff-0000-0000-0000-000000000009', v_torneo, v_damas, v_vol, 3,
      '2026-04-18 12:00:00-03', v_p07, v_p09,

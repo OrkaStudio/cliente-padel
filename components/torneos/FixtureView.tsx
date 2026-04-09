@@ -304,7 +304,9 @@ function PartidoCard({ partido: p, index }: { partido: Partido; index: number })
   const color   = sedeColor(p.sedes?.nombre)
   const isLive  = p.estado === "en_vivo"
   const isFin   = p.estado === "finalizado"
-  const score   = p.resultado ? `${p.resultado.sets_pareja1} – ${p.resultado.sets_pareja2}` : null
+  const res     = p.resultado
+  const score   = res ? `${res.sets_pareja1} – ${res.sets_pareja2}` : null
+  const detalle = res?.sets?.map((s: {p1:number;p2:number}) => `${s.p1}-${s.p2}`).join(" · ") ?? null
 
   return (
     <div style={{
@@ -373,15 +375,26 @@ function PartidoCard({ partido: p, index }: { partido: Partido; index: number })
         </span>
 
         {score ? (
-          <span style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 14, fontWeight: 400,
-            color: isLive ? "#0f172a" : "#64748b",
-            background: isLive ? "#bcff00" : isFin ? "#f1f5f9" : "transparent",
-            padding: "1px 7px", borderRadius: 4, flexShrink: 0,
-          }}>
-            {score}
-          </span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 2 }}>
+            <span style={{
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontSize: 14, fontWeight: 400,
+              color: isLive ? "#0f172a" : "#64748b",
+              background: isLive ? "#bcff00" : isFin ? "#f1f5f9" : "transparent",
+              padding: "1px 7px", borderRadius: 4,
+            }}>
+              {score}
+            </span>
+            {detalle && (
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 8, color: "#94a3b8", fontWeight: 600,
+                letterSpacing: "0.02em", whiteSpace: "nowrap",
+              }}>
+                {detalle}
+              </span>
+            )}
+          </div>
         ) : (
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
