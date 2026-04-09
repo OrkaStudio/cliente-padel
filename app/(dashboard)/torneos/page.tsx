@@ -1,16 +1,12 @@
-import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 
 export default async function TorneosPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
 
   const { data: torneos } = await supabase
     .from("torneos")
     .select("id, nombre, fecha_inicio, fecha_fin, estado")
-    .eq("created_by", user.id)
     .order("created_at", { ascending: false })
 
   const estadoLabel: Record<string, string> = {
