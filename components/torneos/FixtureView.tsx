@@ -314,9 +314,23 @@ function PartidoCard({ partido: p, index }: { partido: Partido; index: number })
       borderRadius: 10,
       padding: "10px 14px",
       display: "flex", alignItems: "center", gap: 14,
+      position: "relative",
       animation: "fadeUp 250ms cubic-bezier(0.23,1,0.32,1) both",
       animationDelay: `${index * 40}ms`,
     }}>
+      {p.categorias?.nombre && (
+        <span style={{
+          position: "absolute", top: 8, right: 10,
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 8, fontWeight: 900, letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          background: `${color}18`,
+          color: color,
+          padding: "2px 7px", borderRadius: 4,
+        }}>
+          {p.categorias.nombre}
+        </span>
+      )}
       {/* Hora + cancha + sede */}
       <div style={{ flexShrink: 0, width: 64 }}>
         <p style={{
@@ -343,15 +357,6 @@ function PartidoCard({ partido: p, index }: { partido: Partido; index: number })
             textTransform: "uppercase", margin: 0, letterSpacing: "0.04em",
           }}>
             {p.sedes.nombre}
-          </p>
-        )}
-        {p.categorias?.nombre && (
-          <p style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, color: "#cbd5e1", fontWeight: 700,
-            textTransform: "uppercase", margin: "2px 0 0", letterSpacing: "0.04em",
-          }}>
-            {p.categorias.nombre}
           </p>
         )}
       </div>
