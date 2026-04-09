@@ -10,8 +10,18 @@ export function BottomNav() {
   const pathname = usePathname()
 
   // Detectar si estamos dentro de un torneo
+  // No mostrar en veedor, admin, ni en la lista de torneos
+  if (
+    pathname.startsWith("/veedor") ||
+    pathname.startsWith("/admin") ||
+    pathname === "/torneos"
+  ) return null
+
   const torneoMatch = pathname.match(/\/torneos\/([^/]+)/)
   const torneoId = torneoMatch?.[1]
+
+  // Si estamos en /torneos/[id] pero no hay tabs útiles todavía, no mostrar
+  if (!torneoId) return null
 
   const items = torneoId
     ? [
