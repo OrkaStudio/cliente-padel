@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "motion/react"
-import { inscribirParejaAction } from "@/actions/inscripcion.actions"
+import { inscribirParejaAction, eliminarParejaAction } from "@/actions/inscripcion.actions"
 import { crearJugadorAction } from "@/actions/jugadores.actions"
 import { JugadorSearch } from "@/components/torneos/shared/JugadorSearch"
 import type { Categoria } from "@/types/torneo"
@@ -28,6 +28,7 @@ export function PanelInscripcion({ torneoId, categorias, parejasIniciales }: Pro
   const [jugador2, setJugador2] = useState<Jugador | null>(null)
   const [crearSlot, setCrearSlot] = useState<{ slot: "jugador1" | "jugador2"; nombre: string } | null>(null)
   const [pending, startTransition] = useTransition()
+  const [, startEliminar] = useTransition()
 
   const parejasCategoria = parejas.filter(p => p.categoria_id === catActiva)
 
@@ -50,7 +51,12 @@ export function PanelInscripcion({ torneoId, categorias, parejasIniciales }: Pro
   }
 
   const handleEliminar = (parejaId: string) => {
+    const snapshot = parejas
     setParejas(prev => prev.filter(p => p.id !== parejaId))
+    startEliminar(async () => {
+      const [, err] = await eliminarParejaAction({ parejaId })
+      if (err) setParejas(snapshot)
+    })
   }
 
   return (

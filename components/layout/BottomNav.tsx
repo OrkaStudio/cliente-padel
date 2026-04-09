@@ -9,35 +9,40 @@ type AnyHref = any
 export function BottomNav() {
   const pathname = usePathname()
 
-  // Detectar si estamos dentro de un torneo
-  // No mostrar en veedor, admin, ni en la lista de torneos
-  if (
-    pathname.startsWith("/veedor") ||
-    pathname.startsWith("/admin") ||
-    pathname === "/torneos"
-  ) return null
+  // Detectar contexto: admin torneo, admin general, o torneo público
+  const adminTorneoMatch = pathname.match(/^\/admin\/torneo\/([^/]+)/)
+  const adminTorneoId = adminTorneoMatch?.[1]
 
   const torneoMatch = pathname.match(/\/torneos\/([^/]+)/)
   const torneoId = torneoMatch?.[1]
 
-  // Si estamos en /torneos/[id] pero no hay tabs útiles todavía, no mostrar
-  if (!torneoId) return null
-
-  const items = torneoId
+  const items = adminTorneoId
     ? [
-        { href: `/torneos/${torneoId}`,         icon: "home",          label: "Torneo"  },
+        { href: `/admin/torneo/${adminTorneoId}`,             icon: "sports_tennis", label: "Monitor"       },
+        { href: `/admin/torneo/${adminTorneoId}/fixture`,     icon: "edit_calendar", label: "Fixture"       },
+        { href: `/admin/torneo/${adminTorneoId}/inscripcion`, icon: "person_add",    label: "Inscripciones" },
+      ]
+    : pathname.startsWith("/admin")
+    ? [
+        { href: "/admin",          icon: "dashboard", label: "Panel"    },
+        { href: "/admin/jugadores", icon: "group",    label: "Jugadores" },
+      ]
+    : torneoId
+    ? [
+        { href: `/torneos/${torneoId}`,         icon: "home",           label: "Torneo"  },
         { href: `/torneos/${torneoId}/fixture`,  icon: "calendar_today", label: "Fixture" },
-        { href: `/torneos/${torneoId}/tabla`,    icon: "leaderboard",   label: "Tabla"   },
-        { href: `/torneos/${torneoId}/llaves`,   icon: "account_tree",  label: "Llaves"  },
+        { href: `/torneos/${torneoId}/tabla`,    icon: "leaderboard",    label: "Tabla"   },
+        { href: `/torneos/${torneoId}/llaves`,   icon: "account_tree",   label: "Llaves"  },
       ]
     : [
         { href: "/torneos", icon: "home", label: "Torneos" },
       ]
 
   const isActive = (href: string) => {
-    if (href.endsWith(`/torneos/${torneoId}`)) {
-      return pathname === `/torneos/${torneoId}`
-    }
+    // Exact match para raíces de sección
+    if (href === `/torneos/${torneoId}`) return pathname === href
+    if (href === `/admin/torneo/${adminTorneoId}`) return pathname === href
+    if (href === "/admin") return pathname === "/admin"
     return pathname.startsWith(href)
   }
 
