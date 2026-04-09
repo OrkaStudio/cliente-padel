@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap');
+
+@layer base {
+  :root {
+    /* Padel — Deep Slate Navy + Neon Green */
+    --background: 210 17% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 222 47% 11%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 77 100% 50%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 17% 95%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 77 100% 50%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 47% 11%;
+
+    --radius: 0.5rem;
+
+    /* Padel tokens */
+    --surface: 0 0% 100%;
+    --surface-low: 210 17% 98%;
+    --surface-high: 214 32% 89%;
+    --on-surface-variant: 215 16% 47%;
+    --outline: 214 32% 91%;
+    --neon: #bcff00;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+  }
+  .neon-accent {
+    background-color: #bcff00;
+    color: #0f172a;
+  }
+  .surface-float {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+  }
+}
