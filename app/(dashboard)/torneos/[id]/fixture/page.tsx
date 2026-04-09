@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { FixtureView } from "@/components/torneos/FixtureView"
+import { aplicarEstadoAuto } from "@/lib/partidos"
 
 export default async function FixturePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -32,5 +33,5 @@ export default async function FixturePage({ params }: { params: Promise<{ id: st
     .eq("torneo_id", id)
     .order("horario")
 
-  return <FixtureView partidos={partidos ?? []} />
+  return <FixtureView partidos={aplicarEstadoAuto(partidos ?? [])} />
 }

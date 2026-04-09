@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { VeedorView } from "@/components/torneos/VeedorView"
+import { aplicarEstadoAuto } from "@/lib/partidos"
 
 export default async function AdminTorneoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -71,7 +72,7 @@ export default async function AdminTorneoPage({ params }: { params: Promise<{ id
         </Link>
       </div>
 
-      <VeedorView partidos={partidos ?? []} sedeName="Todos" isAdmin />
+      <VeedorView partidos={aplicarEstadoAuto(partidos ?? [])} sedeName="Todos" isAdmin />
     </div>
   )
 }

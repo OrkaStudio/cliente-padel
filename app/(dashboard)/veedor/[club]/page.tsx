@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import Image from "next/image"
 import { VeedorView } from "@/components/torneos/VeedorView"
+import { aplicarEstadoAuto } from "@/lib/partidos"
 
 const CLUB_INFO: Record<string, { nombre: string; logo: string; sedeKeyword: string }> = {
   "voleando":  { nombre: "Voleando",  logo: "/clubes/voleando.logo.png",  sedeKeyword: "voleando" },
@@ -129,7 +130,7 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
         </div>
       </div>
 
-      <VeedorView partidos={partidos ?? []} sedeName={sede.nombre} />
+      <VeedorView partidos={aplicarEstadoAuto(partidos ?? [])} sedeName={sede.nombre} />
     </div>
   )
 }
