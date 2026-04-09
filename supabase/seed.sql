@@ -6,6 +6,11 @@
 -- 1. Columna ronda si no existe
 alter table partidos add column if not exists ronda text;
 
+-- FK jugadores → parejas (necesario para joins en PostgREST)
+alter table parejas
+  add constraint if not exists fk_jugador1 foreign key (jugador1_id) references jugadores(id),
+  add constraint if not exists fk_jugador2 foreign key (jugador2_id) references jugadores(id);
+
 -- 2. Políticas de lectura pública (idempotentes)
 do $$ begin
   if not exists (select 1 from pg_policies where tablename = 'torneos' and policyname = 'lectura_publica_torneos') then

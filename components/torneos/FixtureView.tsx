@@ -1,18 +1,20 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Chip } from "@/components/ui/padel/Chip"
-import { StatusBadge } from "@/components/ui/padel/StatusBadge"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Partido = any
 
-function formatPareja(pareja: { jugador1: { nombre: string; apellido: string } | null; jugador2: { nombre: string; apellido: string } | null } | null) {
-  if (!pareja) return "—"
-  const j1 = pareja.jugador1 ? `${pareja.jugador1.apellido}` : ""
-  const j2 = pareja.jugador2 ? pareja.jugador2.apellido : ""
-  if (j1 && j2) return `${j1} / ${j2}`
-  return j1 || j2 || "—"
+const SEDE_COLORS: Record<string, string> = {
+  "Voleando":  "#22c55e",
+  "Más Pádel": "#f97316",
+  "Por Tres":  "#a855f7",
+}
+const DEFAULT_COLOR = "#94a3b8"
+
+function sedeColor(nombre?: string) {
+  if (!nombre) return DEFAULT_COLOR
+  return SEDE_COLORS[nombre] ?? DEFAULT_COLOR
 }
 
 function formatHora(horario: string | null) {
@@ -20,10 +22,9 @@ function formatHora(horario: string | null) {
   return new Date(horario).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
 }
 
-function formatFecha(horario: string | null) {
+function formatDia(horario: string | null) {
   if (!horario) return "Sin fecha"
-  const d = new Date(horario)
-  return d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })
+  return new Date(horario).toLocaleDateString("es-AR", { weekday: "long", day: "numeric" })
 }
 
 function getDayKey(horario: string | null) {
@@ -31,28 +32,19 @@ function getDayKey(horario: string | null) {
   return new Date(horario).toISOString().slice(0, 10)
 }
 
-const VENUE_COLORS: Record<string, string> = {
-  "Voleando": "#bcff00",
-  "Por Tres": "#60a5fa",
-  "Más Pádel": "#f97316",
-  "default": "#cbd5e1",
-}
-
-function getVenueColor(sedeName: string | undefined) {
-  if (!sedeName) return VENUE_COLORS.default
-  return VENUE_COLORS[sedeName] ?? VENUE_COLORS.default
-}
-
-function formatScore(resultado: { sets_pareja1: number; sets_pareja2: number } | null) {
-  if (!resultado) return null
-  return `${resultado.sets_pareja1} – ${resultado.sets_pareja2}`
+function formatPareja(pareja: { jugador1: { nombre: string; apellido: string } | null; jugador2: { nombre: string; apellido: string } | null } | null) {
+  if (!pareja) return "—"
+  const j1 = pareja.jugador1?.apellido ?? ""
+  const j2 = pareja.jugador2?.apellido ?? ""
+  if (j1 && j2) return `${j1} / ${j2}`
+  return j1 || j2 || "—"
 }
 
 export function FixtureView({ partidos }: { partidos: Partido[] }) {
-  const [search, setSearch] = useState("")
-  const [selSede, setSelSede] = useState<string | null>(null)
+  const [search, setSearch]             = useState("")
+  const [selSede, setSelSede]           = useState<string | null>(null)
+  const [showFinalizados, setShowFin]   = useState(false)
 
-  // Extract unique sedes
   const sedes = useMemo(() => {
     const map = new Map<string, string>()
     partidos.forEach((p: Partido) => {
@@ -61,53 +53,50 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
     return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }))
   }, [partidos])
 
-  // Filter
   const filtered = useMemo(() => {
     let list = partidos
     if (selSede) list = list.filter((p: Partido) => p.sedes?.id === selSede)
     if (search.trim()) {
       const q = search.toLowerCase()
-      list = list.filter((p: Partido) => {
-        const p1 = formatPareja(p.pareja1).toLowerCase()
-        const p2 = formatPareja(p.pareja2).toLowerCase()
-        return p1.includes(q) || p2.includes(q)
-      })
+      list = list.filter((p: Partido) =>
+        formatPareja(p.pareja1).toLowerCase().includes(q) ||
+        formatPareja(p.pareja2).toLowerCase().includes(q)
+      )
     }
     return list
   }, [partidos, selSede, search])
 
-  const live = filtered.filter((p: Partido) => p.estado === "en_vivo")
-  const rest = filtered.filter((p: Partido) => p.estado !== "en_vivo")
+  const live        = filtered.filter((p: Partido) => p.estado === "en_vivo")
+  const pendientes  = filtered.filter((p: Partido) => p.estado === "pendiente")
+  const finalizados = filtered.filter((p: Partido) => p.estado === "finalizado")
 
-  // Group rest by day
   const byDay = useMemo(() => {
     const map = new Map<string, { label: string; partidos: Partido[] }>()
-    rest.forEach((p: Partido) => {
+    pendientes.forEach((p: Partido) => {
       const key = getDayKey(p.horario)
-      if (!map.has(key)) {
-        map.set(key, { label: formatFecha(p.horario), partidos: [] })
-      }
+      if (!map.has(key)) map.set(key, { label: formatDia(p.horario), partidos: [] })
       map.get(key)!.partidos.push(p)
     })
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
-  }, [rest])
+  }, [pendientes])
 
   return (
     <div style={{ paddingBottom: 100 }}>
-      {/* Search + filter sticky */}
+
+      {/* ── Sticky header ── */}
       <div style={{
         position: "sticky", top: 48, zIndex: 40,
         background: "rgba(248,250,252,0.97)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid #cbd5e1",
+        borderBottom: "1px solid #e2e8f0",
         padding: "10px 16px 0",
       }}>
         {/* Search */}
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
-          background: "#f1f5f9", border: "1px solid #e2e8f0",
-          borderRadius: 8, padding: "8px 12px", marginBottom: 10,
+          background: "#fff", border: "1px solid #e2e8f0",
+          borderRadius: 10, padding: "9px 12px", marginBottom: 10,
         }}>
-          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, color: "#94a3b8", lineHeight: 1 }}>search</span>
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#94a3b8", lineHeight: 1 }}>search</span>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -119,199 +108,284 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
           />
           {search && (
             <button onClick={() => setSearch("")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}>
-              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#94a3b8", lineHeight: 1 }}>close</span>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, color: "#94a3b8", lineHeight: 1 }}>close</span>
             </button>
           )}
         </div>
 
         {/* Sede chips */}
-        <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 0 10px" }}>
-          <Chip small active={!selSede} onClick={() => setSelSede(null)}>Todas</Chip>
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 0 10px", scrollbarWidth: "none" }}>
+          <SedeChip active={!selSede} onClick={() => setSelSede(null)}>Todas las sedes</SedeChip>
           {sedes.map(s => (
-            <Chip key={s.id} small active={selSede === s.id} onClick={() => setSelSede(s.id)}>
+            <SedeChip key={s.id} active={selSede === s.id} onClick={() => setSelSede(s.id)} color={sedeColor(s.nombre)}>
               {s.nombre}
-            </Chip>
+            </SedeChip>
           ))}
         </div>
       </div>
 
-      <div style={{ padding: "14px 16px 0" }}>
-        {/* EN VIVO section */}
-        {live.length > 0 && (
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+      {/* ── Status bar ── */}
+      {(live.length > 0 || pendientes.length > 0 || finalizados.length > 0) && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+          padding: "10px 16px 0",
+        }}>
+          {live.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <div style={{
-                display: "flex", alignItems: "center", gap: 6,
-                background: "#bcff00", borderRadius: 4, padding: "4px 10px",
+                width: 7, height: 7, borderRadius: "50%", background: "#22c55e",
+                boxShadow: "0 0 0 2px rgba(34,197,94,0.25)",
+              }} />
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 11, fontWeight: 700, color: "#15803d",
               }}>
-                <div style={{
-                  width: 6, height: 6, borderRadius: "50%", background: "#0f172a",
-                  animation: "pulse 1.2s ease-in-out infinite",
-                }} />
-                <span style={{
-                  fontSize: 10, fontWeight: 900, color: "#0f172a",
-                  fontFamily: "var(--font-space-grotesk), sans-serif", letterSpacing: "0.08em",
-                }}>EN VIVO</span>
-              </div>
-              <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+                {live.length} en vivo
+              </span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {live.map((p: Partido, i: number) => (
-                <PartidoRow key={p.id} partido={p} index={i} />
-              ))}
+          )}
+          {live.length > 0 && pendientes.length > 0 && <span style={{ color: "#cbd5e1", fontSize: 11 }}>·</span>}
+          {pendientes.length > 0 && (
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, color: "#64748b" }}>
+              {pendientes.length} por jugar
+            </span>
+          )}
+          {finalizados.length > 0 && (
+            <>
+              <span style={{ color: "#cbd5e1", fontSize: 11 }}>·</span>
+              <button
+                onClick={() => setShowFin(v => !v)}
+                style={{
+                  background: "none", border: "none", padding: 0, cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 3,
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 11, color: "#64748b",
+                }}
+              >
+                Ver {finalizados.length} finalizados
+                <span style={{
+                  fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1,
+                  display: "inline-block",
+                  transform: showFinalizados ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 200ms cubic-bezier(0.23, 1, 0.32, 1)",
+                }}>expand_more</span>
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      <div style={{ padding: "12px 16px 0" }}>
+
+        {/* ── EN VIVO ── */}
+        {live.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 11, fontWeight: 900, color: "#15803d",
+                letterSpacing: "0.08em", textTransform: "uppercase",
+              }}>EN VIVO</span>
+              <div style={{ flex: 1, height: 1.5, background: "#22c55e", opacity: 0.3 }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {live.map((p: Partido, i: number) => <PartidoCard key={p.id} partido={p} index={i} />)}
             </div>
           </div>
         )}
 
-        {/* By day */}
-        {byDay.map(([dayKey, { label, partidos: dayPartidos }]) => (
-          <div key={dayKey} style={{ marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        {/* ── Por día ── */}
+        {byDay.map(([dayKey, { label, partidos: dayP }]) => (
+          <div key={dayKey} style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 20, height: 1, background: "#e2e8f0" }} />
+                <span style={{
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 11, fontWeight: 900, color: "#64748b",
+                  letterSpacing: "0.06em", textTransform: "uppercase",
+                }}>
+                  {label}
+                </span>
+                <div style={{ width: 20, height: 1, background: "#e2e8f0" }} />
+              </div>
               <span style={{
-                fontSize: 11, fontWeight: 900, color: "#64748b", textTransform: "uppercase",
-                fontFamily: "var(--font-space-grotesk), sans-serif", letterSpacing: "0.06em",
-                whiteSpace: "nowrap",
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 10, color: "#94a3b8",
               }}>
-                {label}
+                {dayP.length} {dayP.length === 1 ? "partido" : "partidos"}
               </span>
-              <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {dayPartidos.map((p: Partido, i: number) => (
-                <PartidoRow key={p.id} partido={p} index={i} />
-              ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {dayP.map((p: Partido, i: number) => <PartidoCard key={p.id} partido={p} index={i} />)}
             </div>
           </div>
         ))}
 
-        {filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8" }}>
-            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 40, display: "block" }}>sports_tennis</span>
-            <p style={{
+        {/* ── Finalizados (colapsado) ── */}
+        {finalizados.length > 0 && showFinalizados && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{ width: 20, height: 1, background: "#e2e8f0" }} />
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 11, fontWeight: 900, color: "#94a3b8",
+                letterSpacing: "0.06em", textTransform: "uppercase",
+              }}>
+                Finalizados · {finalizados.length}
+              </span>
+              <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {finalizados.map((p: Partido, i: number) => <PartidoCard key={p.id} partido={p} index={i} />)}
+            </div>
+          </div>
+        )}
+
+        {/* ── Finalizados collapse trigger (bottom) ── */}
+        {finalizados.length > 0 && !showFinalizados && (
+          <button
+            onClick={() => setShowFin(true)}
+            style={{
+              width: "100%", padding: "14px", background: "none", border: "none",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 13, marginTop: 8,
-            }}>
-              {search ? "Sin resultados para tu búsqueda" : "Sin partidos cargados"}
+              fontSize: 12, fontWeight: 700, color: "#94a3b8",
+              borderTop: "1px solid #f1f5f9", marginTop: 8,
+            }}
+          >
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, lineHeight: 1 }}>expand_more</span>
+            Finalizados · {finalizados.length}
+          </button>
+        )}
+
+        {filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: "60px 0" }}>
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 40, color: "#cbd5e1", display: "block" }}>sports_tennis</span>
+            <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, color: "#94a3b8", marginTop: 8 }}>
+              {search ? "Sin resultados" : "Sin partidos cargados"}
             </p>
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   )
 }
 
-function PartidoRow({ partido: p, index }: { partido: Partido; index: number }) {
-  const venueColor = getVenueColor(p.sedes?.nombre)
-  const score = formatScore(p.resultado)
-  const isLive = p.estado === "en_vivo"
-  const isFin = p.estado === "finalizado"
+function SedeChip({ active, onClick, color, children }: { active: boolean; onClick: () => void; color?: string; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flexShrink: 0,
+        padding: "5px 14px", borderRadius: 20,
+        border: `1.5px solid ${active ? "#0f172a" : "#e2e8f0"}`,
+        background: active ? "#0f172a" : "#fff",
+        color: active ? "#fff" : color ?? "#64748b",
+        fontFamily: "var(--font-space-grotesk), sans-serif",
+        fontSize: 11, fontWeight: 700, cursor: "pointer",
+        textTransform: "uppercase", letterSpacing: "0.04em",
+        transition: "all 160ms cubic-bezier(0.23,1,0.32,1)",
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function PartidoCard({ partido: p, index }: { partido: Partido; index: number }) {
+  const color   = sedeColor(p.sedes?.nombre)
+  const isLive  = p.estado === "en_vivo"
+  const isFin   = p.estado === "finalizado"
+  const score   = p.resultado ? `${p.resultado.sets_pareja1} – ${p.resultado.sets_pareja2}` : null
 
   return (
     <div style={{
       background: "#fff",
       border: "1px solid #e2e8f0",
+      borderLeft: `3px solid ${color}`,
       borderRadius: 10,
-      borderLeft: `4px solid ${venueColor}`,
-      overflow: "hidden",
-      // Emil: stagger fade-up, 50ms per item
-      animation: "fadeUp 300ms cubic-bezier(0.23, 1, 0.32, 1) both",
-      animationDelay: `${index * 50}ms`,
+      padding: "10px 14px",
+      display: "flex", alignItems: "center", gap: 14,
+      animation: "fadeUp 250ms cubic-bezier(0.23,1,0.32,1) both",
+      animationDelay: `${index * 40}ms`,
     }}>
-      {/* Top bar: hora + cancha + sede + status */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "8px 12px",
-        background: "#f8fafc",
-        borderBottom: "1px solid #f1f5f9",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 13, fontWeight: 400, color: "#0f172a",
+      {/* Hora + cancha + sede */}
+      <div style={{ flexShrink: 0, width: 64 }}>
+        <p style={{
+          fontFamily: "var(--font-anton), Anton, sans-serif",
+          fontSize: 15, fontWeight: 400,
+          color: isLive ? color : "#0f172a",
+          margin: 0, lineHeight: 1,
+        }}>
+          {formatHora(p.horario)}
+        </p>
+        {p.cancha && (
+          <p style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 9, fontWeight: 700, color: "#94a3b8",
+            textTransform: "uppercase", margin: "3px 0 1px", letterSpacing: "0.04em",
           }}>
-            {formatHora(p.horario)}
-          </span>
-          {p.cancha && (
-            <span style={{
-              fontSize: 10, fontWeight: 700, color: "#64748b",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              background: "#f1f5f9", padding: "2px 6px", borderRadius: 3,
-            }}>
-              C{p.cancha}
-            </span>
-          )}
-          {p.sedes?.nombre && (
-            <span style={{
-              fontSize: 10, color: "#94a3b8",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-            }}>
-              {p.sedes.nombre}
-            </span>
-          )}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {p.categorias?.nombre && (
-            <span style={{
-              fontSize: 9, fontWeight: 900, color: "#64748b",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              background: "#f1f5f9", padding: "2px 7px", borderRadius: 3,
-              textTransform: "uppercase", letterSpacing: "0.05em",
-            }}>
-              {p.categorias.nombre}
-            </span>
-          )}
-          <StatusBadge status={p.estado} />
-        </div>
+            Cancha {p.cancha}
+          </p>
+        )}
+        {p.sedes?.nombre && (
+          <p style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 9, color: color, fontWeight: 700,
+            textTransform: "uppercase", margin: 0, letterSpacing: "0.04em",
+          }}>
+            {p.sedes.nombre}
+          </p>
+        )}
       </div>
 
-      {/* Teams + score */}
-      <div style={{ padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
-        {/* Pareja 1 */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <span style={{
-            fontSize: 12, fontWeight: 700, color: "#0f172a",
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            lineHeight: 1.3,
-          }}>
-            {formatPareja(p.pareja1)}
-          </span>
-        </div>
-
-        {/* Score / VS */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          minWidth: 52,
+      {/* Teams */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+        <span style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 12, fontWeight: 700, color: "#0f172a",
+          flex: 1, textAlign: "right",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>
-          {score ? (
-            <span style={{
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: isFin ? 18 : 16, fontWeight: 400,
-              color: isLive ? "#0f172a" : "#64748b",
-              background: isLive ? "#bcff00" : isFin ? "#f1f5f9" : "transparent",
-              padding: "2px 8px", borderRadius: 4,
-              letterSpacing: "0.02em",
-            }}>
-              {score}
-            </span>
-          ) : (
-            <span style={{
-              fontSize: 10, fontWeight: 900, color: "#94a3b8",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              letterSpacing: "0.08em",
-            }}>VS</span>
-          )}
-        </div>
+          {formatPareja(p.pareja1)}
+        </span>
 
-        {/* Pareja 2 */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, textAlign: "right" }}>
+        {score ? (
           <span style={{
-            fontSize: 12, fontWeight: 700, color: "#0f172a",
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            lineHeight: 1.3,
+            fontFamily: "var(--font-anton), Anton, sans-serif",
+            fontSize: 14, fontWeight: 400,
+            color: isLive ? "#0f172a" : "#64748b",
+            background: isLive ? "#bcff00" : isFin ? "#f1f5f9" : "transparent",
+            padding: "1px 7px", borderRadius: 4, flexShrink: 0,
           }}>
-            {formatPareja(p.pareja2)}
+            {score}
           </span>
-        </div>
+        ) : (
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 9, fontWeight: 900, color: "#94a3b8",
+            letterSpacing: "0.08em", flexShrink: 0,
+          }}>
+            vs
+          </span>
+        )}
+
+        <span style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 12, fontWeight: 700, color: "#0f172a",
+          flex: 1,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {formatPareja(p.pareja2)}
+        </span>
       </div>
     </div>
   )
