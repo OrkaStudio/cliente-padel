@@ -345,6 +345,15 @@ function PartidoCard({ partido: p, index }: { partido: Partido; index: number })
             {p.sedes.nombre}
           </p>
         )}
+        {p.categorias?.nombre && (
+          <p style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 8, color: "#cbd5e1", fontWeight: 700,
+            textTransform: "uppercase", margin: "2px 0 0", letterSpacing: "0.04em",
+          }}>
+            {p.categorias.nombre}
+          </p>
+        )}
       </div>
 
       {/* Teams */}
