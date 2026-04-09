@@ -19,7 +19,7 @@ function sedeColor(nombre?: string) {
 
 function formatHora(horario: string | null) {
   if (!horario) return "--:--"
-  return new Date(horario).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+  return new Date(horario).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
 }
 
 function formatDia(horario: string | null) {
