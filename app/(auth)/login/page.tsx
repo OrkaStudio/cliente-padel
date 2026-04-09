@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { siteConfig } from "@/config/site"
 
@@ -8,6 +9,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get("redirect") ?? "/admin"
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -15,7 +18,9 @@ export default function LoginPage() {
     const supabase = createClient()
     await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
+      },
     })
     setSent(true)
     setLoading(false)

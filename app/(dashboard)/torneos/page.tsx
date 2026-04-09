@@ -9,66 +9,208 @@ export default async function TorneosPage() {
     .select("id, nombre, fecha_inicio, fecha_fin, estado")
     .order("created_at", { ascending: false })
 
-  const estadoLabel: Record<string, string> = {
-    borrador: "Borrador",
-    inscripcion: "Inscripción abierta",
-    en_curso: "En curso",
-    finalizado: "Finalizado",
-  }
-
-  const estadoColor: Record<string, string> = {
-    borrador: "#94a3b8",
-    inscripcion: "#0f172a",
-    en_curso: "#bcff00",
-    finalizado: "#64748b",
-  }
+  const live   = (torneos ?? []).filter(t => t.estado === "en_curso")
+  const others = (torneos ?? []).filter(t => t.estado !== "en_curso")
 
   return (
-    <div style={{ padding: "24px 18px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontFamily: "Anton", fontSize: 26, color: "#0f172a", textTransform: "uppercase", marginBottom: 2 }}>
-            Torneos
-          </h1>
-          <p style={{ fontSize: 11, color: "#64748b", fontFamily: "Space Grotesk", fontWeight: 700 }}>
-            {torneos?.length ?? 0} torneos creados
-          </p>
-        </div>
-        <Link href="/torneos/nuevo" style={{ padding: "12px 20px", borderRadius: 10, background: "#0f172a", color: "#fff", fontFamily: "Anton", fontSize: 14, textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          + Nuevo
-        </Link>
+    <div style={{ padding: "20px 18px", paddingBottom: 100 }}>
+
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{
+          fontFamily: "var(--font-anton), Anton, sans-serif",
+          fontSize: 32,
+          textTransform: "uppercase",
+          color: "#0f172a",
+          lineHeight: 1,
+          fontWeight: 400,
+          margin: 0,
+        }}>
+          Explorar Torneos
+        </h1>
+        <p style={{
+          fontSize: 12,
+          color: "#64748b",
+          fontFamily: "var(--font-space-grotesk), Space Grotesk, sans-serif",
+          fontWeight: 700,
+          marginTop: 4,
+        }}>
+          Seleccioná un evento para ver detalles
+        </p>
       </div>
 
+      {live.length > 0 && (
+        <section style={{ marginBottom: 32 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#bcff00" }} />
+            <h2 style={{
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontSize: 18,
+              textTransform: "uppercase",
+              color: "#0f172a",
+              fontWeight: 400,
+              margin: 0,
+            }}>
+              En Vivo Ahora
+            </h2>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {live.map(t => <TorneoCard key={t.id} torneo={t} />)}
+          </div>
+        </section>
+      )}
+
+      {others.length > 0 && (
+        <section>
+          <h2 style={{
+            fontFamily: "var(--font-anton), Anton, sans-serif",
+            fontSize: 18,
+            textTransform: "uppercase",
+            color: "#64748b",
+            marginBottom: 16,
+            fontWeight: 400,
+            margin: "0 0 16px",
+          }}>
+            {live.length > 0 ? "Otros Torneos" : "Torneos"}
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {others.map(t => <TorneoCard key={t.id} torneo={t} />)}
+          </div>
+        </section>
+      )}
+
       {(!torneos || torneos.length === 0) && (
-        <div style={{ textAlign: "center", padding: "60px 0", border: "2px dashed #e2e8f0", borderRadius: 16 }}>
-          <p style={{ fontFamily: "Anton", fontSize: 20, color: "#94a3b8", textTransform: "uppercase", marginBottom: 8 }}>
+        <div style={{ textAlign: "center", padding: "60px 0" }}>
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 48, color: "#cbd5e1", display: "block" }}>
+            sports_tennis
+          </span>
+          <p style={{
+            fontFamily: "var(--font-anton), Anton, sans-serif",
+            fontSize: 18,
+            color: "#94a3b8",
+            textTransform: "uppercase",
+            marginTop: 12,
+            fontWeight: 400,
+          }}>
             Sin torneos todavía
-          </p>
-          <p style={{ fontSize: 12, color: "#94a3b8", fontFamily: "Space Grotesk" }}>
-            Creá tu primer torneo con el botón de arriba
           </p>
         </div>
       )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {(torneos ?? []).map((t) => (
-          <Link key={t.id} href={`/torneos/${t.id}`} style={{ textDecoration: "none" }}>
-            <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <h2 style={{ fontFamily: "Anton", fontSize: 20, color: "#0f172a", textTransform: "uppercase" }}>
-                  {t.nombre}
-                </h2>
-                <span style={{ fontSize: 9, fontWeight: 900, fontFamily: "Space Grotesk", textTransform: "uppercase", padding: "4px 10px", borderRadius: 99, background: t.estado === "en_curso" ? "#bcff00" : "#f1f5f9", color: estadoColor[t.estado] ?? "#64748b" }}>
-                  {estadoLabel[t.estado] ?? t.estado}
-                </span>
-              </div>
-              <p style={{ fontSize: 12, color: "#64748b", fontFamily: "Space Grotesk", fontWeight: 700, marginTop: 6 }}>
-                {t.fecha_inicio} → {t.fecha_fin}
-              </p>
-            </div>
-          </Link>
-        ))}
-      </div>
     </div>
+  )
+}
+
+function TorneoCard({ torneo }: {
+  torneo: { id: string; nombre: string; fecha_inicio: string; fecha_fin: string; estado: string }
+}) {
+  const isLive        = torneo.estado === "en_curso"
+  const isInscripcion = torneo.estado === "inscripcion"
+
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <Link href={`/torneos/${torneo.id}` as any} style={{ textDecoration: "none" }}>
+      <div style={{
+        width: "100%",
+        background: "#ffffff",
+        borderRadius: 20,
+        overflow: "hidden",
+        border: "1px solid #e2e8f0",
+        cursor: "pointer",
+        position: "relative",
+        display: "block",
+      }}>
+        {/* Hero con gradiente */}
+        <div style={{
+          height: 140,
+          position: "relative",
+          background: isLive
+            ? "linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%)"
+            : "linear-gradient(135deg, #1e293b 0%, #334155 60%, #1e293b 100%)",
+          overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute",
+            right: -10,
+            bottom: -20,
+            fontFamily: "var(--font-anton), Anton, sans-serif",
+            fontSize: 90,
+            color: "rgba(255,255,255,0.05)",
+            lineHeight: 1,
+            userSelect: "none",
+            pointerEvents: "none",
+            transform: "rotate(-8deg)",
+            fontWeight: 400,
+          }}>
+            2026
+          </div>
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75), transparent)" }} />
+
+          <div style={{ position: "absolute", bottom: 12, left: 16, right: 16 }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+              {isLive && (
+                <span style={{
+                  background: "#bcff00", color: "#0f172a",
+                  padding: "2px 8px", borderRadius: 4,
+                  fontSize: 9, fontWeight: 900,
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  textTransform: "uppercase",
+                }}>
+                  En Vivo
+                </span>
+              )}
+              {isInscripcion && (
+                <span style={{
+                  background: "#3b82f6", color: "#fff",
+                  padding: "2px 8px", borderRadius: 4,
+                  fontSize: 9, fontWeight: 900,
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  textTransform: "uppercase",
+                }}>
+                  Inscripciones Abiertas
+                </span>
+              )}
+              <span style={{
+                background: "rgba(255,255,255,0.18)", color: "#fff",
+                padding: "2px 8px", borderRadius: 4,
+                fontSize: 9, fontWeight: 900,
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                textTransform: "uppercase",
+              }}>
+                Open
+              </span>
+            </div>
+            <h3 style={{
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontSize: 22,
+              color: "#fff",
+              textTransform: "uppercase",
+              lineHeight: 1,
+              fontWeight: 400,
+              margin: 0,
+            }}>
+              {torneo.nombre}
+            </h3>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div style={{ padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, color: "#64748b", lineHeight: 1 }}>calendar_today</span>
+              <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "var(--font-space-grotesk), sans-serif", color: "#64748b" }}>
+                {torneo.fecha_inicio} → {torneo.fecha_fin}
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, color: "#64748b", lineHeight: 1 }}>location_on</span>
+              <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "var(--font-space-grotesk), sans-serif", color: "#64748b" }}>
+                Las Flores
+              </span>
+            </div>
+          </div>
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#cbd5e1", lineHeight: 1 }}>chevron_right</span>
+        </div>
+      </div>
+    </Link>
   )
 }

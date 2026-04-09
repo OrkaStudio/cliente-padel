@@ -10,5 +10,6 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(`${origin}/torneos`)
+  const redirect = searchParams.get("redirect") ?? "/torneos"
+  return NextResponse.redirect(`${origin}${redirect}`)
 }

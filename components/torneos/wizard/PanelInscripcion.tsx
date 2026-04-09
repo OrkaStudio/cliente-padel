@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useServerAction } from "zsa-react"
+import { useState, useTransition } from "react"
+import { motion, AnimatePresence } from "motion/react"
 import { inscribirParejaAction } from "@/actions/inscripcion.actions"
 import { crearJugadorAction } from "@/actions/jugadores.actions"
 import { JugadorSearch } from "@/components/torneos/shared/JugadorSearch"
@@ -21,90 +21,76 @@ type Props = {
   parejasIniciales: Pareja[]
 }
 
-type CrearJugadorModal = {
-  slot: "jugador1" | "jugador2"
-  nombrePrefill: string
-} | null
-
-function warningPareja(j1: Jugador, j2: Jugador | null, catTorneoId: string, categorias: Categoria[]): string | null {
-  if (!j2?.categoria_id) return null
-  const catMap = Object.fromEntries(categorias.map((c) => [c.id, c]))
-  const catJ1 = j1.categoria_id ? catMap[j1.categoria_id] : null
-  const catJ2 = catMap[j2.categoria_id]
-  const catTorneo = catMap[catTorneoId]
-  if (!catJ1 || !catJ2 || !catTorneo) return null
-
-  // Categoría base = la de orden menor (más alta)
-  const ordenBase = Math.min(catJ1.orden, catJ2.orden)
-  if (catTorneo.orden > ordenBase) {
-    const catBase = catJ1.orden <= catJ2.orden ? catJ1 : catJ2
-    return `Pareja de ${catBase.nombre} inscribiendo en categoría inferior (${catTorneo.nombre})`
-  }
-  return null
-}
-
 export function PanelInscripcion({ torneoId, categorias, parejasIniciales }: Props) {
-  const [catActiva, setCatActiva] = useState<string>(categorias[0]?.id ?? "")
+  const [catActiva, setCatActiva] = useState(categorias[0]?.id ?? "")
   const [parejas, setParejas] = useState<Pareja[]>(parejasIniciales)
   const [jugador1, setJugador1] = useState<Jugador | null>(null)
   const [jugador2, setJugador2] = useState<Jugador | null>(null)
-  const [crearModal, setCrearModal] = useState<CrearJugadorModal>(null)
-  const { execute: inscribir, isPending } = useServerAction(inscribirParejaAction)
+  const [crearSlot, setCrearSlot] = useState<{ slot: "jugador1" | "jugador2"; nombre: string } | null>(null)
+  const [pending, startTransition] = useTransition()
 
-  const parejasCategoria = parejas.filter((p) => p.categoria_id === catActiva)
-  const warning = jugador1 ? warningPareja(jugador1, jugador2, catActiva, categorias) : null
+  const parejasCategoria = parejas.filter(p => p.categoria_id === catActiva)
 
-  async function handleInscribir() {
+  const handleInscribir = () => {
     if (!jugador1) return
-    const [data, err] = await inscribir({
-      torneo_id: torneoId,
-      categoria_id: catActiva,
-      jugador1_id: jugador1.id,
-      jugador2_id: jugador2?.id ?? null,
-      club_id: null,
+    startTransition(async () => {
+      const [data, err] = await inscribirParejaAction({
+        torneo_id: torneoId,
+        categoria_id: catActiva,
+        jugador1_id: jugador1.id,
+        jugador2_id: jugador2?.id ?? null,
+        club_id: null,
+      })
+      if (!err && data) {
+        setParejas(prev => [...prev, { id: data.id, jugador1, jugador2, categoria_id: catActiva }])
+        setJugador1(null)
+        setJugador2(null)
+      }
     })
-    if (!err && data) {
-      setParejas((prev) => [
-        ...prev,
-        { id: data.id, jugador1, jugador2, categoria_id: catActiva },
-      ])
-      setJugador1(null)
-      setJugador2(null)
-    }
   }
 
-  async function handleEliminar(parejaId: string) {
-    // Optimistic remove — server action en Spec 2
-    setParejas((prev) => prev.filter((p) => p.id !== parejaId))
+  const handleEliminar = (parejaId: string) => {
+    setParejas(prev => prev.filter(p => p.id !== parejaId))
   }
 
   return (
-    <div className="max-w-lg mx-auto flex flex-col min-h-screen">
+    <div style={{ minHeight: "100vh", background: "#f8fafc", paddingBottom: 100 }}>
+
       {/* Header */}
-      <div className="px-6 pt-8 pb-4" style={{ backgroundColor: "#0f172a" }}>
-        <h1
-          className="text-3xl uppercase text-white"
-          style={{ fontFamily: "Anton, sans-serif" }}
-        >
+      <div style={{ background: "#0f172a", padding: "20px 16px 18px" }}>
+        <p style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 10, fontWeight: 900, color: "#bcff00",
+          textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 4px",
+        }}>
+          Panel Admin
+        </p>
+        <h1 style={{
+          fontFamily: "var(--font-anton), Anton, sans-serif",
+          fontSize: 28, fontWeight: 400, color: "#fff",
+          textTransform: "uppercase", margin: 0, lineHeight: 1,
+        }}>
           Inscripción
         </h1>
       </div>
 
-      {/* Tabs categorías */}
-      <div
-        className="flex gap-2 px-4 py-3 overflow-x-auto border-b"
-        style={{ borderColor: "#e2e8f0", backgroundColor: "#ffffff" }}
-      >
-        {categorias.map((cat) => (
+      {/* Tabs de categorías */}
+      <div style={{
+        background: "#fff", borderBottom: "1px solid #e2e8f0",
+        padding: "10px 16px", display: "flex", gap: 8, overflowX: "auto",
+      }}>
+        {categorias.map(cat => (
           <button
             key={cat.id}
-            type="button"
-            onClick={() => setCatActiva(cat.id)}
-            className="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0 transition-all"
+            onClick={() => { setCatActiva(cat.id); setJugador1(null); setJugador2(null) }}
             style={{
-              fontFamily: "Space Grotesk, sans-serif",
-              backgroundColor: catActiva === cat.id ? "#0f172a" : "#f1f5f9",
+              padding: "7px 14px", borderRadius: 8, border: "none", flexShrink: 0,
+              background: catActiva === cat.id ? "#0f172a" : "#f1f5f9",
               color: catActiva === cat.id ? "#bcff00" : "#64748b",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 11, fontWeight: 900, cursor: "pointer",
+              textTransform: "uppercase", letterSpacing: "0.04em",
+              WebkitTapHighlightColor: "transparent",
             }}
           >
             {cat.nombre}
@@ -112,236 +98,338 @@ export function PanelInscripcion({ torneoId, categorias, parejasIniciales }: Pro
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-        {/* Formulario inscripción */}
-        <div
-          className="flex flex-col gap-3 p-4 rounded-xl border"
-          style={{ borderColor: "#e2e8f0", backgroundColor: "#ffffff" }}
-        >
-          <p
-            className="text-xs font-black uppercase tracking-widest"
-            style={{ fontFamily: "Space Grotesk, sans-serif", color: "#64748b" }}
-          >
+      <div style={{ padding: "16px" }}>
+
+        {/* Contador de parejas */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <div style={{
+            background: "#0f172a", borderRadius: 6, padding: "3px 10px",
+            fontFamily: "var(--font-anton), Anton, sans-serif",
+            fontSize: 16, color: "#bcff00",
+          }}>
+            {parejasCategoria.length}
+          </div>
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 11, fontWeight: 900, color: "#64748b",
+            textTransform: "uppercase", letterSpacing: "0.06em",
+          }}>
+            pareja{parejasCategoria.length !== 1 ? "s" : ""} inscripta{parejasCategoria.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {/* Formulario agregar pareja */}
+        <div style={{
+          background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0",
+          padding: "16px", marginBottom: 16,
+        }}>
+          <p style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 10, fontWeight: 900, color: "#94a3b8",
+            textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 14px",
+          }}>
             Agregar pareja
           </p>
 
-          <div className="flex flex-col gap-2">
-            <label className="field-label">Jugador 1</label>
+          {/* Jugador 1 */}
+          <div style={{ marginBottom: 10 }}>
+            <p style={labelStyle}>Jugador 1</p>
             {jugador1 ? (
-              <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 border" style={{ borderColor: "#e2e8f0" }}>
-                <span className="text-sm font-semibold" style={{ fontFamily: "Space Grotesk, sans-serif", color: "#0f172a" }}>
-                  {jugador1.nombre} {jugador1.apellido}
-                </span>
-                <button type="button" onClick={() => setJugador1(null)} className="text-slate-400 text-xs hover:text-slate-600">
-                  ✕
-                </button>
-              </div>
+              <JugadorTag jugador={jugador1} onRemove={() => setJugador1(null)} />
             ) : (
               <JugadorSearch
                 categoriaId={catActiva}
                 categorias={categorias}
                 onSelect={setJugador1}
-                onCrear={(nombre) => setCrearModal({ slot: "jugador1", nombrePrefill: nombre })}
+                onCrear={n => setCrearSlot({ slot: "jugador1", nombre: n })}
                 placeholder="Buscar jugador 1..."
               />
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="field-label">Jugador 2 (opcional)</label>
+          {/* Jugador 2 */}
+          <div style={{ marginBottom: 16 }}>
+            <p style={labelStyle}>
+              Jugador 2
+              <span style={{ color: "#cbd5e1", fontWeight: 400, marginLeft: 4 }}>(opcional)</span>
+            </p>
             {jugador2 ? (
-              <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 border" style={{ borderColor: "#e2e8f0" }}>
-                <span className="text-sm font-semibold" style={{ fontFamily: "Space Grotesk, sans-serif", color: "#0f172a" }}>
-                  {jugador2.nombre} {jugador2.apellido}
-                </span>
-                <button type="button" onClick={() => setJugador2(null)} className="text-slate-400 text-xs hover:text-slate-600">
-                  ✕
-                </button>
-              </div>
+              <JugadorTag jugador={jugador2} onRemove={() => setJugador2(null)} />
             ) : (
               <JugadorSearch
                 categoriaId={catActiva}
                 categorias={categorias}
                 onSelect={setJugador2}
-                onCrear={(nombre) => setCrearModal({ slot: "jugador2", nombrePrefill: nombre })}
+                onCrear={n => setCrearSlot({ slot: "jugador2", nombre: n })}
                 placeholder="Buscar jugador 2..."
               />
             )}
           </div>
 
-          {warning && (
-            <div
-              className="flex items-start gap-2 px-3 py-2 rounded-lg text-xs"
-              style={{ backgroundColor: "#fef3c7", color: "#92400e", fontFamily: "Space Grotesk, sans-serif" }}
-            >
-              <span>⚠️</span>
-              <span>{warning}</span>
-            </div>
-          )}
-
-          <button
-            type="button"
-            disabled={!jugador1 || isPending}
+          <motion.button
             onClick={handleInscribir}
-            className="w-full py-2.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all"
+            disabled={!jugador1 || pending}
+            whileTap={jugador1 ? { scale: 0.97 } : {}}
+            transition={{ duration: 0.16, type: "spring", stiffness: 300, damping: 20 }}
             style={{
-              fontFamily: "Space Grotesk, sans-serif",
-              backgroundColor: jugador1 && !isPending ? "#0f172a" : "#e2e8f0",
-              color: jugador1 && !isPending ? "#bcff00" : "#94a3b8",
-              cursor: jugador1 && !isPending ? "pointer" : "not-allowed",
+              width: "100%", padding: "13px",
+              borderRadius: 10, border: "none",
+              background: jugador1 && !pending ? "#0f172a" : "#e2e8f0",
+              color: jugador1 && !pending ? "#bcff00" : "#94a3b8",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 13, fontWeight: 900,
+              cursor: jugador1 && !pending ? "pointer" : "not-allowed",
+              letterSpacing: "0.05em", textTransform: "uppercase",
+              WebkitTapHighlightColor: "transparent",
             }}
           >
-            {isPending ? "Inscribiendo..." : "Inscribir"}
-          </button>
+            {pending ? "Inscribiendo..." : !jugador1 ? "Seleccioná un jugador" : jugador2 ? "Inscribir pareja" : "Inscribir jugador solo"}
+          </motion.button>
         </div>
 
         {/* Lista de parejas */}
         {parejasCategoria.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <p
-              className="text-xs font-black uppercase tracking-widest px-1"
-              style={{ fontFamily: "Space Grotesk, sans-serif", color: "#64748b" }}
-            >
-              {parejasCategoria.length} pareja{parejasCategoria.length !== 1 ? "s" : ""}
-            </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {parejasCategoria.map((p, i) => (
-              <div
+              <motion.div
                 key={p.id}
-                className="flex items-center justify-between px-4 py-3 rounded-xl border"
-                style={{ borderColor: "#e2e8f0", backgroundColor: "#ffffff" }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04, type: "spring", stiffness: 300, damping: 24 }}
+                style={{
+                  background: "#fff", borderRadius: 12,
+                  border: "1px solid #e2e8f0",
+                  padding: "12px 14px",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}
               >
-                <div className="flex flex-col gap-0.5">
-                  <span
-                    className="text-sm font-bold"
-                    style={{ fontFamily: "Anton, sans-serif", color: "#0f172a", letterSpacing: "0.02em" }}
-                  >
-                    {i + 1}. {p.jugador1.nombre} {p.jugador1.apellido}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{
+                    fontFamily: "var(--font-anton), Anton, sans-serif",
+                    fontSize: 18, color: "#0f172a", lineHeight: 1, minWidth: 20,
+                  }}>
+                    {i + 1}
                   </span>
-                  {p.jugador2 ? (
-                    <span
-                      className="text-sm"
-                      style={{ fontFamily: "Space Grotesk, sans-serif", color: "#64748b" }}
-                    >
-                      {p.jugador2.nombre} {p.jugador2.apellido}
-                    </span>
-                  ) : (
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full w-fit"
-                      style={{ backgroundColor: "#fef3c7", color: "#92400e", fontFamily: "Space Grotesk, sans-serif" }}
-                    >
-                      Incompleta
-                    </span>
-                  )}
+                  <div>
+                    <p style={{
+                      fontFamily: "var(--font-space-grotesk), sans-serif",
+                      fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0,
+                    }}>
+                      {p.jugador1.nombre} {p.jugador1.apellido}
+                    </p>
+                    {p.jugador2 ? (
+                      <p style={{
+                        fontFamily: "var(--font-space-grotesk), sans-serif",
+                        fontSize: 12, color: "#64748b", margin: "1px 0 0",
+                      }}>
+                        {p.jugador2.nombre} {p.jugador2.apellido}
+                      </p>
+                    ) : (
+                      <span style={{
+                        fontSize: 9, fontWeight: 900, color: "#92400e",
+                        background: "#fef3c7", padding: "2px 7px", borderRadius: 4,
+                        fontFamily: "var(--font-space-grotesk), sans-serif",
+                        textTransform: "uppercase",
+                      }}>
+                        Incompleta
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
-                  type="button"
                   onClick={() => handleEliminar(p.id)}
-                  className="text-slate-300 hover:text-red-400 transition-colors text-sm"
+                  style={{
+                    background: "none", border: "none", padding: 4,
+                    cursor: "pointer", display: "flex",
+                    WebkitTapHighlightColor: "transparent",
+                  }}
                 >
-                  ✕
+                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, color: "#cbd5e1", lineHeight: 1 }}>
+                    delete
+                  </span>
                 </button>
-              </div>
+              </motion.div>
             ))}
+          </div>
+        )}
+
+        {parejasCategoria.length === 0 && (
+          <div style={{ textAlign: "center", padding: "32px 0", color: "#94a3b8" }}>
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 36, display: "block", marginBottom: 8 }}>group</span>
+            <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12 }}>
+              Todavía no hay parejas en esta categoría
+            </p>
           </div>
         )}
       </div>
 
-      {/* Modal crear jugador — simplificado */}
-      {crearModal && (
-        <CrearJugadorModal
-          nombrePrefill={crearModal.nombrePrefill}
-          categoriaId={catActiva}
-          categorias={categorias}
-          onClose={() => setCrearModal(null)}
-          onCreado={(jugador) => {
-            if (crearModal.slot === "jugador1") setJugador1(jugador)
-            else setJugador2(jugador)
-            setCrearModal(null)
-          }}
-        />
-      )}
+      {/* Sheet crear jugador */}
+      <AnimatePresence>
+        {crearSlot && (
+          <CrearJugadorSheet
+            nombrePrefill={crearSlot.nombre}
+            categoriaId={catActiva}
+            categorias={categorias}
+            onClose={() => setCrearSlot(null)}
+            onCreado={jugador => {
+              if (crearSlot.slot === "jugador1") setJugador1(jugador)
+              else setJugador2(jugador)
+              setCrearSlot(null)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-function CrearJugadorModal({
-  nombrePrefill,
-  categoriaId,
-  categorias,
-  onClose,
-  onCreado,
-}: {
+const labelStyle: React.CSSProperties = {
+  fontFamily: "var(--font-space-grotesk), sans-serif",
+  fontSize: 10, fontWeight: 900, color: "#64748b",
+  textTransform: "uppercase", letterSpacing: "0.06em",
+  margin: "0 0 6px",
+}
+
+function JugadorTag({ jugador, onRemove }: { jugador: Jugador; onRemove: () => void }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      background: "#f1f5f9", border: "1px solid #e2e8f0",
+      borderRadius: 10, padding: "10px 12px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#bcff00", lineHeight: 1 }}>
+          person
+        </span>
+        <span style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 13, fontWeight: 700, color: "#0f172a",
+        }}>
+          {jugador.nombre} {jugador.apellido}
+        </span>
+      </div>
+      <button onClick={onRemove}
+        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}>
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#94a3b8", lineHeight: 1 }}>close</span>
+      </button>
+    </div>
+  )
+}
+
+function CrearJugadorSheet({ nombrePrefill, categoriaId, categorias, onClose, onCreado }: {
   nombrePrefill: string
   categoriaId: string
   categorias: Categoria[]
   onClose: () => void
   onCreado: (j: Jugador) => void
 }) {
-  const [nombre, setNombre] = useState(nombrePrefill.split(" ")[0] ?? "")
-  const [apellido, setApellido] = useState(nombrePrefill.split(" ").slice(1).join(" ") ?? "")
+  const partes = nombrePrefill.trim().split(" ")
+  const [nombre, setNombre] = useState(partes[0] ?? "")
+  const [apellido, setApellido] = useState(partes.slice(1).join(" ") ?? "")
   const [telefono, setTelefono] = useState("")
   const [catId, setCatId] = useState(categoriaId)
-  const { execute, isPending } = useServerAction(crearJugadorAction)
+  const [pending, startTransition] = useTransition()
 
-  async function handleCrear() {
-    const [data, err] = await execute({ nombre, apellido, telefono: telefono || null, categoria_id: catId })
-    if (!err && data) onCreado(data as Jugador)
+  const handleCrear = () => {
+    startTransition(async () => {
+      const [data, err] = await crearJugadorAction({ nombre, apellido, telefono: telefono || null, categoria_id: catId, email: null, fecha_nacimiento: null })
+      if (!err && data) onCreado(data as Jugador)
+    })
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
-      <div className="w-full max-w-lg bg-white rounded-t-2xl p-6 flex flex-col gap-4">
-        <p
-          className="text-lg font-black uppercase"
-          style={{ fontFamily: "Anton, sans-serif", color: "#0f172a" }}
-        >
+    <>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+      />
+      <motion.div
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        style={{
+          position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+          width: "100%", maxWidth: 430, zIndex: 70,
+          background: "#fff", borderRadius: "20px 20px 0 0",
+          padding: "20px 20px 40px",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
+        }}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0", margin: "0 auto 20px" }} />
+
+        <h3 style={{
+          fontFamily: "var(--font-anton), Anton, sans-serif",
+          fontSize: 20, fontWeight: 400, color: "#0f172a",
+          textTransform: "uppercase", margin: "0 0 20px",
+        }}>
           Nuevo jugador
-        </p>
+        </h3>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="field-label">Nombre</label>
-            <input type="text" className="field-input" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+        {/* Nombre + Apellido */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+          <div>
+            <p style={labelStyle}>Nombre</p>
+            <input value={nombre} onChange={e => setNombre(e.target.value)} style={inputStyle} placeholder="Martín" />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="field-label">Apellido</label>
-            <input type="text" className="field-input" value={apellido} onChange={(e) => setApellido(e.target.value)} />
+          <div>
+            <p style={labelStyle}>Apellido</p>
+            <input value={apellido} onChange={e => setApellido(e.target.value)} style={inputStyle} placeholder="García" />
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="field-label">Teléfono (opcional)</label>
-          <input type="tel" className="field-input" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+        {/* Teléfono */}
+        <div style={{ marginBottom: 12 }}>
+          <p style={labelStyle}>Teléfono <span style={{ color: "#cbd5e1", fontWeight: 400 }}>(opcional)</span></p>
+          <input type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} style={inputStyle} placeholder="1155550000" />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="field-label">Categoría natural</label>
-          <select className="field-input" value={catId} onChange={(e) => setCatId(e.target.value)}>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>{c.nombre}</option>
-            ))}
+        {/* Categoría natural */}
+        <div style={{ marginBottom: 20 }}>
+          <p style={labelStyle}>Categoría natural</p>
+          <select value={catId} onChange={e => setCatId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+            {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </select>
         </div>
 
-        <div className="flex gap-3">
-          <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border text-sm font-bold" style={{ borderColor: "#e2e8f0", color: "#0f172a", fontFamily: "Space Grotesk, sans-serif" }}>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose} style={{
+            flex: 1, padding: "13px", borderRadius: 10,
+            border: "1px solid #e2e8f0", background: "#f8fafc",
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 13, fontWeight: 700, color: "#64748b", cursor: "pointer",
+            WebkitTapHighlightColor: "transparent",
+          }}>
             Cancelar
           </button>
-          <button
-            type="button"
-            disabled={!nombre || !apellido || isPending}
+          <motion.button
             onClick={handleCrear}
-            className="flex-1 py-3 rounded-xl text-sm font-bold"
+            disabled={!nombre || !apellido || pending}
+            whileTap={nombre && apellido ? { scale: 0.97 } : {}}
+            transition={{ duration: 0.16, type: "spring", stiffness: 300, damping: 20 }}
             style={{
-              fontFamily: "Space Grotesk, sans-serif",
-              backgroundColor: nombre && apellido ? "#0f172a" : "#e2e8f0",
-              color: nombre && apellido ? "#bcff00" : "#94a3b8",
+              flex: 2, padding: "13px", borderRadius: 10, border: "none",
+              background: nombre && apellido && !pending ? "#0f172a" : "#e2e8f0",
+              color: nombre && apellido && !pending ? "#bcff00" : "#94a3b8",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 13, fontWeight: 900,
+              cursor: nombre && apellido ? "pointer" : "not-allowed",
+              WebkitTapHighlightColor: "transparent",
             }}
           >
-            {isPending ? "Guardando..." : "Guardar"}
-          </button>
+            {pending ? "Guardando..." : "Guardar jugador"}
+          </motion.button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </>
   )
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "10px 12px",
+  border: "1px solid #e2e8f0", borderRadius: 10,
+  background: "#f8fafc", outline: "none",
+  fontFamily: "var(--font-space-grotesk), sans-serif",
+  fontSize: 13, color: "#0f172a",
+  boxSizing: "border-box",
 }

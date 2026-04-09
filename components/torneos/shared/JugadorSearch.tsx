@@ -18,24 +18,16 @@ export function JugadorSearch({ categoriaId, categorias, onSelect, onCrear, plac
   const [results, setResults] = useState<Jugador[]>([])
   const [open, setOpen] = useState(false)
   const [filtroCategoria, setFiltroCategoria] = useState<string>(categoriaId)
-  const [mostrarOtraCategoria, setMostrarOtraCategoria] = useState(false)
+  const [mostrarOtraCat, setMostrarOtraCat] = useState(false)
   const [, startTransition] = useTransition()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
   const catMap = Object.fromEntries(categorias.map((c) => [c.id, c]))
 
   function search(q: string, catId: string) {
-    if (q.length < 2) {
-      setResults([])
-      setOpen(false)
-      return
-    }
+    if (q.length < 2) { setResults([]); setOpen(false); return }
     startTransition(async () => {
       const [data] = await buscarJugadoresAction({ query: q, categoria_id: catId })
-      if (data) {
-        setResults(data as Jugador[])
-        setOpen(true)
-      }
+      if (data) { setResults(data as Jugador[]); setOpen(true) }
     })
   }
 
@@ -47,15 +39,12 @@ export function JugadorSearch({ categoriaId, categorias, onSelect, onCrear, plac
   }
 
   function handleSelect(jugador: Jugador) {
-    const esCatDistinta = jugador.categoria_id && jugador.categoria_id !== categoriaId
-    if (esCatDistinta) {
-      const catJugador = catMap[jugador.categoria_id!]
-      const catTorneo = catMap[categoriaId]
-      if (catJugador && catTorneo && catJugador.orden > catTorneo.orden) {
-        const confirmar = window.confirm(
-          `${catJugador.nombre} inscribiendo en ${catTorneo.nombre} (categoría inferior) — ¿confirmar?`
-        )
-        if (!confirmar) return
+    const esOtraCat = jugador.categoria_id && jugador.categoria_id !== categoriaId
+    if (esOtraCat) {
+      const catJ = catMap[jugador.categoria_id!]
+      const catT = catMap[categoriaId]
+      if (catJ && catT && catJ.orden > catT.orden) {
+        if (!window.confirm(`${catJ.nombre} inscribiendo en ${catT.nombre} — ¿confirmar?`)) return
       }
     }
     onSelect(jugador)
@@ -64,106 +53,121 @@ export function JugadorSearch({ categoriaId, categorias, onSelect, onCrear, plac
   }
 
   return (
-    <div className="relative">
-      <input
-        type="text"
-        className="field-input"
-        placeholder={placeholder ?? "Buscar jugador..."}
-        value={query}
-        onChange={handleInput}
-        onFocus={() => results.length > 0 && setOpen(true)}
-      />
+    <div style={{ position: "relative" }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8,
+        background: "#f8fafc", border: "1px solid #e2e8f0",
+        borderRadius: 10, padding: "10px 12px",
+      }}>
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#94a3b8", lineHeight: 1, flexShrink: 0 }}>search</span>
+        <input
+          type="text"
+          value={query}
+          onChange={handleInput}
+          onFocus={() => results.length > 0 && setOpen(true)}
+          placeholder={placeholder ?? "Buscar jugador..."}
+          style={{
+            flex: 1, border: "none", background: "transparent", outline: "none",
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 13, color: "#0f172a",
+          }}
+        />
+        {query && (
+          <button onClick={() => { setQuery(""); setResults([]); setOpen(false) }}
+            style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}>
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, color: "#94a3b8", lineHeight: 1 }}>close</span>
+          </button>
+        )}
+      </div>
 
       {open && (
-        <div
-          className="absolute z-50 w-full mt-1 rounded-xl border shadow-lg overflow-hidden"
-          style={{ borderColor: "#e2e8f0", backgroundColor: "#ffffff" }}
-        >
+        <div style={{
+          position: "absolute", zIndex: 50, width: "100%", top: "calc(100% + 4px)",
+          background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12)", overflow: "hidden",
+        }}>
           {results.map((j) => {
-            const catJugador = j.categoria_id ? catMap[j.categoria_id] : null
+            const catJ = j.categoria_id ? catMap[j.categoria_id] : null
             const esOtraCat = j.categoria_id && j.categoria_id !== categoriaId
             return (
-              <button
-                key={j.id}
-                type="button"
-                onClick={() => handleSelect(j)}
-                className="w-full px-4 py-2.5 text-left flex items-center justify-between hover:bg-slate-50 transition-colors"
+              <button key={j.id} type="button" onClick={() => handleSelect(j)}
+                style={{
+                  width: "100%", padding: "12px 14px", border: "none",
+                  background: "transparent", cursor: "pointer", textAlign: "left",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  borderBottom: "1px solid #f8fafc",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
-                <span
-                  className="text-sm font-semibold"
-                  style={{ fontFamily: "Space Grotesk, sans-serif", color: "#0f172a" }}
-                >
+                <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
                   {j.nombre} {j.apellido}
                 </span>
-                {catJugador && (
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full"
-                    style={{
-                      backgroundColor: esOtraCat ? "#fef3c7" : "#f0ffe0",
-                      color: esOtraCat ? "#92400e" : "#166534",
-                      fontFamily: "Space Grotesk, sans-serif",
-                    }}
-                  >
-                    {catJugador.nombre}
+                {catJ && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 900, padding: "3px 8px", borderRadius: 4,
+                    background: esOtraCat ? "#fef3c7" : "#f0fff4",
+                    color: esOtraCat ? "#92400e" : "#166534",
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    textTransform: "uppercase", letterSpacing: "0.04em",
+                  }}>
+                    {catJ.nombre}
                   </span>
                 )}
               </button>
             )
           })}
 
-          {/* Buscar en otra categoría */}
-          {!mostrarOtraCategoria && (
-            <button
-              type="button"
-              onClick={() => setMostrarOtraCategoria(true)}
-              className="w-full px-4 py-2 text-left text-xs text-slate-400 hover:bg-slate-50 border-t"
-              style={{ borderColor: "#f1f5f9", fontFamily: "Space Grotesk, sans-serif" }}
-            >
+          {!mostrarOtraCat && (
+            <button type="button" onClick={() => setMostrarOtraCat(true)}
+              style={{
+                width: "100%", padding: "10px 14px", border: "none",
+                background: "#f8fafc", cursor: "pointer", textAlign: "left",
+                borderTop: "1px solid #f1f5f9",
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 11, color: "#94a3b8",
+              }}>
               Buscar en otra categoría
             </button>
           )}
 
-          {mostrarOtraCategoria && (
-            <div className="px-4 py-2 border-t" style={{ borderColor: "#f1f5f9" }}>
+          {mostrarOtraCat && (
+            <div style={{ padding: "10px 14px", borderTop: "1px solid #f1f5f9", background: "#f8fafc" }}>
               <select
-                className="w-full text-xs rounded border px-2 py-1"
-                style={{ borderColor: "#e2e8f0" }}
                 value={filtroCategoria}
-                onChange={(e) => {
-                  setFiltroCategoria(e.target.value)
-                  search(query, e.target.value)
+                onChange={e => { setFiltroCategoria(e.target.value); search(query, e.target.value) }}
+                style={{
+                  width: "100%", padding: "6px 8px", borderRadius: 6,
+                  border: "1px solid #e2e8f0", background: "#fff",
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 12, color: "#0f172a",
                 }}
               >
-                {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
+                {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
               </select>
             </div>
           )}
 
-          {/* Crear nuevo jugador */}
           {query.trim().length >= 2 && (
-            <button
-              type="button"
-              onClick={() => {
-                onCrear(query.trim())
-                setOpen(false)
+            <button type="button"
+              onClick={() => { onCrear(query.trim()); setOpen(false) }}
+              style={{
+                width: "100%", padding: "12px 14px", border: "none",
+                background: "transparent", cursor: "pointer", textAlign: "left",
+                display: "flex", alignItems: "center", gap: 10,
+                borderTop: "1px solid #e2e8f0",
               }}
-              className="w-full px-4 py-2.5 text-left flex items-center gap-2 border-t hover:bg-slate-50 transition-colors"
-              style={{ borderColor: "#e2e8f0" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
-              <span
-                className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ backgroundColor: "#bcff00", color: "#0f172a" }}
-              >
-                +
-              </span>
-              <span
-                className="text-sm font-semibold"
-                style={{ fontFamily: "Space Grotesk, sans-serif", color: "#0f172a" }}
-              >
+              <div style={{
+                width: 24, height: 24, borderRadius: "50%",
+                background: "#bcff00", display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, color: "#0f172a", lineHeight: 1 }}>add</span>
+              </div>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
                 Crear &quot;{query.trim()}&quot;
               </span>
             </button>

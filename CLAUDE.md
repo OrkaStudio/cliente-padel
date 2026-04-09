@@ -45,3 +45,22 @@ Para este primer torneo las parejas las carga Orka manualmente.
 
 No implementar features no aprobadas explícitamente.
 No implementar `hasInterclub` hasta tener todas las respuestas anteriores.
+
+---
+
+## Skills activas
+
+| Skill | Archivo | Cuándo usarla |
+|-------|---------|---------------|
+| **Frontend Design** | `skills_claude/frontend-design.md` | Siempre — paleta, tipografía, layout, componentes |
+| **Emil Design Eng** | `skills_claude/emil-design-eng.md` | Siempre que haya animaciones, transiciones o interacciones |
+
+### Reglas de la skill Emil (aplicar siempre):
+- Solo animar `transform` y `opacity` — nunca `height`, `width`, `padding`
+- Duración UI < 300ms. Botones: 100-160ms. Modales: 200-500ms
+- Easing: `cubic-bezier(0.23, 1, 0.32, 1)` para entradas, nunca `ease-in`
+- Botones y cards: `scale(0.97)` on press, transición 160ms
+- Nunca animar desde `scale(0)` — empezar desde `scale(0.95)` + `opacity: 0`
+- Stagger en listas: 30-80ms entre ítems
+- App mobile: gate hover animations con `@media (hover: hover) and (pointer: fine)`
+- Respetar `prefers-reduced-motion`

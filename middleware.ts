@@ -1,22 +1,34 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
-/**
- * Middleware global — intercepta cada request para refrescar el token de Supabase.
- * Sin esto, las sesiones expiran silenciosamente y el usuario queda en estado inconsistente.
- */
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // ── Rutas de veedor: verificar cookie PIN ──────────────────────────────────
+  // Excluir la página de login del veedor
+  const veedorMatch = pathname.match(/^\/veedor\/([^/]+)(?!\/login)/)
+  if (veedorMatch && !pathname.includes("/login")) {
+    const club = veedorMatch[1]
+    const pinOk = request.cookies.get(`veedor_pin_${club}`)?.value === "ok"
+    if (!pinOk) {
+      return NextResponse.redirect(new URL(`/veedor/${club}/login`, request.url))
+    }
+  }
+
+  // ── Rutas de admin: verificar cookie PIN ──────────────────────────────────
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
+    const pinOk = request.cookies.get("admin_pin")?.value === "ok"
+    if (!pinOk) {
+      return NextResponse.redirect(new URL("/admin/login", request.url))
+    }
+  }
+
+  // ── Resto: refrescar sesión Supabase normalmente ───────────────────────────
   return await updateSession(request)
 }
 
 export const config = {
   matcher: [
-    /*
-     * Aplica a todas las rutas EXCEPTO:
-     * - _next/static (archivos estáticos)
-     * - _next/image (optimización de imágenes)
-     * - favicon.ico, iconos y archivos públicos con extensión
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap');
-
 @layer base {
   :root {
     /* Padel — Deep Slate Navy + Neon Green */
@@ -51,7 +49,56 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply antialiased;
+    background: #f0f4f8;
+    color: #0f172a;
+    font-family: var(--font-inter), Inter, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  /* Emil Kowalski — custom easing curves */
+  :root {
+    --ease-out-strong:  cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Stagger helpers para listas (30-80ms entre items) */
+  .stagger-1 { animation-delay: 0ms; }
+  .stagger-2 { animation-delay: 50ms; }
+  .stagger-3 { animation-delay: 100ms; }
+  .stagger-4 { animation-delay: 150ms; }
+  .stagger-5 { animation-delay: 200ms; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-up {
+    opacity: 0;
+    animation: fadeUp 300ms var(--ease-out-strong) forwards;
+  }
+
+  /* Marquee para stats */
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .marquee-track {
+    display: flex;
+    animation: marquee 25s linear infinite;
+  }
+
+  /* prefers-reduced-motion — Emil: gentle opacity only, no movement */
+  @media (prefers-reduced-motion: reduce) {
+    .fade-up, .marquee-track {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
   }
 }
 
