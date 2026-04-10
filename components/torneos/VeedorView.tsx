@@ -151,7 +151,7 @@ export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[
       <ResultadoSheet
         partido={sheetPartido}
         onClose={() => setSheetPartido(null)}
-        onSuccess={() => { setSheetPartido(null); router.refresh() }}
+        onSuccess={() => { setSheetPartido(null); window.location.reload() }}
       />
     </div>
   )
