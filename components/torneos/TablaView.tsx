@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { Chip } from "@/components/ui/padel/Chip"
 
 interface Categoria { id: string; nombre: string; tipo: string; tcId: string }
@@ -38,6 +39,14 @@ export function TablaView({ categorias, grupos, partidos, initialCatId }: {
   initialCatId: string | null
 }) {
   const [selCatId, setSelCatId] = useState<string | null>(initialCatId)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const selectCat = (id: string | null) => {
+    setSelCatId(id)
+    const url = id ? `${pathname}?cat=${id}` : pathname
+    router.replace(url, { scroll: false })
+  }
 
   const activeCats = selCatId ? categorias.filter(c => c.id === selCatId) : categorias
 
@@ -50,9 +59,9 @@ export function TablaView({ categorias, grupos, partidos, initialCatId }: {
         borderBottom: "1px solid #cbd5e1", padding: "8px 0",
       }}>
         <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 16px" }}>
-          <Chip small active={!selCatId} onClick={() => setSelCatId(null)}>Todas</Chip>
+          <Chip small active={!selCatId} onClick={() => selectCat(null)}>Todas</Chip>
           {categorias.map(c => (
-            <Chip key={c.id} small active={selCatId === c.id} onClick={() => setSelCatId(c.id)}>
+            <Chip key={c.id} small active={selCatId === c.id} onClick={() => selectCat(c.id)}>
               {c.nombre}
             </Chip>
           ))}

@@ -2,8 +2,15 @@ import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { LlavesView } from "@/components/torneos/LlavesView"
 
-export default async function LlavesPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function LlavesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ cat?: string }>
+}) {
   const { id } = await params
+  const { cat } = await searchParams
   const supabase = await createClient()
 
   const { data: torneo } = await supabase
@@ -48,5 +55,5 @@ export default async function LlavesPage({ params }: { params: Promise<{ id: str
     nombre: (tc.categorias as any)?.nombre ?? "",
   }))
 
-  return <LlavesView partidos={partidos ?? []} categorias={categorias} />
+  return <LlavesView partidos={partidos ?? []} categorias={categorias} initialCatId={cat ?? null} />
 }

@@ -5,8 +5,15 @@ import { notFound } from "next/navigation"
 import { FixtureView } from "@/components/torneos/FixtureView"
 import { aplicarEstadoAuto } from "@/lib/partidos"
 
-export default async function FixturePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FixturePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ sede?: string }>
+}) {
   const { id } = await params
+  const { sede } = await searchParams
   const supabase = await createClient()
 
   const { data: torneo } = await supabase
@@ -35,5 +42,5 @@ export default async function FixturePage({ params }: { params: Promise<{ id: st
     .eq("torneo_id", id)
     .order("horario")
 
-  return <FixtureView partidos={aplicarEstadoAuto(partidos ?? [])} />
+  return <FixtureView partidos={aplicarEstadoAuto(partidos ?? [])} initialSedeId={sede ?? null} />
 }

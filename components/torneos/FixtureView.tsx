@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter, usePathname } from "next/navigation"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Partido = any
@@ -40,10 +41,18 @@ function formatPareja(pareja: { jugador1: { nombre: string; apellido: string } |
   return j1 || j2 || "—"
 }
 
-export function FixtureView({ partidos }: { partidos: Partido[] }) {
+export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; initialSedeId?: string | null }) {
   const [search, setSearch]             = useState("")
-  const [selSede, setSelSede]           = useState<string | null>(null)
+  const [selSede, setSelSede]           = useState<string | null>(initialSedeId ?? null)
   const [showFinalizados, setShowFin]   = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const selectSede = (id: string | null) => {
+    setSelSede(id)
+    const url = id ? `${pathname}?sede=${id}` : pathname
+    router.replace(url, { scroll: false })
+  }
 
   const sedes = useMemo(() => {
     const map = new Map<string, string>()
@@ -115,9 +124,9 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
 
         {/* Sede chips */}
         <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 0 10px", scrollbarWidth: "none" }}>
-          <SedeChip active={!selSede} onClick={() => setSelSede(null)}>Todas las sedes</SedeChip>
+          <SedeChip active={!selSede} onClick={() => selectSede(null)}>Todas las sedes</SedeChip>
           {sedes.map(s => (
-            <SedeChip key={s.id} active={selSede === s.id} onClick={() => setSelSede(s.id)} color={sedeColor(s.nombre)}>
+            <SedeChip key={s.id} active={selSede === s.id} onClick={() => selectSede(s.id)} color={sedeColor(s.nombre)}>
               {s.nombre}
             </SedeChip>
           ))}

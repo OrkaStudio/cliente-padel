@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { Chip } from "@/components/ui/padel/Chip"
 import { StatusBadge } from "@/components/ui/padel/StatusBadge"
 
@@ -53,11 +54,20 @@ const ROUND_LABELS: Record<string, string> = {
   "3ro": "3er Puesto",
 }
 
-export function LlavesView({ partidos, categorias }: {
+export function LlavesView({ partidos, categorias, initialCatId }: {
   partidos: Partido[]
   categorias: { id: string; nombre: string }[]
+  initialCatId?: string | null
 }) {
-  const [selCatId, setSelCatId] = useState<string | null>(categorias[0]?.id ?? null)
+  const [selCatId, setSelCatId] = useState<string | null>(initialCatId ?? categorias[0]?.id ?? null)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const selectCat = (id: string | null) => {
+    setSelCatId(id)
+    const url = id ? `${pathname}?cat=${id}` : pathname
+    router.replace(url, { scroll: false })
+  }
 
   const filtrados = useMemo(
     () => selCatId ? partidos.filter((p: Partido) => p.categorias?.id === selCatId) : partidos,
@@ -76,10 +86,10 @@ export function LlavesView({ partidos, categorias }: {
       }}>
         <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 16px" }}>
           {categorias.length > 1 && (
-            <Chip small active={!selCatId} onClick={() => setSelCatId(null)}>Todas</Chip>
+            <Chip small active={!selCatId} onClick={() => selectCat(null)}>Todas</Chip>
           )}
           {categorias.map(c => (
-            <Chip key={c.id} small active={selCatId === c.id} onClick={() => setSelCatId(c.id)}>
+            <Chip key={c.id} small active={selCatId === c.id} onClick={() => selectCat(c.id)}>
               {c.nombre}
             </Chip>
           ))}
