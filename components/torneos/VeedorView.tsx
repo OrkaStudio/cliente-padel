@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "motion/react"
 import { ResultadoSheet } from "./ResultadoSheet"
 import { marcarEnVivoAction } from "@/actions/partidos.actions"
@@ -21,6 +22,7 @@ function nombrePareja(p: { jugador1: { nombre: string; apellido: string } | null
 }
 
 export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[]; sedeName: string; isAdmin?: boolean }) {
+  const router = useRouter()
   const [tab, setTab] = useState<"hoy" | "todos">("hoy")
   const [sheetPartido, setSheetPartido] = useState<Partido | null>(null)
   const [iniciando, startInicio] = useTransition()
@@ -146,7 +148,11 @@ export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[
       </div>
 
       {/* Sheet de resultado */}
-      <ResultadoSheet partido={sheetPartido} onClose={() => setSheetPartido(null)} />
+      <ResultadoSheet
+        partido={sheetPartido}
+        onClose={() => setSheetPartido(null)}
+        onSuccess={() => { setSheetPartido(null); router.refresh() }}
+      />
     </div>
   )
 }

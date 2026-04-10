@@ -144,10 +144,12 @@ function SetRow({
 export function ResultadoSheet({
   partido,
   onClose,
+  onSuccess,
   tercerSet = "super_tie_break",
 }: {
   partido: { id: string; pareja1: Pareja | null; pareja2: Pareja | null } | null
   onClose: () => void
+  onSuccess?: () => void
   tercerSet?: "completo" | "tie_break" | "super_tie_break"
 }) {
   const [set1, setSet1] = useState<SetScore>({ p1: 0, p2: 0 })
@@ -183,7 +185,7 @@ export function ResultadoSheet({
     startTransition(async () => {
       const [, err] = await actualizarResultadoAction({ partidoId: partido.id, sets: allSets })
       if (err) { setError(err.message); return }
-      onClose()
+      onSuccess ? onSuccess() : onClose()
     })
   }
 
