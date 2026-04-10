@@ -105,25 +105,11 @@ export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[
           </Section>
         )}
 
-        {/* PRÓXIMOS */}
+        {/* PRÓXIMOS — sin botón, se inician solos por hora */}
         {proximos.length > 0 && (
           <Section label="Próximos">
             {proximos.map((p: Partido, i: number) => (
-              <PartidoCard
-                key={p.id} partido={p} index={i}
-                accion={
-                  <motion.button
-                    onClick={() => handleIniciar(p)}
-                    disabled={iniciando && iniciandoId === p.id}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.16, type: "spring", stiffness: 300, damping: 20 }}
-                    style={btnStyle("#0f172a", "#fff", iniciando && iniciandoId === p.id)}
-                  >
-                    <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, lineHeight: 1 }}>play_arrow</span>
-                    {iniciando && iniciandoId === p.id ? "..." : "Iniciar"}
-                  </motion.button>
-                }
-              />
+              <PartidoCard key={p.id} partido={p} index={i} />
             ))}
           </Section>
         )}
