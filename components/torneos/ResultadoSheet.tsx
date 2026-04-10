@@ -184,7 +184,11 @@ export function ResultadoSheet({
     setError(null)
     startTransition(async () => {
       const [, err] = await actualizarResultadoAction({ partidoId: partido.id, sets: allSets })
-      if (err) { setError(err.message); return }
+      if (err) {
+        console.error("Error al guardar resultado:", err)
+        setError(err.message ?? err.code ?? JSON.stringify(err))
+        return
+      }
       onSuccess ? onSuccess() : onClose()
     })
   }
