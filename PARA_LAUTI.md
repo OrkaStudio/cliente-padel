@@ -38,6 +38,52 @@ npm run dev
 
 ---
 
+## Cambios sesión 10/04 (Fran + Claude)
+
+### Resumen de lo que se hizo
+
+#### RLS — escrituras bloqueadas con anon key
+El problema principal era que `actualizarResultadoAction` no hacía nada porque la anon key no tiene permisos de escritura en Supabase (RLS).
+
+**Solución:** se creó `lib/supabase/admin.ts` con el service role key que bypasea RLS:
+```ts
+// lib/supabase/admin.ts
+import { createClient } from "@supabase/supabase-js"
+export function createAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  )
+}
+```
+
+Todas las server actions que escriben usan ahora `createAdminClient()`. **Importante:** la variable `SUPABASE_SERVICE_ROLE_KEY` en `.env.local` debe ser la service_role key (JWT que empieza con `eyJ...` y tiene `"role":"service_role"`), NO la anon key.
+
+#### VeedorView — mejoras
+- **Quitado el botón "Iniciar"** de los partidos próximos — el estado `en_vivo` se deriva automáticamente por hora (`aplicarEstadoAuto` en `lib/partidos.ts`)
+- **Agregado botón "Corregir resultado"** (gris, discreto) en partidos finalizados para poder editar si hubo un error
+- **Cambiado `window.location.reload()`** por `router.refresh()` para que al guardar un resultado la página se actualice sin perder el tab activo (Hoy/Todos)
+
+#### Filtros persistentes en URL
+Los filtros de sede/categoría ahora se guardan en la URL (`?sede=<id>` o `?cat=<id>`). Al refrescar la página se mantiene el filtro seleccionado.
+
+Páginas actualizadas con `export const dynamic = "force-dynamic"` y lectura de searchParams:
+- `app/(dashboard)/torneos/[id]/fixture/page.tsx` → `?sede=`
+- `app/(dashboard)/torneos/[id]/tabla/page.tsx` → `?cat=`
+- `app/(dashboard)/torneos/[id]/llaves/page.tsx` → `?cat=`
+
+Componentes actualizados a `useSearchParams()` (ya no usan useState para el filtro):
+- `components/torneos/FixtureView.tsx`
+- `components/torneos/TablaView.tsx`
+- `components/torneos/LlavesView.tsx`
+
+#### Tus cambios (Lauti) integrados
+- `BottomNav.tsx` — context-aware para admin (Monitor / Fixture / Inscripciones cuando estás en `/admin/torneo/[id]`)
+- `PanelInscripcion.tsx` — `eliminarParejaAction` conectado con optimistic update + rollback si falla
+
+---
+
 ## Lo que se construyó esta sesión
 
 ### Vistas públicas (jugadores — sin login)
@@ -123,18 +169,12 @@ actions/partidos.actions.ts
 
 ## Lo que quedó pendiente
 
-### 1. Vista de jugadores en admin ⬅ PRÓXIMO A HACER
-Se empezó pero no se terminó. Falta:
-- `components/admin/JugadoresView.tsx` — lista con buscador, filtro por categoría
-- La página `app/(dashboard)/admin/jugadores/page.tsx` ya existe y trae los datos
-- El link en el panel admin ya está (`/admin/jugadores`)
-
-### 2. BottomNav en admin
-El BottomNav actualmente muestra las tabs del torneo cuando detecta `/torneos/[id]`.
-Dentro de `/admin` no muestra nada relevante. Podría adaptarse para mostrar tabs de admin (Monitor / Fixture / Inscripciones).
-
-### 3. Eliminación real de parejas
-`handleEliminar` en `PanelInscripcion` hace un optimistic remove local pero no llama ninguna action al servidor. Falta crear `eliminarParejaAction` en `inscripcion.actions.ts`.
+### 1. Inscripciones + Jugadores ⬅ PRÓXIMO (ver `PLAN_INSCRIPCION_JUGADORES.md`)
+Ver el plan detallado en ese archivo. Resumen:
+- Fix `crearJugadorAction` → usar `createAdminClient()` (no guarda porque usa anon key)
+- Mejorar sheet "Crear jugador" en el search
+- Flujo de inscripción en 2 pasos (J1 primero, luego J2)
+- Form de alta de jugadores en `/admin/jugadores`
 
 ### 4. Logos de clubes en el header veedor
 Los logos están en `public/clubes/` correctamente nombrados:
