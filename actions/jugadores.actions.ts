@@ -2,6 +2,7 @@
 
 import { createServerAction } from "zsa"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { buscarJugadoresInputSchema, crearJugadorInputSchema } from "@/validations/jugador.schema"
 
 export const buscarJugadoresAction = createServerAction()
@@ -26,7 +27,7 @@ export const buscarJugadoresAction = createServerAction()
 export const crearJugadorAction = createServerAction()
   .input(crearJugadorInputSchema)
   .handler(async ({ input }) => {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data, error } = await supabase
       .from("jugadores")
       .insert(input)

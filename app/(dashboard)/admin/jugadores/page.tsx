@@ -5,10 +5,10 @@ import { JugadoresView } from "@/components/admin/JugadoresView"
 export default async function AdminJugadoresPage() {
   const supabase = await createClient()
 
-  const { data: jugadores } = await supabase
-    .from("jugadores")
-    .select("id, nombre, apellido, telefono, categoria_id, categorias(nombre)")
-    .order("apellido")
+  const [{ data: jugadores }, { data: categorias }] = await Promise.all([
+    supabase.from("jugadores").select("id, nombre, apellido, telefono, categoria_id, categorias(nombre)").order("apellido"),
+    supabase.from("categorias").select("id, nombre").order("orden"),
+  ])
 
   return (
     <div>
@@ -39,7 +39,7 @@ export default async function AdminJugadoresPage() {
         </div>
       </div>
 
-      <JugadoresView jugadores={jugadores ?? []} />
+      <JugadoresView jugadores={jugadores ?? []} categorias={categorias ?? []} />
     </div>
   )
 }

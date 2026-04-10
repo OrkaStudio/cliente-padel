@@ -31,6 +31,14 @@ export function PanelInscripcion({ torneoId, categorias, parejasIniciales }: Pro
   const [, startEliminar] = useTransition()
 
   const parejasCategoria = parejas.filter(p => p.categoria_id === catActiva)
+  const [verJugadores, setVerJugadores] = useState(false)
+
+  const jugadoresDelTorneo = Array.from(
+    new Map(
+      parejas.flatMap(p => [p.jugador1, ...(p.jugador2 ? [p.jugador2] : [])])
+        .map(j => [j.id, j])
+    ).values()
+  ).sort((a, b) => a.apellido.localeCompare(b.apellido))
 
   const handleInscribir = () => {
     if (!jugador1) return
@@ -153,24 +161,26 @@ export function PanelInscripcion({ torneoId, categorias, parejasIniciales }: Pro
             )}
           </div>
 
-          {/* Jugador 2 */}
-          <div style={{ marginBottom: 16 }}>
-            <p style={labelStyle}>
-              Jugador 2
-              <span style={{ color: "#cbd5e1", fontWeight: 400, marginLeft: 4 }}>(opcional)</span>
-            </p>
-            {jugador2 ? (
-              <JugadorTag jugador={jugador2} onRemove={() => setJugador2(null)} />
-            ) : (
-              <JugadorSearch
-                categoriaId={catActiva}
-                categorias={categorias}
-                onSelect={setJugador2}
-                onCrear={n => setCrearSlot({ slot: "jugador2", nombre: n })}
-                placeholder="Buscar jugador 2..."
-              />
-            )}
-          </div>
+          {/* Jugador 2 — aparece solo cuando J1 está elegido */}
+          {jugador1 && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={labelStyle}>
+                Jugador 2
+                <span style={{ color: "#cbd5e1", fontWeight: 400, marginLeft: 4 }}>(opcional)</span>
+              </p>
+              {jugador2 ? (
+                <JugadorTag jugador={jugador2} onRemove={() => setJugador2(null)} />
+              ) : (
+                <JugadorSearch
+                  categoriaId={catActiva}
+                  categorias={categorias}
+                  onSelect={setJugador2}
+                  onCrear={n => setCrearSlot({ slot: "jugador2", nombre: n })}
+                  placeholder="Buscar jugador 2..."
+                />
+              )}
+            </div>
+          )}
 
           <motion.button
             onClick={handleInscribir}
@@ -267,6 +277,79 @@ export function PanelInscripcion({ torneoId, categorias, parejasIniciales }: Pro
             </p>
           </div>
         )}
+      </div>
+
+      {/* Sección jugadores inscriptos */}
+      <div style={{ padding: "0 16px 16px" }}>
+        <button
+          onClick={() => setVerJugadores(v => !v)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12,
+            padding: "12px 14px", cursor: "pointer",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#64748b", lineHeight: 1 }}>group</span>
+            <span style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 11, fontWeight: 900, color: "#64748b",
+              textTransform: "uppercase", letterSpacing: "0.06em",
+            }}>
+              Jugadores inscriptos
+            </span>
+            <span style={{
+              background: "#0f172a", color: "#bcff00", borderRadius: 6,
+              padding: "1px 7px",
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontSize: 13,
+            }}>
+              {jugadoresDelTorneo.length}
+            </span>
+          </div>
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, color: "#94a3b8", lineHeight: 1 }}>
+            {verJugadores ? "expand_less" : "expand_more"}
+          </span>
+        </button>
+
+        <AnimatePresence>
+          {verJugadores && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ type: "spring", stiffness: 300, damping: 28 }}
+              style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}
+            >
+              {jugadoresDelTorneo.map(j => (
+                <div key={j.id} style={{
+                  background: "#fff", borderRadius: 10, border: "1px solid #e2e8f0",
+                  padding: "10px 14px", display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: "50%",
+                    background: "#f1f5f9", flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <span style={{
+                      fontFamily: "var(--font-anton), Anton, sans-serif",
+                      fontSize: 11, color: "#64748b",
+                    }}>
+                      {j.nombre[0]}{j.apellido[0]}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 13, fontWeight: 700, color: "#0f172a",
+                  }}>
+                    {j.apellido}, {j.nombre}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Sheet crear jugador */}
