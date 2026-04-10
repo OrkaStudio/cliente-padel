@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Chip } from "@/components/ui/padel/Chip"
 
 interface Categoria { id: string; nombre: string; tipo: string; tcId: string }
@@ -32,18 +31,18 @@ function calcStats(parejaId: string, partidos: Partido[]) {
   return { mp, w, l, sd: gf - gc, pts: w * 3 }
 }
 
-export function TablaView({ categorias, grupos, partidos, initialCatId }: {
+export function TablaView({ categorias, grupos, partidos }: {
   categorias: Categoria[]
   grupos: Grupo[]
   partidos: Partido[]
-  initialCatId: string | null
+  initialCatId?: string | null
 }) {
-  const [selCatId, setSelCatId] = useState<string | null>(initialCatId)
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const selCatId = searchParams.get("cat")
 
   const selectCat = (id: string | null) => {
-    setSelCatId(id)
     const url = id ? `${pathname}?cat=${id}` : pathname
     router.replace(url, { scroll: false })
   }

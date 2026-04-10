@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Partido = any
@@ -43,13 +43,13 @@ function formatPareja(pareja: { jugador1: { nombre: string; apellido: string } |
 
 export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; initialSedeId?: string | null }) {
   const [search, setSearch]             = useState("")
-  const [selSede, setSelSede]           = useState<string | null>(initialSedeId ?? null)
   const [showFinalizados, setShowFin]   = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const selSede = searchParams.get("sede")
 
   const selectSede = (id: string | null) => {
-    setSelSede(id)
     const url = id ? `${pathname}?sede=${id}` : pathname
     router.replace(url, { scroll: false })
   }

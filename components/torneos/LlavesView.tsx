@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useMemo } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Chip } from "@/components/ui/padel/Chip"
 import { StatusBadge } from "@/components/ui/padel/StatusBadge"
 
@@ -59,12 +59,12 @@ export function LlavesView({ partidos, categorias, initialCatId }: {
   categorias: { id: string; nombre: string }[]
   initialCatId?: string | null
 }) {
-  const [selCatId, setSelCatId] = useState<string | null>(initialCatId ?? categorias[0]?.id ?? null)
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const selCatId = searchParams.get("cat") ?? categorias[0]?.id ?? null
 
   const selectCat = (id: string | null) => {
-    setSelCatId(id)
     const url = id ? `${pathname}?cat=${id}` : pathname
     router.replace(url, { scroll: false })
   }
