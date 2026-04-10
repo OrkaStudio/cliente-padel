@@ -2,7 +2,7 @@
 
 import { createServerAction } from "zsa"
 import { z } from "zod"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { cookies } from "next/headers"
 
 // ─── Marcar en vivo ───────────────────────────────────────────────────────────
@@ -10,7 +10,7 @@ import { cookies } from "next/headers"
 export const marcarEnVivoAction = createServerAction()
   .input(z.object({ partidoId: z.string().uuid() }))
   .handler(async ({ input }) => {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { error } = await supabase
       .from("partidos")
       .update({ estado: "en_vivo" })
@@ -34,7 +34,7 @@ export const actualizarResultadoAction = createServerAction()
 
     if (sets_pareja1 === sets_pareja2) throw new Error("No puede terminar empatado")
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { error } = await supabase
       .from("partidos")
       .update({
@@ -55,7 +55,7 @@ export const moverPartidoAction = createServerAction()
     intercambiarCon:  z.string().uuid().optional(), // si quiere hacer swap
   }))
   .handler(async ({ input }) => {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Traer datos del partido a mover
     const { data: partido, error: errPartido } = await supabase
@@ -122,7 +122,7 @@ export const cambiarEstadoTorneoAction = createServerAction()
     estado: z.enum(["borrador", "inscripcion", "en_curso", "finalizado"]),
   }))
   .handler(async ({ input }) => {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { error } = await supabase
       .from("torneos")
       .update({ estado: input.estado })
