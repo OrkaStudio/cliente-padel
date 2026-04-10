@@ -18,102 +18,124 @@ function nombrePareja(p: Pareja | null) {
 
 type SetScore = { p1: number; p2: number }
 
-// Scores válidos cuando gana P1
-const P1_WINS: SetScore[] = [
-  { p1: 6, p2: 0 }, { p1: 6, p2: 1 }, { p1: 6, p2: 2 },
-  { p1: 6, p2: 3 }, { p1: 6, p2: 4 }, { p1: 7, p2: 5 }, { p1: 7, p2: 6 },
-]
-// Scores válidos cuando gana P2
-const P2_WINS: SetScore[] = [
-  { p1: 0, p2: 6 }, { p1: 1, p2: 6 }, { p1: 2, p2: 6 },
-  { p1: 3, p2: 6 }, { p1: 4, p2: 6 }, { p1: 5, p2: 7 }, { p1: 6, p2: 7 },
-]
-// Super tie-break
-const STB_P1: SetScore[] = Array.from({ length: 9 }, (_, i) => ({ p1: 10, p2: i }))
-const STB_P2: SetScore[] = Array.from({ length: 9 }, (_, i) => ({ p1: i, p2: 10 }))
+function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+      {/* Flecha arriba — siempre visible */}
+      <button
+        onClick={() => onChange(value + 1)}
+        style={{
+          width: 44, height: 44, borderRadius: 10,
+          border: "1.5px solid #e2e8f0", background: "#f8fafc",
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          WebkitTapHighlightColor: "transparent",
+        }}
+      >
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#0f172a", lineHeight: 1 }}>
+          keyboard_arrow_up
+        </span>
+      </button>
 
-const DEFAULT_SET: SetScore = { p1: 6, p2: 4 }
+      {/* Número */}
+      <span style={{
+        fontFamily: "var(--font-anton), Anton, sans-serif",
+        fontSize: 40, fontWeight: 400, color: "#0f172a",
+        lineHeight: 1, minWidth: 44, textAlign: "center",
+      }}>
+        {value}
+      </span>
 
-function scoreKey(s: SetScore) { return `${s.p1}-${s.p2}` }
-function eqScore(a: SetScore, b: SetScore) { return a.p1 === b.p1 && a.p2 === b.p2 }
+      {/* Flecha abajo — solo si value > 0, pero reserva espacio siempre */}
+      <button
+        onClick={() => onChange(value - 1)}
+        disabled={value === 0}
+        style={{
+          width: 44, height: 44, borderRadius: 10,
+          border: "1.5px solid #e2e8f0", background: "#f8fafc",
+          cursor: value === 0 ? "default" : "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          opacity: value === 0 ? 0 : 1,
+          pointerEvents: value === 0 ? "none" : "auto",
+          transition: "opacity 150ms ease",
+          WebkitTapHighlightColor: "transparent",
+        }}
+      >
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#0f172a", lineHeight: 1 }}>
+          keyboard_arrow_down
+        </span>
+      </button>
+    </div>
+  )
+}
 
-function SetPicker({
+function SetRow({
+  label,
   value,
   onChange,
   nombre1,
   nombre2,
-  isStb = false,
 }: {
+  label: string
   value: SetScore
   onChange: (s: SetScore) => void
   nombre1: string
   nombre2: string
-  isStb?: boolean
 }) {
-  const p1Scores = isStb ? STB_P1 : P1_WINS
-  const p2Scores = isStb ? STB_P2 : P2_WINS
+  const ganador = value.p1 > value.p2 ? nombre1.split(" / ")[0] : value.p2 > value.p1 ? nombre2.split(" / ")[0] : null
+
   return (
     <div>
-      {/* Gana P1 */}
-      <p style={{
-        fontFamily: "var(--font-space-grotesk), sans-serif",
-        fontSize: 9, fontWeight: 900, color: "#64748b",
-        textTransform: "uppercase", letterSpacing: "0.06em",
-        margin: "0 0 6px",
-      }}>
-        Gana {nombre1.split(" / ")[0]}
-      </p>
-      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none" }}>
-        {p1Scores.map(s => (
-          <button
-            key={scoreKey(s)}
-            onClick={() => onChange(s)}
-            style={{
-              flexShrink: 0,
-              padding: "7px 12px", borderRadius: 8,
-              border: `1.5px solid ${eqScore(value, s) ? "#22c55e" : "#e2e8f0"}`,
-              background: eqScore(value, s) ? "#f0fdf4" : "#f8fafc",
-              color: eqScore(value, s) ? "#15803d" : "#64748b",
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 14, fontWeight: 400,
-              cursor: "pointer",
-              transition: "all 120ms ease",
-            }}
-          >
-            {s.p1}-{s.p2}
-          </button>
-        ))}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <p style={{
+          fontFamily: "var(--font-anton), Anton, sans-serif",
+          fontSize: 11, color: "#94a3b8", margin: 0, letterSpacing: "0.08em",
+        }}>
+          {label}
+        </p>
+        {ganador && (
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 9, fontWeight: 900, color: "#15803d",
+            background: "#f0fdf4", padding: "2px 8px", borderRadius: 4,
+            textTransform: "uppercase", letterSpacing: "0.06em",
+          }}>
+            Gana {ganador}
+          </span>
+        )}
       </div>
 
-      {/* Gana P2 */}
-      <p style={{
-        fontFamily: "var(--font-space-grotesk), sans-serif",
-        fontSize: 9, fontWeight: 900, color: "#64748b",
-        textTransform: "uppercase", letterSpacing: "0.06em",
-        margin: "4px 0 6px",
-      }}>
-        Gana {nombre2.split(" / ")[0]}
-      </p>
-      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
-        {p2Scores.map(s => (
-          <button
-            key={scoreKey(s)}
-            onClick={() => onChange(s)}
-            style={{
-              flexShrink: 0,
-              padding: "7px 12px", borderRadius: 8,
-              border: `1.5px solid ${eqScore(value, s) ? "#f97316" : "#e2e8f0"}`,
-              background: eqScore(value, s) ? "#fff7ed" : "#f8fafc",
-              color: eqScore(value, s) ? "#c2410c" : "#64748b",
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 14, fontWeight: 400,
-              cursor: "pointer",
-              transition: "all 120ms ease",
-            }}
-          >
-            {s.p1}-{s.p2}
-          </button>
-        ))}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 32px 1fr", alignItems: "center", gap: 8 }}>
+        {/* P1 */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 9, fontWeight: 900, color: "#94a3b8",
+            textTransform: "uppercase", letterSpacing: "0.05em",
+          }}>
+            {nombre1.split(" / ")[0]}
+          </span>
+          <Stepper value={value.p1} onChange={v => onChange({ ...value, p1: v })} />
+        </div>
+
+        {/* Separador */}
+        <div style={{ textAlign: "center" }}>
+          <span style={{
+            fontFamily: "var(--font-anton), Anton, sans-serif",
+            fontSize: 22, color: "#e2e8f0",
+          }}>–</span>
+        </div>
+
+        {/* P2 */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 9, fontWeight: 900, color: "#94a3b8",
+            textTransform: "uppercase", letterSpacing: "0.05em",
+          }}>
+            {nombre2.split(" / ")[0]}
+          </span>
+          <Stepper value={value.p2} onChange={v => onChange({ ...value, p2: v })} />
+        </div>
       </div>
     </div>
   )
@@ -128,8 +150,8 @@ export function ResultadoSheet({
   onClose: () => void
   tercerSet?: "completo" | "tie_break" | "super_tie_break"
 }) {
-  const [set1, setSet1] = useState<SetScore>(DEFAULT_SET)
-  const [set2, setSet2] = useState<SetScore>(DEFAULT_SET)
+  const [set1, setSet1] = useState<SetScore>({ p1: 0, p2: 0 })
+  const [set2, setSet2] = useState<SetScore>({ p1: 0, p2: 0 })
   const [set3, setSet3] = useState<SetScore | null>(null)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -137,11 +159,10 @@ export function ResultadoSheet({
   const nombre1 = nombrePareja(partido?.pareja1 ?? null)
   const nombre2 = nombrePareja(partido?.pareja2 ?? null)
 
-  // Reset al abrir
   useEffect(() => {
     if (partido) {
-      setSet1(DEFAULT_SET)
-      setSet2(DEFAULT_SET)
+      setSet1({ p1: 0, p2: 0 })
+      setSet2({ p1: 0, p2: 0 })
       setSet3(null)
       setError(null)
     }
@@ -149,18 +170,12 @@ export function ResultadoSheet({
 
   const sets1 = [set1, set2, set3].filter(Boolean).filter(s => s!.p1 > s!.p2).length
   const sets2 = [set1, set2, set3].filter(Boolean).filter(s => s!.p2 > s!.p1).length
-  const empate = sets1 === 1 && sets2 === 1 && !set3
-  const hayGanador = !empate && sets1 !== sets2
+  const empate11 = set1.p1 !== set1.p2 && set2.p1 !== set2.p2 &&
+    (set1.p1 > set1.p2) !== (set2.p1 > set2.p2) && !set3
+  const hayGanador = sets1 !== sets2 && (sets1 >= 2 || sets2 >= 2)
 
-  // Si después de set1 y set2 hay empate, mostrar 3er set automáticamente
-  useEffect(() => {
-    if (set1.p1 > set1.p2 !== set2.p1 > set2.p2 && !set3) {
-      // 1-1 → sugerir 3er set pero no auto-agregar
-    }
-  }, [set1, set2])
-
+  const isStb = tercerSet !== "completo"
   const allSets = [set1, set2, ...(set3 ? [set3] : [])]
-  const isStb = tercerSet === "super_tie_break" || tercerSet === "tie_break"
 
   const handleGuardar = () => {
     if (!partido) return
@@ -189,92 +204,103 @@ export function ResultadoSheet({
             style={{
               position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 70,
               background: "#fff", borderRadius: "20px 20px 0 0",
-              padding: "16px 16px 40px",
+              padding: "16px 20px 44px",
               boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
-              maxHeight: "90vh", overflowY: "auto",
+              maxHeight: "92vh", overflowY: "auto",
             }}
           >
             {/* Handle */}
             <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0", margin: "0 auto 16px" }} />
 
             {/* Equipos */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 900, color: "#0f172a", flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 900, color: "#0f172a", flex: 1 }}>
                 {nombre1}
               </span>
-              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, color: "#cbd5e1", fontWeight: 700, padding: "0 8px" }}>vs</span>
-              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 900, color: "#0f172a", flex: 1, textAlign: "right" }}>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, color: "#cbd5e1", fontWeight: 700, padding: "0 10px" }}>vs</span>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 900, color: "#0f172a", flex: 1, textAlign: "right" }}>
                 {nombre2}
               </span>
             </div>
 
             {/* Set 1 */}
-            <div style={{ marginBottom: 14 }}>
-              <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 11, color: "#94a3b8", margin: "0 0 8px", letterSpacing: "0.06em" }}>
-                SET 1
-              </p>
-              <SetPicker value={set1} onChange={setSet1} nombre1={nombre1} nombre2={nombre2} />
-            </div>
+            <SetRow label="SET 1" value={set1} onChange={setSet1} nombre1={nombre1} nombre2={nombre2} />
+
+            <div style={{ height: 1, background: "#f1f5f9", margin: "16px 0" }} />
 
             {/* Set 2 */}
-            <div style={{ marginBottom: 14, paddingTop: 10, borderTop: "1px solid #f1f5f9" }}>
-              <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 11, color: "#94a3b8", margin: "0 0 8px", letterSpacing: "0.06em" }}>
-                SET 2
-              </p>
-              <SetPicker value={set2} onChange={setSet2} nombre1={nombre1} nombre2={nombre2} />
-            </div>
+            <SetRow label="SET 2" value={set2} onChange={setSet2} nombre1={nombre1} nombre2={nombre2} />
 
             {/* 3er set / STB */}
-            {set3 ? (
-              <div style={{ marginBottom: 14, paddingTop: 10, borderTop: "1px solid #f1f5f9" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 11, color: "#94a3b8", margin: 0, letterSpacing: "0.06em" }}>
+            {set3 !== null ? (
+              <>
+                <div style={{ height: 1, background: "#f1f5f9", margin: "16px 0" }} />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 11, color: "#94a3b8", margin: 0, letterSpacing: "0.08em" }}>
                     {isStb ? "SUPER TIE-BREAK" : "SET 3"}
                   </p>
                   <button onClick={() => setSet3(null)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}>
                     <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#94a3b8", lineHeight: 1 }}>close</span>
                   </button>
                 </div>
-                <SetPicker value={set3} onChange={setSet3} nombre1={nombre1} nombre2={nombre2} isStb={isStb} />
-              </div>
-            ) : (
-              empate && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 32px 1fr", alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {nombre1.split(" / ")[0]}
+                    </span>
+                    <Stepper value={set3.p1} onChange={v => setSet3({ ...set3, p1: v })} />
+                  </div>
+                  <div style={{ textAlign: "center" }}>
+                    <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 22, color: "#e2e8f0" }}>–</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {nombre2.split(" / ")[0]}
+                    </span>
+                    <Stepper value={set3.p2} onChange={v => setSet3({ ...set3, p2: v })} />
+                  </div>
+                </div>
+              </>
+            ) : empate11 && (
+              <>
+                <div style={{ height: 1, background: "#f1f5f9", margin: "16px 0" }} />
                 <button
-                  onClick={() => setSet3(isStb ? { p1: 10, p2: 7 } : { p1: 6, p2: 4 })}
+                  onClick={() => setSet3({ p1: 0, p2: 0 })}
                   style={{
-                    width: "100%", padding: "12px",
-                    border: "1.5px dashed #bcff00", borderRadius: 10,
+                    width: "100%", padding: "13px",
+                    border: "1.5px dashed #bcff00", borderRadius: 12,
                     background: "#f9ffe0", cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                     fontFamily: "var(--font-space-grotesk), sans-serif",
                     fontSize: 12, fontWeight: 900, color: "#0f172a",
-                    marginBottom: 14,
                   }}
                 >
-                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, lineHeight: 1 }}>add</span>
+                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, lineHeight: 1 }}>add</span>
                   {isStb ? "Agregar Super Tie-Break" : "Agregar 3er set"}
                 </button>
-              )
+              </>
             )}
 
             {/* Resumen */}
             <div style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              padding: "10px 16px", borderRadius: 10,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
+              padding: "12px 16px", borderRadius: 12,
               background: hayGanador ? "#f0fdf4" : "#f8fafc",
               border: `1px solid ${hayGanador ? "#86efac" : "#e2e8f0"}`,
-              marginBottom: 14,
+              margin: "16px 0 14px",
             }}>
               <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", flex: 1, textAlign: "right" }}>
                 {nombre1.split(" / ")[0]}
               </span>
-              <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 26, color: "#0f172a" }}>{sets1}</span>
-              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, color: "#cbd5e1", fontWeight: 700 }}>–</span>
-              <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 26, color: "#0f172a" }}>{sets2}</span>
+              <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 30, color: "#0f172a" }}>{sets1}</span>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, color: "#cbd5e1", fontWeight: 700 }}>–</span>
+              <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 30, color: "#0f172a" }}>{sets2}</span>
               <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", flex: 1 }}>
                 {nombre2.split(" / ")[0]}
               </span>
-              {hayGanador && <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, color: "#22c55e", lineHeight: 1 }}>check_circle</span>}
+              {hayGanador && (
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#22c55e", lineHeight: 1 }}>check_circle</span>
+              )}
             </div>
 
             {error && (
