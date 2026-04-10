@@ -118,7 +118,20 @@ export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[
         {finalizados.length > 0 && (
           <Section label="Finalizados">
             {finalizados.map((p: Partido, i: number) => (
-              <PartidoCard key={p.id} partido={p} index={i} finalizado />
+              <PartidoCard
+                key={p.id} partido={p} index={i} finalizado
+                accion={
+                  <motion.button
+                    onClick={() => setSheetPartido(p)}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.16, type: "spring", stiffness: 300, damping: 20 }}
+                    style={btnStyle("#f1f5f9", "#64748b")}
+                  >
+                    <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, lineHeight: 1 }}>edit</span>
+                    Corregir resultado
+                  </motion.button>
+                }
+              />
             ))}
           </Section>
         )}
@@ -137,7 +150,7 @@ export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[
       <ResultadoSheet
         partido={sheetPartido}
         onClose={() => setSheetPartido(null)}
-        onSuccess={() => { setSheetPartido(null); window.location.reload() }}
+        onSuccess={() => { setSheetPartido(null); router.refresh() }}
       />
     </div>
   )
