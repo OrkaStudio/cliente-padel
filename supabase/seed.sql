@@ -1,380 +1,216 @@
 -- =============================================
--- SEED — Datos de ejemplo para desarrollo
+-- SEED — 6 categorías × 20 parejas = 120 parejas, ~240 partidos
 -- Correr en Supabase SQL Editor
 -- =============================================
 
--- 1. Columna ronda si no existe
 alter table partidos add column if not exists ronda text;
 
--- FK jugadores → parejas (necesario para joins en PostgREST)
 alter table parejas
   add constraint if not exists fk_jugador1 foreign key (jugador1_id) references jugadores(id),
   add constraint if not exists fk_jugador2 foreign key (jugador2_id) references jugadores(id);
 
--- 2. Políticas de lectura pública (idempotentes)
+-- Políticas de lectura pública
 do $$ begin
-  if not exists (select 1 from pg_policies where tablename = 'torneos' and policyname = 'lectura_publica_torneos') then
-    execute 'create policy "lectura_publica_torneos" on torneos for select using (true)'; end if;
-end $$;
-do $$ begin
-  if not exists (select 1 from pg_policies where tablename = 'sedes' and policyname = 'lectura_publica_sedes') then
-    execute 'create policy "lectura_publica_sedes" on sedes for select using (true)'; end if;
-end $$;
-do $$ begin
-  if not exists (select 1 from pg_policies where tablename = 'torneo_categorias' and policyname = 'lectura_publica_torneo_categorias') then
-    execute 'create policy "lectura_publica_torneo_categorias" on torneo_categorias for select using (true)'; end if;
-end $$;
-do $$ begin
-  if not exists (select 1 from pg_policies where tablename = 'parejas' and policyname = 'lectura_publica_parejas') then
-    execute 'create policy "lectura_publica_parejas" on parejas for select using (true)'; end if;
-end $$;
-do $$ begin
-  if not exists (select 1 from pg_policies where tablename = 'grupos' and policyname = 'lectura_publica_grupos') then
-    execute 'create policy "lectura_publica_grupos" on grupos for select using (true)'; end if;
-end $$;
-do $$ begin
-  if not exists (select 1 from pg_policies where tablename = 'grupo_parejas' and policyname = 'lectura_publica_grupo_parejas') then
-    execute 'create policy "lectura_publica_grupo_parejas" on grupo_parejas for select using (true)'; end if;
-end $$;
-do $$ begin
-  if not exists (select 1 from pg_policies where tablename = 'categorias' and policyname = 'lectura_publica_categorias') then
-    execute 'create policy "lectura_publica_categorias" on categorias for select using (true)'; end if;
+  if not exists (select 1 from pg_policies where tablename='torneos'            and policyname='lectura_publica_torneos')            then execute 'create policy "lectura_publica_torneos"            on torneos            for select using (true)'; end if;
+  if not exists (select 1 from pg_policies where tablename='sedes'              and policyname='lectura_publica_sedes')              then execute 'create policy "lectura_publica_sedes"              on sedes              for select using (true)'; end if;
+  if not exists (select 1 from pg_policies where tablename='torneo_categorias'  and policyname='lectura_publica_torneo_categorias')  then execute 'create policy "lectura_publica_torneo_categorias"  on torneo_categorias  for select using (true)'; end if;
+  if not exists (select 1 from pg_policies where tablename='parejas'            and policyname='lectura_publica_parejas')            then execute 'create policy "lectura_publica_parejas"            on parejas            for select using (true)'; end if;
+  if not exists (select 1 from pg_policies where tablename='grupos'             and policyname='lectura_publica_grupos')             then execute 'create policy "lectura_publica_grupos"             on grupos             for select using (true)'; end if;
+  if not exists (select 1 from pg_policies where tablename='grupo_parejas'      and policyname='lectura_publica_grupo_parejas')      then execute 'create policy "lectura_publica_grupo_parejas"      on grupo_parejas      for select using (true)'; end if;
+  if not exists (select 1 from pg_policies where tablename='categorias'         and policyname='lectura_publica_categorias')         then execute 'create policy "lectura_publica_categorias"         on categorias         for select using (true)'; end if;
+  if not exists (select 1 from pg_policies where tablename='jugadores'          and policyname='lectura_publica_jugadores')          then execute 'create policy "lectura_publica_jugadores"          on jugadores          for select using (true)'; end if;
 end $$;
 
--- 3. Usuario ficticio
-insert into auth.users (
-  id, email, created_at, updated_at,
-  raw_app_meta_data, raw_user_meta_data,
-  aud, role, encrypted_password, confirmation_token, email_confirmed_at
-) values (
-  '00000000-0000-0000-0000-000000000001', 'seed@ejemplo.com',
-  now(), now(),
-  '{"provider":"email","providers":["email"]}', '{}',
-  'authenticated', 'authenticated', '', '', now()
-) on conflict (id) do nothing;
+-- Usuario ficticio
+insert into auth.users (id, email, created_at, updated_at, raw_app_meta_data, raw_user_meta_data, aud, role, encrypted_password, confirmation_token, email_confirmed_at)
+values ('00000000-0000-0000-0000-000000000001','seed@ejemplo.com',now(),now(),'{"provider":"email","providers":["email"]}','{}','authenticated','authenticated','','',now())
+on conflict (id) do nothing;
 
 -- =============================================
--- 4. Limpiar seed anterior para recargar limpio
+-- Limpieza
 -- =============================================
 delete from partidos       where torneo_id = '11111111-0000-0000-0000-000000000001';
-delete from grupo_parejas  where grupo_id  in (select id from grupos where torneo_categoria_id in (select id from torneo_categorias where torneo_id = '11111111-0000-0000-0000-000000000001'));
+delete from grupo_parejas  where grupo_id in (select id from grupos where torneo_categoria_id in (select id from torneo_categorias where torneo_id = '11111111-0000-0000-0000-000000000001'));
 delete from grupos         where torneo_categoria_id in (select id from torneo_categorias where torneo_id = '11111111-0000-0000-0000-000000000001');
 delete from parejas        where torneo_id = '11111111-0000-0000-0000-000000000001';
 delete from torneo_categorias where torneo_id = '11111111-0000-0000-0000-000000000001';
 delete from sedes          where torneo_id = '11111111-0000-0000-0000-000000000001';
-delete from torneos        where id        = '11111111-0000-0000-0000-000000000001';
+delete from torneos        where id = '11111111-0000-0000-0000-000000000001';
 delete from jugadores      where id::text like 'cccccccc%';
 
 -- =============================================
--- 5. Datos completos
+-- Datos
 -- =============================================
 do $$
 declare
-  v_user    uuid := '00000000-0000-0000-0000-000000000001';
-  v_torneo  uuid := '11111111-0000-0000-0000-000000000001';
+  v_user   uuid := '00000000-0000-0000-0000-000000000001';
+  v_torneo uuid := '11111111-0000-0000-0000-000000000001';
+  v_vol    uuid := '22220000-0000-0000-0000-000000000001'; -- Voleando  (4 canchas)
+  v_mas    uuid := '22220000-0000-0000-0000-000000000002'; -- Más Pádel (3 canchas)
 
-  -- Sedes
-  v_vol uuid := '22220000-0000-0000-0000-000000000001'; -- Voleando (4 canchas)
-  v_mas uuid := '22220000-0000-0000-0000-000000000002'; -- Más Pádel (3 canchas)
+  -- 6 categorías: 1-3 en Voleando, 4-6 en Más Pádel
+  cat_nombres  text[]  := array['4ta Caballeros','5ta Caballeros','6ta Caballeros','4ta Damas','5ta Damas','Mixtos'];
+  cat_canchas  int[]   := array[4, 4, 4, 3, 3, 3];
 
-  -- Categorías (se buscan del seed del schema)
-  v_5ta    uuid;
-  v_4ta    uuid;
-  v_damas  uuid;
-  v_mixtos uuid;
+  -- Nombres para generar jugadores
+  nm text[] := array['Martín','Pablo','Nicolás','Diego','Sebastián','Andrés','Tomás','Fernando','Alejandro','Ezequiel',
+                     'Leandro','Facundo','Matías','Santiago','Luciano','Damián','Rodrigo','Gustavo','Esteban','Claudio'];
+  nf text[] := array['Valentina','Camila','Florencia','Agustina','Sofía','Lucía','María','Ana','Paula','Carolina',
+                     'Natalia','Jimena','Antonella','Micaela','Romina','Verónica','Daniela','Mariana','Gabriela','Celeste'];
+  ap text[] := array['Rodríguez','García','López','Martínez','González','Pérez','Sánchez','Fernández','Gómez','Díaz',
+                     'Torres','Ruiz','Ramírez','Herrera','Medina','Ibáñez','Castro','Vargas','Morales','Molina'];
 
-  -- torneo_categorias
-  v_tc1 uuid := 'bbbbbbbb-0000-0000-0000-000000000001';
-  v_tc2 uuid := 'bbbbbbbb-0000-0000-0000-000000000002';
-  v_tc3 uuid := 'bbbbbbbb-0000-0000-0000-000000000003';
-  v_tc4 uuid := 'bbbbbbbb-0000-0000-0000-000000000004';
+  -- Round-robin: 10 partidos para 5 equipos (índices 1-5 dentro del grupo)
+  rr_a int[] := array[1,1,1,1,2,2,2,3,3,4];
+  rr_b int[] := array[2,3,4,5,3,4,5,4,5,5];
 
-  -- Jugadores 5ta Caballeros (6)
-  v_j01 uuid := 'cccccccc-0000-0000-0000-000000000001';
-  v_j02 uuid := 'cccccccc-0000-0000-0000-000000000002';
-  v_j03 uuid := 'cccccccc-0000-0000-0000-000000000003';
-  v_j04 uuid := 'cccccccc-0000-0000-0000-000000000004';
-  v_j05 uuid := 'cccccccc-0000-0000-0000-000000000005';
-  v_j06 uuid := 'cccccccc-0000-0000-0000-000000000006';
+  -- Horarios: 8 slots por día
+  slots text[] := array['09:00','10:30','12:00','13:30','15:00','16:30','18:00','19:30'];
+  -- Fechas: 3 días
+  dias  text[] := array['2026-04-17','2026-04-18','2026-04-19'];
 
-  -- Jugadores 4ta Caballeros (6)
-  v_j07 uuid := 'cccccccc-0000-0000-0000-000000000007';
-  v_j08 uuid := 'cccccccc-0000-0000-0000-000000000008';
-  v_j09 uuid := 'cccccccc-0000-0000-0000-000000000009';
-  v_j10 uuid := 'cccccccc-0000-0000-0000-000000000010';
-  v_j11 uuid := 'cccccccc-0000-0000-0000-000000000011';
-  v_j12 uuid := 'cccccccc-0000-0000-0000-000000000012';
-
-  -- Jugadores 4ta Damas (6)
-  v_j13 uuid := 'cccccccc-0000-0000-0000-000000000013';
-  v_j14 uuid := 'cccccccc-0000-0000-0000-000000000014';
-  v_j15 uuid := 'cccccccc-0000-0000-0000-000000000015';
-  v_j16 uuid := 'cccccccc-0000-0000-0000-000000000016';
-  v_j17 uuid := 'cccccccc-0000-0000-0000-000000000017';
-  v_j18 uuid := 'cccccccc-0000-0000-0000-000000000018';
-
-  -- Jugadores Mixtos (6)
-  v_j19 uuid := 'cccccccc-0000-0000-0000-000000000019';
-  v_j20 uuid := 'cccccccc-0000-0000-0000-000000000020';
-  v_j21 uuid := 'cccccccc-0000-0000-0000-000000000021';
-  v_j22 uuid := 'cccccccc-0000-0000-0000-000000000022';
-  v_j23 uuid := 'cccccccc-0000-0000-0000-000000000023';
-  v_j24 uuid := 'cccccccc-0000-0000-0000-000000000024';
-
-  -- Parejas (12 total, 3 por categoría)
-  v_p01 uuid := 'dddddddd-0000-0000-0000-000000000001'; -- 5ta: Rodríguez/García
-  v_p02 uuid := 'dddddddd-0000-0000-0000-000000000002'; -- 5ta: López/Martínez
-  v_p03 uuid := 'dddddddd-0000-0000-0000-000000000003'; -- 5ta: Fernández/González
-
-  v_p04 uuid := 'dddddddd-0000-0000-0000-000000000004'; -- 4ta: Gómez/Díaz
-  v_p05 uuid := 'dddddddd-0000-0000-0000-000000000005'; -- 4ta: Torres/Ruiz
-  v_p06 uuid := 'dddddddd-0000-0000-0000-000000000006'; -- 4ta: Ramírez/Herrera
-
-  v_p07 uuid := 'dddddddd-0000-0000-0000-000000000007'; -- Damas: V.Ruiz/Díaz
-  v_p08 uuid := 'dddddddd-0000-0000-0000-000000000008'; -- Damas: Torres/Ramírez
-  v_p09 uuid := 'dddddddd-0000-0000-0000-000000000009'; -- Damas: Morales/Castro
-
-  v_p10 uuid := 'dddddddd-0000-0000-0000-000000000010'; -- Mixtos: Suárez/Vega
-  v_p11 uuid := 'dddddddd-0000-0000-0000-000000000011'; -- Mixtos: Ibáñez/Blanco
-  v_p12 uuid := 'dddddddd-0000-0000-0000-000000000012'; -- Mixtos: Molina/Sosa
-
-  -- Grupos (4)
-  v_g1 uuid := 'eeeeeeee-0000-0000-0000-000000000001'; -- Grupo A 5ta Cabs
-  v_g2 uuid := 'eeeeeeee-0000-0000-0000-000000000002'; -- Grupo A 4ta Cabs
-  v_g3 uuid := 'eeeeeeee-0000-0000-0000-000000000003'; -- Grupo A Damas
-  v_g4 uuid := 'eeeeeeee-0000-0000-0000-000000000004'; -- Grupo A Mixtos
+  -- Variables de loop
+  c int; g int; m int; p int;
+  v_cat_id  uuid;
+  v_tc_id   uuid;
+  v_sede    uuid;
+  v_canchas int;
+  v_j1      uuid;
+  v_j2      uuid;
+  v_par     uuid;
+  v_par_a   uuid;
+  v_par_b   uuid;
+  v_grupo   uuid;
+  v_pid     uuid;
+  v_ga      int;   -- global pair index A in match
+  v_gb      int;   -- global pair index B in match
+  v_pnum    int;   -- partido counter dentro de categoría
+  v_dia     text;
+  v_slot    text;
+  v_cancha  int;
+  v_estado  text;
+  v_nombre  text;
+  v_apell   text;
 
 begin
 
-  -- Categorías (buscar por nombre, pre-seeded en schema.sql)
-  select id into v_5ta    from categorias where nombre = '5ta Caballeros' limit 1;
-  select id into v_4ta    from categorias where nombre = '4ta Caballeros' limit 1;
-  select id into v_damas  from categorias where nombre = '4ta Damas'      limit 1;
-  select id into v_mixtos from categorias where nombre = 'Mixtos'         limit 1;
-
   -- Torneo
-  insert into torneos (id, nombre, fecha_inicio, fecha_fin, costo_inscripcion, estado, created_by) values
-    (v_torneo, 'Interclub Las Flores 2026', '2026-04-17', '2026-04-19', 12000, 'en_curso', v_user)
+  insert into torneos (id, nombre, fecha_inicio, fecha_fin, costo_inscripcion, estado, created_by)
+  values (v_torneo, 'Interclub Las Flores 2026', '2026-04-17', '2026-04-19', 12000, 'en_curso', v_user)
   on conflict (id) do nothing;
 
   -- Sedes
   insert into sedes (id, torneo_id, nombre, canchas_count, horario_inicio, horario_fin, duracion_turno, disponibilidad) values
-    (v_vol, v_torneo, 'Voleando',  4, '08:00', '22:00', 90, '{}'),
-    (v_mas, v_torneo, 'Más Pádel', 3, '09:00', '21:00', 90, '{}')
+    (v_vol, v_torneo, 'Voleando',  4, '09:00', '21:30', 90, '{}'),
+    (v_mas, v_torneo, 'Más Pádel', 3, '09:00', '21:30', 90, '{}')
   on conflict (id) do nothing;
 
-  -- Torneo categorías
-  insert into torneo_categorias (id, torneo_id, categoria_id, formato, sets, tercer_set) values
-    (v_tc1, v_torneo, v_5ta,    'grupos_playoff', 'best_2', 'super_tie_break'),
-    (v_tc2, v_torneo, v_4ta,    'grupos_playoff', 'best_2', 'super_tie_break'),
-    (v_tc3, v_torneo, v_damas,  'grupos_playoff', 'best_2', 'super_tie_break'),
-    (v_tc4, v_torneo, v_mixtos, 'grupos_playoff', 'best_2', 'super_tie_break')
-  on conflict (id) do nothing;
+  -- ────────────────────────────────────────────────────────────
+  -- Loop por categoría
+  -- ────────────────────────────────────────────────────────────
+  for c in 1..6 loop
 
-  -- ─── Jugadores ────────────────────────────────────────────
-  -- 5ta Caballeros
-  insert into jugadores (id, nombre, apellido, telefono, categoria_id) values
-    (v_j01, 'Martín',    'Rodríguez', '1155550001', v_5ta),
-    (v_j02, 'Pablo',     'García',    '1155550002', v_5ta),
-    (v_j03, 'Nicolás',   'López',     '1155550003', v_5ta),
-    (v_j04, 'Diego',     'Martínez',  '1155550004', v_5ta),
-    (v_j05, 'Sebastián', 'Fernández', '1155550005', v_5ta),
-    (v_j06, 'Andrés',    'González',  '1155550006', v_5ta)
-  on conflict (id) do nothing;
+    select id into v_cat_id from categorias where nombre = cat_nombres[c] limit 1;
+    v_sede    := case when c <= 3 then v_vol else v_mas end;
+    v_canchas := cat_canchas[c];
 
-  -- 4ta Caballeros
-  insert into jugadores (id, nombre, apellido, telefono, categoria_id) values
-    (v_j07, 'Tomás',     'Gómez',    '1155550007', v_4ta),
-    (v_j08, 'Fernando',  'Díaz',     '1155550008', v_4ta),
-    (v_j09, 'Alejandro', 'Torres',   '1155550009', v_4ta),
-    (v_j10, 'Ezequiel',  'Ruiz',     '1155550010', v_4ta),
-    (v_j11, 'Leandro',   'Ramírez',  '1155550011', v_4ta),
-    (v_j12, 'Facundo',   'Herrera',  '1155550012', v_4ta)
-  on conflict (id) do nothing;
+    -- torneo_categoria
+    v_tc_id := ('bbbbbbbb-0000-0000-0000-' || lpad(to_hex(c), 12, '0'))::uuid;
+    insert into torneo_categorias (id, torneo_id, categoria_id, formato, sets, tercer_set)
+    values (v_tc_id, v_torneo, v_cat_id, 'grupos_playoff', 'best_2', 'super_tie_break')
+    on conflict (id) do nothing;
 
-  -- 4ta Damas
-  insert into jugadores (id, nombre, apellido, telefono, categoria_id) values
-    (v_j13, 'Valentina', 'Ruiz',    '1155550013', v_damas),
-    (v_j14, 'Camila',    'Díaz',    '1155550014', v_damas),
-    (v_j15, 'Florencia', 'Torres',  '1155550015', v_damas),
-    (v_j16, 'Agustina',  'Ramírez', '1155550016', v_damas),
-    (v_j17, 'Sofía',     'Morales', '1155550017', v_damas),
-    (v_j18, 'Lucía',     'Castro',  '1155550018', v_damas)
-  on conflict (id) do nothing;
+    -- ── Jugadores: 40 por categoría (2 por pareja × 20 parejas) ──
+    for p in 1..40 loop
+      v_j1 := ('cccccccc-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(p), 12, '0'))::uuid;
 
-  -- Mixtos
-  insert into jugadores (id, nombre, apellido, telefono, categoria_id) values
-    (v_j19, 'Carlos',    'Suárez',  '1155550019', v_mixtos),
-    (v_j20, 'Ana',       'Vega',    '1155550020', v_mixtos),
-    (v_j21, 'Miguel',    'Ibáñez',  '1155550021', v_mixtos),
-    (v_j22, 'Julia',     'Blanco',  '1155550022', v_mixtos),
-    (v_j23, 'Roberto',   'Molina',  '1155550023', v_mixtos),
-    (v_j24, 'Carla',     'Sosa',    '1155550024', v_mixtos)
-  on conflict (id) do nothing;
+      -- nombre según tipo de categoría
+      if c <= 3 then          -- Caballeros: nombres masculinos
+        v_nombre := nm[((p - 1) % 20) + 1];
+      elsif c <= 5 then       -- Damas: nombres femeninos
+        v_nombre := nf[((p - 1) % 20) + 1];
+      else                    -- Mixtos: impares masc, pares fem
+        v_nombre := case when p % 2 = 1 then nm[((p - 1) / 2 % 20) + 1] else nf[(p / 2 - 1) % 20 + 1] end;
+      end if;
+      v_apell := ap[((c * 40 + p - 1) % 20) + 1];
 
-  -- ─── Parejas ──────────────────────────────────────────────
-  insert into parejas (id, torneo_id, categoria_id, jugador1_id, jugador2_id) values
-    (v_p01, v_torneo, v_5ta,    v_j01, v_j02),
-    (v_p02, v_torneo, v_5ta,    v_j03, v_j04),
-    (v_p03, v_torneo, v_5ta,    v_j05, v_j06),
-    (v_p04, v_torneo, v_4ta,    v_j07, v_j08),
-    (v_p05, v_torneo, v_4ta,    v_j09, v_j10),
-    (v_p06, v_torneo, v_4ta,    v_j11, v_j12),
-    (v_p07, v_torneo, v_damas,  v_j13, v_j14),
-    (v_p08, v_torneo, v_damas,  v_j15, v_j16),
-    (v_p09, v_torneo, v_damas,  v_j17, v_j18),
-    (v_p10, v_torneo, v_mixtos, v_j19, v_j20),
-    (v_p11, v_torneo, v_mixtos, v_j21, v_j22),
-    (v_p12, v_torneo, v_mixtos, v_j23, v_j24)
-  on conflict (id) do nothing;
+      insert into jugadores (id, nombre, apellido, telefono, categoria_id)
+      values (v_j1, v_nombre, v_apell, null, v_cat_id)
+      on conflict (id) do nothing;
+    end loop;
 
-  -- ─── Grupos ───────────────────────────────────────────────
-  insert into grupos (id, torneo_categoria_id, nombre) values
-    (v_g1, v_tc1, 'A'),
-    (v_g2, v_tc2, 'A'),
-    (v_g3, v_tc3, 'A'),
-    (v_g4, v_tc4, 'A')
-  on conflict (id) do nothing;
+    -- ── Parejas: 20 por categoría ──
+    for p in 1..20 loop
+      v_par := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(p), 12, '0'))::uuid;
+      v_j1  := ('cccccccc-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(p * 2 - 1), 12, '0'))::uuid;
+      v_j2  := ('cccccccc-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(p * 2),     12, '0'))::uuid;
+      insert into parejas (id, torneo_id, categoria_id, jugador1_id, jugador2_id)
+      values (v_par, v_torneo, v_cat_id, v_j1, v_j2)
+      on conflict (id) do nothing;
+    end loop;
 
-  insert into grupo_parejas (grupo_id, pareja_id, posicion) values
-    (v_g1, v_p01, 1), (v_g1, v_p02, 2), (v_g1, v_p03, 3),
-    (v_g2, v_p04, 1), (v_g2, v_p05, 2), (v_g2, v_p06, 3),
-    (v_g3, v_p07, 1), (v_g3, v_p08, 2), (v_g3, v_p09, 3),
-    (v_g4, v_p10, 1), (v_g4, v_p11, 2), (v_g4, v_p12, 3)
-  on conflict do nothing;
+    -- ── Grupos: 4 × 5 parejas ──
+    for g in 1..4 loop
+      v_grupo := ('eeeeeeee-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(g), 12, '0'))::uuid;
+      insert into grupos (id, torneo_categoria_id, nombre)
+      values (v_grupo, v_tc_id, chr(64 + g))   -- A, B, C, D
+      on conflict (id) do nothing;
 
-  -- ─── Partidos ─────────────────────────────────────────────
-  -- Round robin 3 parejas = 3 partidos por grupo = 12 de grupo total
-  -- + 8 de playoff (2 semis + 1 final por categoría)
-  -- Voleando: 5ta Cabs (C1-C2) + Damas (C3-C4)
-  -- Más Pádel: 4ta Cabs (C1-C2) + Mixtos (C2-C3)
+      for p in 1..5 loop
+        v_par := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex((g-1)*5 + p), 12, '0'))::uuid;
+        insert into grupo_parejas (grupo_id, pareja_id, posicion)
+        values (v_grupo, v_par, p)
+        on conflict do nothing;
+      end loop;
+    end loop;
 
-  insert into partidos (id, torneo_id, categoria_id, sede_id, cancha, horario, pareja1_id, pareja2_id, resultado, estado, tipo, ronda) values
+    -- ── Partidos: 10 por grupo × 4 grupos = 40 por categoría ──
+    -- Distribución: días 1 y 2 para grupos, día 3 para playoffs
+    -- Día 1: partidos 1-20 (grupos A y B)
+    -- Día 2: partidos 21-40 (grupos C y D)
+    v_pnum := 0;
 
-    -- ══════════════════════════════
-    -- DÍA 1 — 17/04 — GRUPOS
-    -- ══════════════════════════════
+    for g in 1..4 loop
+      for m in 1..10 loop
+        v_pnum := v_pnum + 1;
 
-    -- 5ta Cabs en Voleando (3 matches)
-    ('ffffffff-0000-0000-0000-000000000001', v_torneo, v_5ta, v_vol, 1,
-     '2026-04-17 09:00:00-03', v_p01, v_p02,
-     '{"sets_pareja1":2,"sets_pareja2":1,"sets":[{"p1":6,"p2":3},{"p1":4,"p2":6},{"p1":10,"p2":7}]}',
-     'finalizado', 'grupo', null),
+        -- Índices globales de pareja (1-20)
+        v_ga := (g - 1) * 5 + rr_a[m];
+        v_gb := (g - 1) * 5 + rr_b[m];
+        v_par_a := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(v_ga), 12, '0'))::uuid;
+        v_par_b := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(v_gb), 12, '0'))::uuid;
 
-    ('ffffffff-0000-0000-0000-000000000002', v_torneo, v_5ta, v_vol, 2,
-     '2026-04-17 10:30:00-03', v_p02, v_p03,
-     '{"sets_pareja1":1,"sets_pareja2":2,"sets":[{"p1":3,"p2":6},{"p1":6,"p2":4},{"p1":7,"p2":10}]}',
-     'finalizado', 'grupo', null),
+        -- Día: primera mitad en día 1, segunda en día 2
+        v_dia  := dias[case when v_pnum <= 20 then 1 else 2 end];
+        v_slot := slots[((v_pnum - 1) % 8) + 1];
+        -- Cancha: rotar con offset por categoría para distribuir entre canchas del día
+        v_cancha := ((v_pnum - 1 + (c - 1) * 2) % v_canchas) + 1;
 
-    ('ffffffff-0000-0000-0000-000000000003', v_torneo, v_5ta, v_vol, 1,
-     '2026-04-17 12:00:00-03', v_p01, v_p03,
-     '{"sets_pareja1":2,"sets_pareja2":0,"sets":[{"p1":6,"p2":2},{"p1":6,"p2":1}]}',
-     'finalizado', 'grupo', null),
+        -- Estado: día 1 finalizado, día 2 = primeros 5 pendientes + el 6to en vivo + resto pendiente
+        v_estado := case
+          when v_pnum <= 20 then 'finalizado'
+          when v_pnum = 21  then 'en_vivo'
+          else 'pendiente'
+        end;
 
-    -- 4ta Cabs en Más Pádel (3 matches)
-    ('ffffffff-0000-0000-0000-000000000004', v_torneo, v_4ta, v_mas, 1,
-     '2026-04-17 09:00:00-03', v_p04, v_p05,
-     '{"sets_pareja1":2,"sets_pareja2":0,"sets":[{"p1":6,"p2":0},{"p1":6,"p2":3}]}',
-     'finalizado', 'grupo', null),
+        v_pid := ('ffffffff-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(v_pnum), 12, '0'))::uuid;
 
-    ('ffffffff-0000-0000-0000-000000000005', v_torneo, v_4ta, v_mas, 2,
-     '2026-04-17 10:30:00-03', v_p05, v_p06,
-     '{"sets_pareja1":2,"sets_pareja2":1,"sets":[{"p1":7,"p2":5},{"p1":4,"p2":6},{"p1":10,"p2":6}]}',
-     'finalizado', 'grupo', null),
+        insert into partidos (id, torneo_id, categoria_id, sede_id, cancha, horario, pareja1_id, pareja2_id, resultado, estado, tipo, ronda)
+        values (
+          v_pid, v_torneo, v_cat_id, v_sede, v_cancha,
+          (v_dia || ' ' || v_slot || ':00-03:00')::timestamptz,
+          v_par_a, v_par_b,
+          case when v_estado = 'finalizado'
+            then '{"sets_pareja1":2,"sets_pareja2":1,"sets":[{"p1":6,"p2":3},{"p1":4,"p2":6},{"p1":10,"p2":7}]}'::jsonb
+            else null
+          end,
+          v_estado, 'grupo', null
+        )
+        on conflict (id) do nothing;
 
-    ('ffffffff-0000-0000-0000-000000000006', v_torneo, v_4ta, v_mas, 1,
-     '2026-04-17 12:00:00-03', v_p04, v_p06,
-     '{"sets_pareja1":2,"sets_pareja2":0,"sets":[{"p1":6,"p2":4},{"p1":6,"p2":2}]}',
-     'finalizado', 'grupo', null),
+      end loop;
+    end loop;
 
-    -- ══════════════════════════════
-    -- DÍA 2 — 18/04 — GRUPOS
-    -- ══════════════════════════════
-
-    -- Damas en Voleando (3 matches: 2 finalizados + 1 EN VIVO)
-    ('ffffffff-0000-0000-0000-000000000007', v_torneo, v_damas, v_vol, 3,
-     '2026-04-18 09:00:00-03', v_p07, v_p08,
-     '{"sets_pareja1":2,"sets_pareja2":1,"sets":[{"p1":6,"p2":4},{"p1":3,"p2":6},{"p1":10,"p2":5}]}',
-     'finalizado', 'grupo', null),
-
-    ('ffffffff-0000-0000-0000-000000000008', v_torneo, v_damas, v_vol, 4,
-     '2026-04-18 10:30:00-03', v_p08, v_p09,
-     '{"sets_pareja1":0,"sets_pareja2":2,"sets":[{"p1":2,"p2":6},{"p1":4,"p2":6}]}',
-     'finalizado', 'grupo', null),
-
-    ('ffffffff-0000-0000-0000-000000000009', v_torneo, v_damas, v_vol, 3,
-     '2026-04-18 12:00:00-03', v_p07, v_p09,
-     null, 'en_vivo', 'grupo', null),  -- ← PARTIDO EN VIVO
-
-    -- Mixtos en Más Pádel (3 matches: 1 finalizado + 2 pendientes)
-    ('ffffffff-0000-0000-0000-000000000010', v_torneo, v_mixtos, v_mas, 2,
-     '2026-04-18 09:00:00-03', v_p10, v_p11,
-     '{"sets_pareja1": 1, "sets_pareja2": 2}', 'finalizado', 'grupo', null),
-
-    ('ffffffff-0000-0000-0000-000000000011', v_torneo, v_mixtos, v_mas, 3,
-     '2026-04-18 10:30:00-03', v_p11, v_p12,
-     null, 'pendiente', 'grupo', null),
-
-    ('ffffffff-0000-0000-0000-000000000012', v_torneo, v_mixtos, v_mas, 2,
-     '2026-04-18 12:00:00-03', v_p10, v_p12,
-     null, 'pendiente', 'grupo', null),
-
-    -- ══════════════════════════════
-    -- DÍA 3 — 19/04 — PLAYOFFS
-    -- ══════════════════════════════
-
-    -- 5ta Cabs: Semis + Final (Voleando C1-C2)
-    ('ffffffff-0000-0000-0000-000000000013', v_torneo, v_5ta, v_vol, 1,
-     '2026-04-19 09:00:00-03', v_p01, v_p03,
-     null, 'pendiente', 'playoff', 'semis'),
-
-    ('ffffffff-0000-0000-0000-000000000014', v_torneo, v_5ta, v_vol, 2,
-     '2026-04-19 09:00:00-03', v_p02, v_p03,
-     null, 'pendiente', 'playoff', 'semis'),
-
-    ('ffffffff-0000-0000-0000-000000000015', v_torneo, v_5ta, v_vol, 1,
-     '2026-04-19 14:00:00-03', v_p01, v_p02,
-     null, 'pendiente', 'playoff', 'final'),
-
-    -- 4ta Cabs: Semis + Final (Más Pádel C1)
-    ('ffffffff-0000-0000-0000-000000000016', v_torneo, v_4ta, v_mas, 1,
-     '2026-04-19 09:00:00-03', v_p04, v_p06,
-     null, 'pendiente', 'playoff', 'semis'),
-
-    ('ffffffff-0000-0000-0000-000000000017', v_torneo, v_4ta, v_mas, 2,
-     '2026-04-19 09:00:00-03', v_p05, v_p06,
-     null, 'pendiente', 'playoff', 'semis'),
-
-    ('ffffffff-0000-0000-0000-000000000018', v_torneo, v_4ta, v_mas, 1,
-     '2026-04-19 14:00:00-03', v_p04, v_p05,
-     null, 'pendiente', 'playoff', 'final'),
-
-    -- Damas: Semis + Final (Voleando C3-C4)
-    ('ffffffff-0000-0000-0000-000000000019', v_torneo, v_damas, v_vol, 3,
-     '2026-04-19 09:00:00-03', v_p07, v_p09,
-     null, 'pendiente', 'playoff', 'semis'),
-
-    ('ffffffff-0000-0000-0000-000000000020', v_torneo, v_damas, v_vol, 4,
-     '2026-04-19 09:00:00-03', v_p08, v_p09,
-     null, 'pendiente', 'playoff', 'semis'),
-
-    ('ffffffff-0000-0000-0000-000000000021', v_torneo, v_damas, v_vol, 3,
-     '2026-04-19 14:00:00-03', v_p07, v_p08,
-     null, 'pendiente', 'playoff', 'final'),
-
-    -- Mixtos: Semis + Final (Más Pádel C2-C3)
-    ('ffffffff-0000-0000-0000-000000000022', v_torneo, v_mixtos, v_mas, 2,
-     '2026-04-19 09:00:00-03', v_p10, v_p12,
-     null, 'pendiente', 'playoff', 'semis'),
-
-    ('ffffffff-0000-0000-0000-000000000023', v_torneo, v_mixtos, v_mas, 3,
-     '2026-04-19 09:00:00-03', v_p11, v_p12,
-     null, 'pendiente', 'playoff', 'semis'),
-
-    ('ffffffff-0000-0000-0000-000000000024', v_torneo, v_mixtos, v_mas, 2,
-     '2026-04-19 14:00:00-03', v_p10, v_p11,
-     null, 'pendiente', 'playoff', 'final')
-
-  on conflict (id) do nothing;
+  end loop; -- categorías
 
 end $$;

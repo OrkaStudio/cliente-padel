@@ -224,6 +224,8 @@ function SwapSheet({ partido, opciones, onClose }: {
   onClose: () => void
 }) {
   const [seleccionado, setSeleccionado] = useState<Partido | null>(null)
+  const [filtroDia, setFiltroDia] = useState<string>("todos")
+  const [filtroCancha, setFiltroCancha] = useState<string>("todas")
   const [pending, startTransition] = useTransition()
   const [ok, setOk] = useState(false)
   const router = useRouter()
@@ -245,13 +247,31 @@ function SwapSheet({ partido, opciones, onClose }: {
     })
   }
 
-  // Agrupar opciones por categoría para mejor legibilidad
-  const grupos = opciones.reduce<Record<string, Partido[]>>((acc, p) => {
-    const cat = p.categorias?.nombre ?? "Sin categoría"
-    if (!acc[cat]) acc[cat] = []
-    acc[cat].push(p)
-    return acc
-  }, {})
+  // Días y canchas únicas para filtros
+  const dias = Array.from(new Set(
+    opciones
+      .filter(p => p.horario)
+      .map(p => new Date(p.horario).toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "numeric" }))
+  ))
+  const diaKeys = Array.from(new Set(
+    opciones.filter(p => p.horario).map(p => new Date(p.horario).toISOString().slice(0, 10))
+  )).sort()
+  const canchas = Array.from(new Set(opciones.filter(p => p.cancha).map(p => p.cancha as number))).sort((a, b) => a - b)
+
+  // Filtrar y ordenar cronológicamente
+  const opcionesFiltradas = opciones
+    .filter(p => {
+      if (filtroDia !== "todos" && p.horario) {
+        if (new Date(p.horario).toISOString().slice(0, 10) !== filtroDia) return false
+      }
+      if (filtroCancha !== "todas" && p.cancha !== Number(filtroCancha)) return false
+      return true
+    })
+    .sort((a, b) => {
+      if (!a.horario) return 1
+      if (!b.horario) return -1
+      return new Date(a.horario).getTime() - new Date(b.horario).getTime()
+    })
 
   return (
     <>
@@ -301,56 +321,105 @@ function SwapSheet({ partido, opciones, onClose }: {
           </p>
         </div>
 
-        {/* Lista scrolleable */}
-        <div style={{ overflowY: "auto", flex: 1, padding: "0 16px 8px" }}>
-          {Object.entries(grupos).map(([cat, ps]) => (
-            <div key={cat} style={{ marginBottom: 12 }}>
-              <p style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 9, fontWeight: 900, color: "#94a3b8",
-                textTransform: "uppercase", letterSpacing: "0.08em",
-                margin: "0 0 6px",
-              }}>
-                {cat}
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {ps.map(p => {
-                  const esSel = seleccionado?.id === p.id
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => setSeleccionado(esSel ? null : p)}
-                      style={{
-                        width: "100%", padding: "12px 14px",
-                        borderRadius: 10, cursor: "pointer", textAlign: "left",
-                        border: esSel ? "2px solid #0f172a" : "1px solid #e2e8f0",
-                        background: esSel ? "#0f172a" : "#f8fafc",
-                        WebkitTapHighlightColor: "transparent",
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                      }}
-                    >
+        {/* Filtros */}
+        <div style={{ padding: "0 16px 10px", flexShrink: 0, borderBottom: "1px solid #f1f5f9" }}>
+          {/* Filtro día */}
+          {diaKeys.length > 1 && (
+            <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 8, scrollbarWidth: "none" }}>
+              {[["todos", "Todos los días"], ...diaKeys.map((k, i) => [k, dias[i] ?? k])].map(([key, label]) => (
+                <button key={key} onClick={() => { setFiltroDia(key); setSeleccionado(null) }}
+                  style={{
+                    flexShrink: 0, padding: "4px 10px", borderRadius: 20, border: "1.5px solid",
+                    borderColor: filtroDia === key ? "#0f172a" : "#e2e8f0",
+                    background: filtroDia === key ? "#0f172a" : "#fff",
+                    color: filtroDia === key ? "#fff" : "#64748b",
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 10, fontWeight: 700, cursor: "pointer",
+                    WebkitTapHighlightColor: "transparent",
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Filtro cancha */}
+          {canchas.length > 1 && (
+            <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none" }}>
+              {[["todas", "Todas"], ...canchas.map(c => [String(c), `C${c}`])].map(([key, label]) => (
+                <button key={key} onClick={() => { setFiltroCancha(key); setSeleccionado(null) }}
+                  style={{
+                    flexShrink: 0, padding: "4px 10px", borderRadius: 20, border: "1.5px solid",
+                    borderColor: filtroCancha === key ? "#0f172a" : "#e2e8f0",
+                    background: filtroCancha === key ? "#0f172a" : "#fff",
+                    color: filtroCancha === key ? "#fff" : "#64748b",
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 10, fontWeight: 700, cursor: "pointer",
+                    WebkitTapHighlightColor: "transparent",
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Lista cronológica */}
+        <div style={{ overflowY: "auto", flex: 1, padding: "8px 16px" }}>
+          {opcionesFiltradas.length === 0 ? (
+            <p style={{
+              textAlign: "center", padding: "24px 0",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 12, color: "#94a3b8",
+            }}>
+              No hay partidos con ese filtro
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {opcionesFiltradas.map(p => {
+                const esSel = seleccionado?.id === p.id
+                return (
+                  <button key={p.id} onClick={() => setSeleccionado(esSel ? null : p)}
+                    style={{
+                      width: "100%", padding: "10px 12px",
+                      borderRadius: 10, cursor: "pointer", textAlign: "left",
+                      border: esSel ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                      background: esSel ? "#0f172a" : "#f8fafc",
+                      WebkitTapHighlightColor: "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+                    }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {p.categorias?.nombre && (
+                        <p style={{
+                          fontFamily: "var(--font-space-grotesk), sans-serif",
+                          fontSize: 8, fontWeight: 900, margin: "0 0 2px",
+                          color: esSel ? "#bcff00" : "#94a3b8",
+                          textTransform: "uppercase", letterSpacing: "0.06em",
+                        }}>
+                          {p.categorias.nombre}
+                        </p>
+                      )}
                       <span style={{
                         fontFamily: "var(--font-space-grotesk), sans-serif",
                         fontSize: 12, fontWeight: 700,
                         color: esSel ? "#fff" : "#0f172a",
                       }}>
                         {nombrePareja(p.pareja1)}
-                        <span style={{ fontWeight: 400, color: esSel ? "#94a3b8" : "#94a3b8", margin: "0 5px" }}>vs</span>
+                        <span style={{ fontWeight: 400, color: esSel ? "#94a3b8" : "#94a3b8", margin: "0 4px" }}>vs</span>
                         {nombrePareja(p.pareja2)}
                       </span>
-                      <span style={{
-                        fontFamily: "var(--font-space-grotesk), sans-serif",
-                        fontSize: 10, fontWeight: 700, flexShrink: 0, marginLeft: 8,
-                        color: esSel ? "#bcff00" : "#64748b",
-                      }}>
-                        {p.horario ? formatHora(p.horario) : "—"} · C{p.cancha ?? "—"}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
+                    </div>
+                    <span style={{
+                      fontFamily: "var(--font-space-grotesk), sans-serif",
+                      fontSize: 10, fontWeight: 700, flexShrink: 0,
+                      color: esSel ? "#bcff00" : "#64748b",
+                    }}>
+                      {p.horario ? formatHora(p.horario) : "—"} · C{p.cancha ?? "—"}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
-          ))}
+          )}
         </div>
 
         {/* Footer con botón confirmar */}
