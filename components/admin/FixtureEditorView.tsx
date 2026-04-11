@@ -268,7 +268,7 @@ function SwapSheet({ partido, opciones, onClose }: {
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         style={{
-          position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+          position: "fixed", bottom: 0, left: 0, right: 0, margin: "0 auto",
           width: "100%", maxWidth: 430, zIndex: 70,
           background: "#fff", borderRadius: "20px 20px 0 0",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",

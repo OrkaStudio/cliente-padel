@@ -4,6 +4,7 @@ import { createServerAction } from "zsa"
 import { z } from "zod"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { cookies } from "next/headers"
+import { revalidatePath } from "next/cache"
 
 // ─── Marcar en vivo ───────────────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ export const moverPartidoAction = createServerAction()
         .eq("id", input.intercambiarCon)
       if (e2) throw e2
 
+      await revalidarFixture(supabase, partido.sede_id)
       return { swapped: true }
     }
 
@@ -111,8 +113,28 @@ export const moverPartidoAction = createServerAction()
       .eq("id", input.partidoId)
     if (error) throw error
 
+    await revalidarFixture(supabase, partido.sede_id)
     return { movido: true }
   })
+
+// ─── Helper: invalida fixture + llaves del torneo al que pertenece una sede ──
+
+async function revalidarFixture(
+  supabase: ReturnType<typeof createAdminClient>,
+  sedeId: string
+) {
+  const { data: sede } = await supabase
+    .from("sedes")
+    .select("torneo_id")
+    .eq("id", sedeId)
+    .single()
+  if (!sede?.torneo_id) return
+  const tid = sede.torneo_id
+  revalidatePath(`/torneos/${tid}/fixture`)
+  revalidatePath(`/torneos/${tid}/llaves`)
+  revalidatePath(`/admin/torneo/${tid}`)
+  revalidatePath(`/admin/torneo/${tid}/fixture`)
+}
 
 // ─── Cambiar estado del torneo ────────────────────────────────────────────────
 
