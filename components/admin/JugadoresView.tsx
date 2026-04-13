@@ -10,7 +10,7 @@ type Jugador = {
   apellido: string
   telefono: string | null
   categoria_id: string | null
-  categorias: { nombre: string } | null
+  categorias: { nombre: string }[] | { nombre: string } | null
 }
 
 type Categoria = {
@@ -270,7 +270,7 @@ export function JugadoresView({ jugadores: jugadoresIniciales, categorias }: Pro
                   fontFamily: "var(--font-space-grotesk), sans-serif",
                   textTransform: "uppercase", letterSpacing: "0.04em",
                 }}>
-                  {j.categorias.nombre}
+                  {Array.isArray(j.categorias) ? j.categorias[0]?.nombre : j.categorias.nombre}
                 </span>
               )}
             </div>
