@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import type { CategoriaInterclub, Club } from "@/components/torneos/interclub/CategoriasInterclub"
 
@@ -125,7 +126,6 @@ export default async function CategoriaInterclubPage({
   const liderA = cat.ptsA > cat.ptsB
   const liderB = cat.ptsB > cat.ptsA
 
-  // Parejas únicas por club
   const parejasA = [...new Set(cat.partidos.map((p) => p.pairA))]
   const parejasB = [...new Set(cat.partidos.map((p) => p.pairB))]
 
@@ -134,15 +134,19 @@ export default async function CategoriaInterclubPage({
   const pendientes = cat.partidos.filter((p) => p.estado === "pendiente")
 
   return (
-    <div style={{ background: "#0d0d0d", minHeight: "100vh", paddingBottom: 60 }}>
+    <div style={{ background: "#f8fafc", minHeight: "100vh", paddingBottom: 60 }}>
 
-      {/* Header */}
-      <div style={{ background: "#0d0d0d", padding: "12px 18px 0", position: "sticky", top: 0, zIndex: 10 }}>
+      {/* Header nav */}
+      <div style={{
+        background: "#ffffff", borderBottom: "1px solid #e2e8f0",
+        padding: "12px 18px",
+        position: "sticky", top: 0, zIndex: 10,
+      }}>
         <Link
           href={`/torneos/${id}/interclub` as AnyHref}
           style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            color: "rgba(255,255,255,0.4)", textDecoration: "none",
+            color: "#64748b", textDecoration: "none",
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 12, fontWeight: 800,
             textTransform: "uppercase", letterSpacing: "0.06em",
@@ -155,7 +159,11 @@ export default async function CategoriaInterclubPage({
       </div>
 
       {/* Hero categoría */}
-      <div style={{ padding: "20px 18px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      <div style={{
+        background: "#ffffff",
+        borderBottom: "1px solid #e2e8f0",
+        padding: "24px 18px 28px",
+      }}>
         {/* Badge estado */}
         <div style={{ marginBottom: 12 }}>
           {isLive && (
@@ -173,7 +181,7 @@ export default async function CategoriaInterclubPage({
           )}
           {isFin && (
             <span style={{
-              background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)",
+              background: "#f1f5f9", color: "#64748b",
               padding: "3px 10px", borderRadius: 2,
               fontSize: 9, fontWeight: 900,
               fontFamily: "var(--font-space-grotesk), sans-serif",
@@ -185,7 +193,8 @@ export default async function CategoriaInterclubPage({
           )}
           {cat.estado === "pendiente" && (
             <span style={{
-              background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.2)",
+              background: "#f8fafc", color: "#94a3b8",
+              border: "1px solid #e2e8f0",
               padding: "3px 10px", borderRadius: 2,
               fontSize: 9, fontWeight: 900,
               fontFamily: "var(--font-space-grotesk), sans-serif",
@@ -201,59 +210,87 @@ export default async function CategoriaInterclubPage({
         <h1 style={{
           fontFamily: "var(--font-anton), Anton, sans-serif",
           fontSize: 36, fontWeight: 400, lineHeight: 1,
-          color: "#ffffff", textTransform: "uppercase",
-          margin: "0 0 20px",
+          color: "#0f172a", textTransform: "uppercase",
+          margin: "0 0 24px",
         }}>
           {cat.nombre}
         </h1>
 
-        {/* Marcador */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
-          <div>
+        {/* Marcador con logos */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center" }}>
+
+          {/* Club A */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 10,
+              background: "#f8fafc",
+              border: `2px solid ${liderA ? "#BCFF00" : "#e2e8f0"}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              overflow: "hidden", position: "relative",
+              boxShadow: liderA ? "0 0 0 3px rgba(188,255,0,0.2)" : "none",
+            }}>
+              {CLUB_A.logoUrl
+                ? <Image src={CLUB_A.logoUrl} alt={CLUB_A.nombre} fill style={{ objectFit: "contain", padding: 4 }} />
+                : <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 14, color: "#0f172a" }}>{CLUB_A.abbr}</span>
+              }
+            </div>
+            <div style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 9, fontWeight: 900, color: "#64748b",
+              textTransform: "uppercase", letterSpacing: "0.1em",
+            }}>
+              {CLUB_A.nombre}
+            </div>
             <div style={{
               fontFamily: "var(--font-anton), Anton, sans-serif",
               fontSize: 72, fontWeight: 400, lineHeight: 1,
-              color: liderA ? "#BCFF00" : "rgba(255,255,255,0.2)",
+              color: liderA ? "#0f172a" : "#cbd5e1",
               letterSpacing: "-0.03em",
             }}>
               {cat.ptsA}
             </div>
-            <div style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 10, fontWeight: 900,
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4,
-            }}>
-              {CLUB_A.nombre}
-            </div>
           </div>
 
+          {/* VS */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)" }} />
+            <div style={{ width: 1, height: 16, background: "#e2e8f0" }} />
             <span style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,0.15)",
+              fontSize: 10, fontWeight: 900, color: "#94a3b8",
               textTransform: "uppercase",
             }}>VS</span>
-            <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)" }} />
+            <div style={{ width: 1, height: 16, background: "#e2e8f0" }} />
           </div>
 
-          <div style={{ textAlign: "right" }}>
+          {/* Club B */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 10,
+              background: "#f8fafc",
+              border: `2px solid ${liderB ? "#BCFF00" : "#e2e8f0"}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              overflow: "hidden", position: "relative",
+              boxShadow: liderB ? "0 0 0 3px rgba(188,255,0,0.2)" : "none",
+            }}>
+              {CLUB_B.logoUrl
+                ? <Image src={CLUB_B.logoUrl} alt={CLUB_B.nombre} fill style={{ objectFit: "contain", padding: 4 }} />
+                : <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 14, color: "#0f172a" }}>{CLUB_B.abbr}</span>
+              }
+            </div>
+            <div style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 9, fontWeight: 900, color: "#64748b",
+              textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "right",
+            }}>
+              {CLUB_B.nombre}
+            </div>
             <div style={{
               fontFamily: "var(--font-anton), Anton, sans-serif",
               fontSize: 72, fontWeight: 400, lineHeight: 1,
-              color: liderB ? "#BCFF00" : "rgba(255,255,255,0.2)",
-              letterSpacing: "-0.03em",
+              color: liderB ? "#0f172a" : "#cbd5e1",
+              letterSpacing: "-0.03em", textAlign: "right",
             }}>
               {cat.ptsB}
-            </div>
-            <div style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 10, fontWeight: 900,
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4,
-            }}>
-              {CLUB_B.nombre}
             </div>
           </div>
         </div>
@@ -265,50 +302,90 @@ export default async function CategoriaInterclubPage({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
           {/* Club A */}
           <div style={{
-            background: "rgba(255,255,255,0.03)", borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.06)", padding: "14px 14px",
+            background: "#ffffff", borderRadius: 10,
+            border: `2px solid ${liderA ? "#BCFF00" : "#e2e8f0"}`,
+            padding: "14px",
+            boxShadow: liderA ? "0 2px 8px rgba(188,255,0,0.15)" : "0 1px 3px rgba(0,0,0,0.04)",
           }}>
-            <div style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 8, fontWeight: 900,
-              color: liderA ? "#BCFF00" : "rgba(255,255,255,0.35)",
-              textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10,
-            }}>
-              {CLUB_A.nombre}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: 5,
+                background: "#f8fafc", border: "1px solid #e2e8f0",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                position: "relative", overflow: "hidden", flexShrink: 0,
+              }}>
+                {CLUB_A.logoUrl
+                  ? <Image src={CLUB_A.logoUrl} alt={CLUB_A.nombre} fill style={{ objectFit: "contain", padding: 2 }} />
+                  : null
+                }
+              </div>
+              <div style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 8, fontWeight: 900,
+                color: liderA ? "#0f172a" : "#64748b",
+                textTransform: "uppercase", letterSpacing: "0.12em",
+              }}>
+                {CLUB_A.nombre}
+              </div>
             </div>
             {parejasA.map((pareja) => (
               <div key={pareja} style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 12, fontWeight: 700,
-                color: "#ffffff", marginBottom: 6,
-                lineHeight: 1.3,
+                display: "flex", alignItems: "center", gap: 8,
+                marginBottom: 6, paddingLeft: 8,
+                borderLeft: "2px solid #0f172a",
               }}>
-                {pareja.replace(" / ", "\n")}
+                <span style={{
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 12, fontWeight: 700,
+                  color: "#0f172a", lineHeight: 1.3,
+                }}>
+                  {pareja}
+                </span>
               </div>
             ))}
           </div>
 
           {/* Club B */}
           <div style={{
-            background: "rgba(255,255,255,0.03)", borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.06)", padding: "14px 14px",
+            background: "#ffffff", borderRadius: 10,
+            border: `2px solid ${liderB ? "#BCFF00" : "#e2e8f0"}`,
+            padding: "14px",
+            boxShadow: liderB ? "0 2px 8px rgba(188,255,0,0.15)" : "0 1px 3px rgba(0,0,0,0.04)",
           }}>
-            <div style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 8, fontWeight: 900,
-              color: liderB ? "#BCFF00" : "rgba(255,255,255,0.35)",
-              textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10,
-            }}>
-              {CLUB_B.nombre}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: 5,
+                background: "#f8fafc", border: "1px solid #e2e8f0",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                position: "relative", overflow: "hidden", flexShrink: 0,
+              }}>
+                {CLUB_B.logoUrl
+                  ? <Image src={CLUB_B.logoUrl} alt={CLUB_B.nombre} fill style={{ objectFit: "contain", padding: 2 }} />
+                  : null
+                }
+              </div>
+              <div style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 8, fontWeight: 900,
+                color: liderB ? "#0f172a" : "#64748b",
+                textTransform: "uppercase", letterSpacing: "0.12em",
+              }}>
+                {CLUB_B.nombre}
+              </div>
             </div>
             {parejasB.map((pareja) => (
               <div key={pareja} style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 12, fontWeight: 700,
-                color: "#ffffff", marginBottom: 6,
-                lineHeight: 1.3,
+                display: "flex", alignItems: "center", gap: 8,
+                marginBottom: 6, paddingLeft: 8,
+                borderLeft: "2px solid #b45309",
               }}>
-                {pareja.replace(" / ", "\n")}
+                <span style={{
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 12, fontWeight: 700,
+                  color: "#0f172a", lineHeight: 1.3,
+                }}>
+                  {pareja}
+                </span>
               </div>
             ))}
           </div>
@@ -320,8 +397,8 @@ export default async function CategoriaInterclubPage({
         <div style={{ padding: "24px 18px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <span style={{
-              width: 7, height: 7, borderRadius: "50%", background: "#BCFF00",
-              display: "inline-block", boxShadow: "0 0 8px #BCFF00",
+              width: 7, height: 7, borderRadius: "50%", background: "#16a34a",
+              display: "inline-block", boxShadow: "0 0 8px rgba(22,163,74,0.5)",
             }} />
             <SectionTitle>En cancha</SectionTitle>
           </div>
@@ -359,6 +436,133 @@ export default async function CategoriaInterclubPage({
           </div>
         </div>
       )}
+
+      {/* Fixture */}
+      <div style={{ padding: "24px 18px 0" }}>
+        <SectionTitle>Fixture</SectionTitle>
+        <div style={{ marginTop: 12, overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: "32%" }} />
+              {parejasB.map((_, i) => (
+                <col key={i} style={{ width: `${68 / parejasB.length}%` }} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr>
+                <th style={{
+                  padding: "8px 10px",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 8, fontWeight: 900, color: "#94a3b8",
+                  textTransform: "uppercase", letterSpacing: "0.1em",
+                  textAlign: "left",
+                }}>
+                  {CLUB_A.abbr} ↓ / {CLUB_B.abbr} →
+                </th>
+                {parejasB.map((pareja) => (
+                  <th key={pareja} style={{
+                    padding: "8px 6px",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 10, fontWeight: 700, color: "#0f172a",
+                    textAlign: "center", lineHeight: 1.3,
+                  }}>
+                    {pareja.split(" / ").map((n, i) => (
+                      <div key={i}>{n}</div>
+                    ))}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {parejasA.map((pA) => (
+                <tr key={pA}>
+                  <td style={{
+                    padding: "8px 10px",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 10, fontWeight: 700, color: "#0f172a", lineHeight: 1.3,
+                  }}>
+                    {pA.split(" / ").map((n, i) => (
+                      <div key={i}>{n}</div>
+                    ))}
+                  </td>
+                  {parejasB.map((pB) => {
+                    const partido = cat.partidos.find((p) => p.pairA === pA && p.pairB === pB)
+                    return (
+                      <td key={pB} style={{
+                        padding: "8px 6px",
+                        background: partido?.estado === "en_vivo"
+                          ? "#fefce8"
+                          : "#ffffff",
+                        border: partido?.estado === "en_vivo"
+                          ? "1px solid #BCFF00"
+                          : "1px solid #e2e8f0",
+                        textAlign: "center",
+                        verticalAlign: "middle",
+                      }}>
+                        {!partido ? (
+                          <span style={{ color: "#e2e8f0", fontSize: 12 }}>–</span>
+                        ) : partido.estado === "finalizado" ? (
+                          <div>
+                            <div style={{
+                              fontFamily: "var(--font-space-grotesk), sans-serif",
+                              fontSize: 11, fontWeight: 900,
+                              color: "#0f172a",
+                              letterSpacing: "0.02em",
+                            }}>
+                              {partido.resultado}
+                            </div>
+                            <div style={{
+                              fontFamily: "var(--font-space-grotesk), sans-serif",
+                              fontSize: 8, fontWeight: 900,
+                              color: partido.ganador === "A" ? "#16a34a"
+                                : partido.ganador === "B" ? "#dc2626"
+                                : "#94a3b8",
+                              textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 3,
+                              background: partido.ganador === "A" ? "rgba(22,163,74,0.08)"
+                                : partido.ganador === "B" ? "rgba(220,38,38,0.08)"
+                                : "transparent",
+                              borderRadius: 2, padding: "1px 3px",
+                              display: "inline-block",
+                            }}>
+                              {partido.ganador === "A" ? CLUB_A.abbr
+                                : partido.ganador === "B" ? CLUB_B.abbr
+                                : "–"}
+                            </div>
+                          </div>
+                        ) : partido.estado === "en_vivo" ? (
+                          <div>
+                            <div style={{
+                              fontFamily: "var(--font-anton), Anton, sans-serif",
+                              fontSize: 15, fontWeight: 400,
+                              color: "#0f172a",
+                              background: "#BCFF00",
+                              borderRadius: 4, padding: "1px 6px",
+                              display: "inline-block",
+                            }}>
+                              {partido.resultado ?? "–"}
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{
+                            fontFamily: "var(--font-space-grotesk), sans-serif",
+                            fontSize: 11, color: "#cbd5e1",
+                          }}>—</span>
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }
@@ -368,7 +572,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     <h2 style={{
       fontFamily: "var(--font-anton), Anton, sans-serif",
       fontSize: 20, fontWeight: 400, textTransform: "uppercase",
-      letterSpacing: "0.05em", margin: 0, color: "#ffffff",
+      letterSpacing: "0.05em", margin: 0, color: "#0f172a",
     }}>
       {children}
     </h2>
@@ -389,38 +593,43 @@ function PartidoCard({
 
   return (
     <div style={{
-      background: isLive ? "rgba(188,255,0,0.05)" : "rgba(255,255,255,0.03)",
-      border: isLive ? "1px solid rgba(188,255,0,0.2)" : "1px solid rgba(255,255,255,0.06)",
-      borderRadius: 8, padding: "12px 14px",
+      background: "#ffffff",
+      border: isLive ? "2px solid #BCFF00" : "1px solid #e2e8f0",
+      borderRadius: 10, padding: "12px 14px",
+      boxShadow: isLive ? "0 2px 10px rgba(188,255,0,0.15)" : "0 1px 3px rgba(0,0,0,0.04)",
     }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 10, alignItems: "center" }}>
         {/* Pareja A */}
         <div>
-          <div style={{
+          <span style={{
+            display: "inline-block",
+            background: "#0f172a", color: "#ffffff",
+            padding: "1px 6px", borderRadius: 3,
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 900,
-            color: "rgba(255,255,255,0.3)",
-            textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4,
+            fontSize: 7, fontWeight: 900,
+            textTransform: "uppercase", letterSpacing: "0.1em",
+            marginBottom: 5,
           }}>
             {CLUB_A.abbr}
-          </div>
+          </span>
           <div style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, fontWeight: ganador === "A" ? 900 : 700,
-            color: ganador === "A" ? "#ffffff" : ganador === "B" ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.7)",
+            fontSize: 12,
+            fontWeight: ganador === "A" ? 900 : 700,
+            color: ganador === "A" ? "#0f172a" : ganador === "B" ? "#94a3b8" : "#334155",
             lineHeight: 1.3,
           }}>
             {pairA}
           </div>
         </div>
 
-        {/* Score / estado */}
-        <div style={{ textAlign: "center", flexShrink: 0 }}>
+        {/* Score */}
+        <div style={{ textAlign: "center" }}>
           {isFin && (
             <span style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: 13, fontWeight: 900,
-              color: "#ffffff", letterSpacing: "0.04em",
+              color: "#0f172a", letterSpacing: "0.04em",
             }}>
               {resultado}
             </span>
@@ -429,7 +638,11 @@ function PartidoCard({
             <span style={{
               fontFamily: "var(--font-anton), Anton, sans-serif",
               fontSize: 18, fontWeight: 400,
-              color: "#BCFF00", letterSpacing: "0.02em",
+              color: "#000",
+              background: "#BCFF00",
+              borderRadius: 6, padding: "2px 8px",
+              display: "inline-block",
+              letterSpacing: "0.02em",
             }}>
               {resultado ?? "–"}
             </span>
@@ -437,25 +650,29 @@ function PartidoCard({
           {estado === "pendiente" && (
             <span style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 13, color: "rgba(255,255,255,0.15)",
+              fontSize: 13, color: "#e2e8f0",
             }}>—</span>
           )}
         </div>
 
         {/* Pareja B */}
         <div style={{ textAlign: "right" }}>
-          <div style={{
+          <span style={{
+            display: "inline-block",
+            background: "#b45309", color: "#ffffff",
+            padding: "1px 6px", borderRadius: 3,
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 900,
-            color: "rgba(255,255,255,0.3)",
-            textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4,
+            fontSize: 7, fontWeight: 900,
+            textTransform: "uppercase", letterSpacing: "0.1em",
+            marginBottom: 5,
           }}>
             {CLUB_B.abbr}
-          </div>
+          </span>
           <div style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, fontWeight: ganador === "B" ? 900 : 700,
-            color: ganador === "B" ? "#ffffff" : ganador === "A" ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.7)",
+            fontSize: 12,
+            fontWeight: ganador === "B" ? 900 : 700,
+            color: ganador === "B" ? "#0f172a" : ganador === "A" ? "#94a3b8" : "#334155",
             lineHeight: 1.3,
           }}>
             {pairB}

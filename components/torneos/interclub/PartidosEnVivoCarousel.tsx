@@ -26,18 +26,18 @@ export function PartidosEnVivoCarousel({ categorias, clubA, clubB }: Props) {
   if (partidos.length === 0) return null
 
   return (
-    <div style={{ background: "#0d0d0d", paddingBottom: 4 }}>
+    <div style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", paddingBottom: 4 }}>
       {/* Header */}
-      <div style={{ padding: "20px 18px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ padding: "16px 18px 10px", display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{
-          width: 7, height: 7, borderRadius: "50%", background: "#BCFF00",
+          width: 7, height: 7, borderRadius: "50%", background: "#16a34a",
           flexShrink: 0, display: "inline-block",
-          boxShadow: "0 0 8px #BCFF00",
+          boxShadow: "0 0 8px rgba(22,163,74,0.5)",
         }} />
         <span style={{
           fontFamily: "var(--font-space-grotesk), sans-serif",
           fontSize: 10, fontWeight: 900,
-          color: "#BCFF00",
+          color: "#16a34a",
           textTransform: "uppercase", letterSpacing: "0.12em",
         }}>
           En cancha ahora · {partidos.length} {partidos.length === 1 ? "partido" : "partidos"}
@@ -54,16 +54,17 @@ export function PartidosEnVivoCarousel({ categorias, clubA, clubB }: Props) {
         {partidos.map((partido) => (
           <div key={partido.id} style={{
             flexShrink: 0, width: 280,
-            background: "rgba(188,255,0,0.06)",
-            border: "1px solid rgba(188,255,0,0.2)",
-            borderRadius: 8, padding: "12px 14px",
+            background: "#ffffff",
+            border: "2px solid #BCFF00",
+            borderRadius: 10, padding: "12px 14px",
             scrollSnapAlign: "start",
+            boxShadow: "0 2px 8px rgba(188,255,0,0.15)",
           }}>
             {/* Categoría */}
             <div style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: 8, fontWeight: 900,
-              color: "rgba(255,255,255,0.35)",
+              color: "#64748b",
               textTransform: "uppercase", letterSpacing: "0.12em",
               marginBottom: 8,
             }}>
@@ -72,71 +73,76 @@ export function PartidosEnVivoCarousel({ categorias, clubA, clubB }: Props) {
 
             {/* Parejas */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center" }}>
-              <div>
+              <div style={{
+                borderLeft: `2px solid ${clubA.color}`,
+                paddingLeft: 8,
+              }}>
                 <div style={{
                   fontFamily: "var(--font-space-grotesk), sans-serif",
                   fontSize: 8, fontWeight: 900,
-                  color: "rgba(255,255,255,0.35)",
+                  color: clubA.color,
                   textTransform: "uppercase", letterSpacing: "0.1em",
                   marginBottom: 3,
                 }}>
                   {clubA.abbr}
                 </div>
                 <div style={{
-                  fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 13, fontWeight: 400,
-                  color: "#ffffff", lineHeight: 1.2,
-                  textTransform: "uppercase",
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 12, fontWeight: 800,
+                  color: "#0f172a", lineHeight: 1.3,
                 }}>
-                  {partido.pairA.replace(" / ", "\n")}
+                  {partido.pairA}
                 </div>
               </div>
 
               <div style={{ textAlign: "center" }}>
                 <div style={{
                   fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 20, fontWeight: 400,
-                  color: "#BCFF00", lineHeight: 1,
+                  fontSize: 22, fontWeight: 400,
+                  color: "#0f172a", lineHeight: 1,
+                  background: "#BCFF00",
+                  borderRadius: 6,
+                  padding: "2px 8px",
                 }}>
                   {partido.resultado ?? "–"}
                 </div>
                 <div style={{
                   fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 8, fontWeight: 900,
-                  color: "rgba(255,255,255,0.25)",
+                  fontSize: 7, fontWeight: 900,
+                  color: "#16a34a",
                   textTransform: "uppercase", letterSpacing: "0.08em",
-                  marginTop: 2,
+                  marginTop: 4,
                 }}>
                   en vivo
                 </div>
               </div>
 
-              <div style={{ textAlign: "right" }}>
+              <div style={{
+                textAlign: "right",
+                borderRight: `2px solid ${clubB.color}`,
+                paddingRight: 8,
+              }}>
                 <div style={{
                   fontFamily: "var(--font-space-grotesk), sans-serif",
                   fontSize: 8, fontWeight: 900,
-                  color: "rgba(255,255,255,0.35)",
+                  color: clubB.color,
                   textTransform: "uppercase", letterSpacing: "0.1em",
                   marginBottom: 3,
                 }}>
                   {clubB.abbr}
                 </div>
                 <div style={{
-                  fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 13, fontWeight: 400,
-                  color: "#ffffff", lineHeight: 1.2,
-                  textTransform: "uppercase", textAlign: "right",
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 12, fontWeight: 800,
+                  color: "#0f172a", lineHeight: 1.3, textAlign: "right",
                 }}>
-                  {partido.pairB.replace(" / ", "\n")}
+                  {partido.pairB}
                 </div>
               </div>
             </div>
           </div>
         ))}
       </div>
-
-      {/* Divisor */}
-      <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "0 18px" }} />
     </div>
   )
 }

@@ -102,6 +102,41 @@
   }
 }
 
+/* ── BorderRotate — animated gradient border ── */
+@property --gradient-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes border-rotate {
+  to { --gradient-angle: 360deg; }
+}
+
+.gradient-border-auto {
+  animation: border-rotate var(--animation-duration, 5s) linear infinite;
+}
+.gradient-border-hover {
+  /* static by default */
+}
+.gradient-border-hover:hover {
+  animation: border-rotate var(--animation-duration, 5s) linear infinite;
+}
+.gradient-border-stop-hover {
+  animation: border-rotate var(--animation-duration, 5s) linear infinite;
+}
+.gradient-border-stop-hover:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-border-auto,
+  .gradient-border-hover:hover,
+  .gradient-border-stop-hover {
+    animation: none;
+  }
+}
+
 @layer utilities {
   .font-heading {
     font-family: 'Anton', sans-serif;

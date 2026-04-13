@@ -8,7 +8,7 @@ import type { CategoriaInterclub, Club } from "@/components/torneos/interclub/Ca
 type AnyHref = any
 
 const CLUB_A: Club = { nombre: "Voleando", color: "#0f172a", abbr: "VOL", logoUrl: "/clubes/voleando.logo.png" }
-const CLUB_B: Club = { nombre: "Más Pádel", color: "#b45309", abbr: "MP", logoUrl: "/clubes/mas-padel.logo.png" }
+const CLUB_B: Club = { nombre: "+ Pádel", color: "#b45309", abbr: "MP", logoUrl: "/clubes/mas-padel.logo.png" }
 
 const MOCK_CATEGORIAS: CategoriaInterclub[] = [
   {
@@ -121,18 +121,22 @@ export default async function InterclubPage({ params }: { params: Promise<{ id: 
   const finalizadas = MOCK_CATEGORIAS.filter((c) => c.estado === "finalizado").length
 
   return (
-    <div style={{ background: "#0d0d0d", minHeight: "100vh", paddingBottom: 40 }}>
+    <div style={{ background: "#f8fafc", minHeight: "100vh", paddingBottom: 40 }}>
       {/* Back */}
-      <div style={{ padding: "12px 18px 0", background: "#0d0d0d" }}>
+      <div style={{
+        position: "sticky", top: 0, zIndex: 50,
+        padding: "12px 18px 0", background: "#ffffff", borderBottom: "1px solid #f1f5f9",
+      }}>
         <Link
           href={`/torneos/${id}` as AnyHref}
           style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            color: "rgba(255,255,255,0.4)", textDecoration: "none",
+            color: "#64748b", textDecoration: "none",
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 12, fontWeight: 800,
             textTransform: "uppercase", letterSpacing: "0.06em",
             WebkitTapHighlightColor: "transparent",
+            paddingBottom: 12,
           }}
         >
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, lineHeight: 1 }}>

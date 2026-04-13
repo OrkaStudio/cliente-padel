@@ -1,4 +1,7 @@
 import Image from "next/image"
+import { InfiniteSlider } from "@/components/ui/infinite-slider"
+import { ProgressiveBlur } from "@/components/ui/progressive-blur"
+import { BorderRotate } from "@/components/ui/border-rotate"
 
 type Club = { nombre: string; color: string; abbr: string; logoUrl?: string }
 
@@ -14,6 +17,8 @@ type Props = {
   categoriasFinalizadas: number
 }
 
+type StatItem = { label: string; value: number; live?: boolean }
+
 export function HeroMarcador({
   torneoNombre,
   torneoFecha,
@@ -27,208 +32,253 @@ export function HeroMarcador({
 }: Props) {
   const total = ptsA + ptsB
   const pctA = total > 0 ? (ptsA / total) * 100 : 50
-  const lider = ptsA > ptsB ? clubA.nombre : ptsB > ptsA ? clubB.nombre : null
-  const ventaja = Math.abs(ptsA - ptsB)
+  const liderA = ptsA > ptsB
+  const liderB = ptsB > ptsA
   const pendientes = totalCategorias - categoriasEnJuego - categoriasFinalizadas
+  const puckColor = liderA ? clubA.color : liderB ? clubB.color : "#94a3b8"
+
+  const stats: StatItem[] = [
+    { label: "Categorías", value: totalCategorias },
+    { label: "En juego", value: categoriasEnJuego, live: categoriasEnJuego > 0 },
+    { label: "Finalizadas", value: categoriasFinalizadas },
+    { label: "Pendientes", value: pendientes },
+  ]
+
+  // Colores del borde animado por club
+  const colorsA = { primary: '#0f172a', secondary: '#334155', accent: '#BCFF00' }
+  const colorsB = { primary: '#78350f', secondary: '#b45309', accent: '#fbbf24' }
 
   return (
-    <div style={{ background: "#0d0d0d", padding: "24px 18px 28px", position: "relative", overflow: "hidden" }}>
+    <div style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0" }}>
 
-      {/* Logo watermark A */}
-      {clubA.logoUrl && (
-        <div aria-hidden style={{
-          position: "absolute", left: -20, top: "50%", transform: "translateY(-50%)",
-          width: 200, height: 200, pointerEvents: "none", userSelect: "none",
-        }}>
-          <Image src={clubA.logoUrl} alt="" fill
-            style={{ objectFit: "contain", objectPosition: "left center", opacity: 0.06 }} />
-        </div>
-      )}
-      {/* Logo watermark B */}
-      {clubB.logoUrl && (
-        <div aria-hidden style={{
-          position: "absolute", right: -20, top: "50%", transform: "translateY(-50%)",
-          width: 200, height: 200, pointerEvents: "none", userSelect: "none",
-        }}>
-          <Image src={clubB.logoUrl} alt="" fill
-            style={{ objectFit: "contain", objectPosition: "right center", opacity: 0.06 }} />
-        </div>
-      )}
-
-      {/* Badge interclub */}
-      <div style={{ marginBottom: 16, position: "relative", zIndex: 2 }}>
-        <span style={{
-          background: "#BCFF00", color: "#000",
-          padding: "3px 10px", borderRadius: 2,
-          fontSize: 9, fontWeight: 900,
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          textTransform: "uppercase", letterSpacing: "0.12em",
-        }}>
-          Interclub
-        </span>
-      </div>
-
-      {/* Nombre del torneo */}
-      <h1 style={{
-        fontFamily: "var(--font-anton), Anton, sans-serif",
-        fontSize: 40, fontWeight: 400,
-        color: "#ffffff", lineHeight: 1,
-        textTransform: "uppercase", letterSpacing: "0.01em",
-        margin: "0 0 16px", position: "relative", zIndex: 2,
-      }}>
-        {torneoNombre}
-      </h1>
-
-      {/* Fecha + sedes chip */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 28, position: "relative", zIndex: 2, flexWrap: "wrap" }}>
-        <span style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          background: "rgba(255,255,255,0.08)", borderRadius: 4,
-          padding: "5px 10px",
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)",
-        }}>
-          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1 }}>calendar_today</span>
-          {torneoFecha}
-        </span>
-        <span style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          background: "rgba(255,255,255,0.08)", borderRadius: 4,
-          padding: "5px 10px",
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)",
-        }}>
-          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1 }}>location_on</span>
-          {clubA.nombre} · {clubB.nombre}
-        </span>
-      </div>
-
-      {/* Marcador */}
-      <div style={{
-        display: "grid", gridTemplateColumns: "1fr auto 1fr",
-        alignItems: "center", gap: 12, position: "relative", zIndex: 2, marginBottom: 20,
-      }}>
-        {/* Club A */}
-        <div>
-          <div style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 80, fontWeight: 400, lineHeight: 1,
-            color: ptsA >= ptsB ? "#BCFF00" : "rgba(255,255,255,0.25)",
-            letterSpacing: "-0.03em",
-          }}>
-            {ptsA}
-          </div>
-          <div style={{
+      {/* Badge + fecha + título centrado */}
+      <div style={{ padding: "20px 18px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <span style={{
+            background: "#BCFF00", color: "#000",
+            padding: "3px 10px", borderRadius: 2,
+            fontSize: 9, fontWeight: 900,
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,0.5)",
-            textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4,
+            textTransform: "uppercase", letterSpacing: "0.12em",
+          }}>Interclub</span>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 10, fontWeight: 700, color: "#64748b",
           }}>
-            {clubA.nombre}
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1 }}>calendar_today</span>
+            {torneoFecha}
+          </span>
+        </div>
+
+        <h1 style={{
+          fontFamily: "var(--font-anton), Anton, sans-serif",
+          fontSize: 28, fontWeight: 400, lineHeight: 1,
+          color: "#0f172a", textTransform: "uppercase",
+          letterSpacing: "0.01em", margin: "0 0 20px",
+          textAlign: "center",
+        }}>{torneoNombre}</h1>
+      </div>
+
+      {/* Dos cards con borde animado */}
+      <div style={{ padding: "0 14px 20px", display: "flex", gap: 10, alignItems: "stretch" }}>
+
+        {/* Card Club A */}
+        <BorderRotate
+          animationMode="auto-rotate"
+          animationSpeed={liderA ? 3 : 6}
+          gradientColors={colorsA}
+          backgroundColor="#ffffff"
+          borderWidth={2}
+          borderRadius={14}
+          style={{
+            flex: 1,
+            position: "relative",
+            overflow: "hidden",
+            minHeight: 190,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            padding: "12px 12px 20px",
+          }}
+        >
+          {/* Logo como fondo */}
+          {clubA.logoUrl && (
+            <div aria-hidden style={{
+              position: "absolute", inset: 0,
+              pointerEvents: "none",
+            }}>
+              <Image
+                src={clubA.logoUrl} alt=""
+                fill
+                style={{ objectFit: "contain", padding: 20, opacity: liderA ? 0.28 : 0.14 }}
+              />
+            </div>
+          )}
+          {/* Número abajo — no tapa el logo */}
+          <span style={{
+            position: "relative", zIndex: 1,
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 76, fontWeight: 900, lineHeight: 1,
+            color: liderA ? clubA.color : "#d1d5db",
+            letterSpacing: "-0.05em",
+          }}>{ptsA}</span>
+        </BorderRotate>
+
+        {/* VS central */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0, width: 32,
+        }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: "50%",
+            background: "#0f172a",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 7, fontWeight: 900, color: "#ffffff",
+              textTransform: "uppercase", letterSpacing: "0.04em",
+            }}>VS</span>
           </div>
         </div>
 
-        {/* VS */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
+        {/* Card Club B */}
+        <BorderRotate
+          animationMode="auto-rotate"
+          animationSpeed={liderB ? 3 : 6}
+          gradientColors={colorsB}
+          backgroundColor="#ffffff"
+          borderWidth={2}
+          borderRadius={14}
+          style={{
+            flex: 1,
+            position: "relative",
+            overflow: "hidden",
+            minHeight: 190,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            padding: "12px 12px 20px",
+          }}
+        >
+          {clubB.logoUrl && (
+            <div aria-hidden style={{
+              position: "absolute", inset: 0,
+              pointerEvents: "none",
+            }}>
+              <Image
+                src={clubB.logoUrl} alt=""
+                fill
+                style={{ objectFit: "contain", padding: 20, opacity: liderB ? 0.28 : 0.14 }}
+              />
+            </div>
+          )}
+          <span style={{
+            position: "relative", zIndex: 1,
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 76, fontWeight: 900, lineHeight: 1,
+            color: liderB ? clubB.color : "#d1d5db",
+            letterSpacing: "-0.05em",
+          }}>{ptsB}</span>
+        </BorderRotate>
+      </div>
+
+      {/* Barra gamificada */}
+      <div style={{ padding: "0 14px 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,0.2)",
-            textTransform: "uppercase", letterSpacing: "0.1em",
-          }}>VS</span>
-          <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
-        </div>
+            fontSize: 8, fontWeight: 900,
+            color: "#fff", background: clubA.color,
+            padding: "2px 7px", borderRadius: 3,
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            flexShrink: 0,
+          }}>{clubA.abbr}</span>
 
-        {/* Club B */}
-        <div style={{ textAlign: "right" }}>
-          <div style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 80, fontWeight: 400, lineHeight: 1,
-            color: ptsB > ptsA ? "#BCFF00" : "rgba(255,255,255,0.25)",
-            letterSpacing: "-0.03em",
-          }}>
-            {ptsB}
+          <div style={{ flex: 1, position: "relative", height: 8, borderRadius: 4 }}>
+            <div style={{ position: "absolute", inset: 0, borderRadius: 4, background: "#f1f5f9" }} />
+            <div style={{
+              position: "absolute", left: 0, top: 0, height: "100%",
+              width: `${pctA}%`,
+              background: clubA.color,
+              borderRadius: "4px 0 0 4px",
+              transition: "width 1.2s cubic-bezier(0.23, 1, 0.32, 1)",
+            }} />
+            <div style={{
+              position: "absolute", right: 0, top: 0, height: "100%",
+              width: `${100 - pctA}%`,
+              background: clubB.color, opacity: 0.7,
+              borderRadius: "0 4px 4px 0",
+              transition: "width 1.2s cubic-bezier(0.23, 1, 0.32, 1)",
+            }} />
+            {/* Puck */}
+            <div style={{
+              position: "absolute",
+              top: "50%", left: `${pctA}%`,
+              transform: "translate(-50%, -50%)",
+              width: 22, height: 22, borderRadius: "50%",
+              background: "#ffffff",
+              border: "2px solid #e2e8f0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+              zIndex: 2,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "left 1.2s cubic-bezier(0.23, 1, 0.32, 1)",
+            }}>
+              <div style={{
+                width: 7, height: 7, borderRadius: "50%",
+                background: puckColor,
+                transition: "background 400ms ease",
+              }} />
+            </div>
           </div>
-          <div style={{
+
+          <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,0.5)",
-            textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4,
-          }}>
-            {clubB.nombre}
-          </div>
+            fontSize: 8, fontWeight: 900,
+            color: "#fff", background: clubB.color,
+            padding: "2px 7px", borderRadius: 3,
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            flexShrink: 0,
+          }}>{clubB.abbr}</span>
         </div>
       </div>
 
-      {/* Barra tug-of-war */}
-      <div style={{ position: "relative", zIndex: 2, marginBottom: 8 }}>
-        <div style={{
-          height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)",
-          overflow: "hidden", display: "flex",
-        }}>
-          <div style={{
-            width: `${pctA}%`, background: "#BCFF00",
-            borderRadius: "2px 0 0 2px",
-            transition: "width 1.2s cubic-bezier(0.23, 1, 0.32, 1)",
-          }} />
-          <div style={{ flex: 1, background: "rgba(255,255,255,0.15)", borderRadius: "0 2px 2px 0" }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
-          {lider ? (
-            <span style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 10, fontWeight: 900,
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase", letterSpacing: "0.08em",
-            }}>
-              {lider} lidera por{" "}
-              <span style={{ color: "#BCFF00" }}>{ventaja} {ventaja === 1 ? "pt" : "pts"}</span>
-            </span>
-          ) : total > 0 ? (
-            <span style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 10, fontWeight: 900, color: "#BCFF00",
-              textTransform: "uppercase", letterSpacing: "0.08em",
-            }}>Empate</span>
-          ) : (
-            <span style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,0.25)",
-              textTransform: "uppercase", letterSpacing: "0.08em",
-            }}>Sin partidos jugados aún</span>
-          )}
-        </div>
-      </div>
-
-      {/* Stats strip */}
-      <div style={{
-        display: "flex", justifyContent: "space-around",
-        marginTop: 20, paddingTop: 16,
-        borderTop: "1px solid rgba(255,255,255,0.07)",
-        position: "relative", zIndex: 2,
-      }}>
-        {[
-          { label: "Categorías", value: totalCategorias },
-          { label: "En juego", value: categoriasEnJuego, highlight: categoriasEnJuego > 0 },
-          { label: "Finalizadas", value: categoriasFinalizadas },
-          { label: "Pendientes", value: pendientes },
-        ].map((stat) => (
-          <div key={stat.label} style={{ textAlign: "center" }}>
-            <div style={{
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 22, fontWeight: 400, lineHeight: 1,
-              color: stat.highlight ? "#BCFF00" : "#ffffff",
-            }}>
-              {stat.value}
+      {/* Stats strip — carrusel infinito */}
+      <div style={{ position: "relative", borderTop: "1px solid #f1f5f9", overflow: "hidden" }}>
+        <InfiniteSlider gap={0} duration={18} className="py-3">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "0 28px",
+                borderRight: "1px solid #f1f5f9",
+                flexShrink: 0,
+              }}
+            >
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 20, fontWeight: 900, lineHeight: 1,
+                color: stat.live ? "#000" : "#0f172a",
+                background: stat.live ? "#BCFF00" : "transparent",
+                borderRadius: stat.live ? 4 : 0,
+                padding: stat.live ? "1px 6px" : 0,
+                display: "inline-block",
+                letterSpacing: "-0.03em",
+              }}>{stat.value}</span>
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 9, fontWeight: 700, color: "#94a3b8",
+                textTransform: "uppercase", letterSpacing: "0.12em",
+              }}>{stat.label}</span>
             </div>
-            <div style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 8, fontWeight: 900,
-              color: "rgba(255,255,255,0.3)",
-              textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4,
-            }}>
-              {stat.label}
-            </div>
-          </div>
-        ))}
+          ))}
+        </InfiniteSlider>
+        <ProgressiveBlur blurIntensity={0.6} className="pointer-events-none absolute top-0 left-0 h-full w-16" direction="left" />
+        <ProgressiveBlur blurIntensity={0.6} className="pointer-events-none absolute top-0 right-0 h-full w-16" direction="right" />
       </div>
     </div>
   )
