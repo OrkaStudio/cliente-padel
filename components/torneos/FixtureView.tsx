@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,17 +41,35 @@ function formatPareja(pareja: { jugador1: { nombre: string; apellido: string } |
   return j1 || j2 || "—"
 }
 
-export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; initialSedeId?: string | null }) {
+export function FixtureView({ partidos }: { partidos: Partido[] }) {
   const [search, setSearch]             = useState("")
   const [showFinalizados, setShowFin]   = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const selSede = searchParams.get("sede")
+  const [favoritoId, setFavoritoId]     = useState<string | null>(null)
 
+  useEffect(() => {
+    setFavoritoId(localStorage.getItem("padel_favorite"))
+  }, [])
+
+  const toggleFavorito = (id: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (favoritoId === id) {
+       localStorage.removeItem("padel_favorite")
+       setFavoritoId(null)
+    } else {
+       localStorage.setItem("padel_favorite", id)
+       setFavoritoId(id)
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectSede = (id: string | null) => {
     const url = id ? `${pathname}?sede=${id}` : pathname
-    router.replace(url, { scroll: false })
+    router.replace(url as any, { scroll: false })
   }
 
   const sedes = useMemo(() => {
@@ -72,8 +90,15 @@ export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; 
         formatPareja(p.pareja2).toLowerCase().includes(q)
       )
     }
+    if (favoritoId) {
+      list = [...list].sort((a, b) => {
+        const aFav = a.pareja1_id === favoritoId || a.pareja2_id === favoritoId
+        const bFav = b.pareja1_id === favoritoId || b.pareja2_id === favoritoId
+        return (aFav === bFav) ? 0 : aFav ? -1 : 1
+      })
+    }
     return list
-  }, [partidos, selSede, search])
+  }, [partidos, selSede, search, favoritoId])
 
   const live        = filtered.filter((p: Partido) => p.estado === "en_vivo")
   const pendientes  = filtered.filter((p: Partido) => p.estado === "pendiente")
@@ -143,7 +168,7 @@ export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; 
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <div style={{
                 width: 7, height: 7, borderRadius: "50%", background: "#22c55e",
-                boxShadow: "0 0 0 2px rgba(34,197,94,0.25)",
+                animation: "pulseLive 2s infinite ease-in-out",
               }} />
               <span style={{
                 fontFamily: "var(--font-space-grotesk), sans-serif",
@@ -198,7 +223,7 @@ export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; 
               <div style={{ flex: 1, height: 1.5, background: "#22c55e", opacity: 0.3 }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {live.map((p: Partido, i: number) => <PartidoCard key={p.id} partido={p} index={i} />)}
+              {live.map((p: Partido, i: number) => <PartidoCard key={p.id} partido={p} index={i} favoritoId={favoritoId} toggleFavorito={toggleFavorito} />)}
             </div>
           </div>
         )}
@@ -226,7 +251,7 @@ export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; 
               </span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {dayP.map((p: Partido, i: number) => <PartidoCard key={p.id} partido={p} index={i} />)}
+              {dayP.map((p: Partido, i: number) => <PartidoCard key={p.id} partido={p} index={i} favoritoId={favoritoId} toggleFavorito={toggleFavorito} />)}
             </div>
           </div>
         ))}
@@ -246,7 +271,7 @@ export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; 
               <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {finalizados.map((p: Partido, i: number) => <PartidoCard key={p.id} partido={p} index={i} />)}
+              {finalizados.map((p: Partido, i: number) => <PartidoCard key={p.id} partido={p} index={i} favoritoId={favoritoId} toggleFavorito={toggleFavorito} />)}
             </div>
           </div>
         )}
@@ -272,7 +297,11 @@ export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; 
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 40, color: "#cbd5e1", display: "block" }}>sports_tennis</span>
             <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, color: "#94a3b8", marginTop: 8 }}>
-              {search ? "Sin resultados" : "Sin partidos cargados"}
+              {search
+                ? `No encontramos a "${search}"`
+                : selSede
+                  ? "Sin partidos para esta sede"
+                  : "Fixture no disponible aún"}
             </p>
           </div>
         )}
@@ -282,6 +311,11 @@ export function FixtureView({ partidos, initialSedeId }: { partidos: Partido[]; 
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(6px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseLive {
+          0% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 2px rgba(34,197,94,0.25); }
+          50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 0 6px rgba(34,197,94,0.1); }
+          100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 2px rgba(34,197,94,0.25); }
         }
       `}</style>
     </div>
@@ -309,7 +343,7 @@ function SedeChip({ active, onClick, color, children }: { active: boolean; onCli
   )
 }
 
-function PartidoCard({ partido: p, index }: { partido: Partido; index: number }) {
+function PartidoCard({ partido: p, index, favoritoId, toggleFavorito }: { partido: Partido; index: number; favoritoId?: string | null; toggleFavorito?: (id: string, e: React.MouseEvent) => void }) {
   const color   = sedeColor(p.sedes?.nombre)
   const isLive  = p.estado === "en_vivo"
   const isFin   = p.estado === "finalizado"
@@ -321,32 +355,32 @@ function PartidoCard({ partido: p, index }: { partido: Partido; index: number })
     <div style={{
       background: "#fff",
       border: "1px solid #e2e8f0",
-      borderLeft: `3px solid ${color}`,
-      borderRadius: 10,
-      padding: "10px 14px",
+      boxShadow: `inset 4px 0 0 ${color}, 0 2px 12px ${color}10`,
+      borderRadius: 12,
+      padding: "12px 14px",
       display: "flex", alignItems: "center", gap: 14,
       position: "relative",
       animation: "fadeUp 250ms cubic-bezier(0.23,1,0.32,1) both",
-      animationDelay: `${index * 40}ms`,
+      animationDelay: `${Math.min(index, 8) * 40}ms`,
     }}>
       {p.categorias?.nombre && (
         <span style={{
-          position: "absolute", top: 8, right: 10,
+          position: "absolute", top: 10, right: 12,
           fontFamily: "var(--font-space-grotesk), sans-serif",
           fontSize: 8, fontWeight: 900, letterSpacing: "0.06em",
           textTransform: "uppercase",
-          background: `${color}18`,
+          background: `${color}15`,
           color: color,
-          padding: "2px 7px", borderRadius: 4,
+          padding: "3px 8px", borderRadius: 100,
         }}>
           {p.categorias.nombre}
         </span>
       )}
       {/* Hora + cancha + sede */}
-      <div style={{ flexShrink: 0, width: 64 }}>
+      <div style={{ flexShrink: 0, width: 68 }}>
         <p style={{
           fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: 15, fontWeight: 400,
+          fontSize: 16, fontWeight: 400,
           color: isLive ? color : "#0f172a",
           margin: 0, lineHeight: 1,
         }}>
@@ -356,32 +390,47 @@ function PartidoCard({ partido: p, index }: { partido: Partido; index: number })
           <p style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 9, fontWeight: 700, color: "#94a3b8",
-            textTransform: "uppercase", margin: "3px 0 1px", letterSpacing: "0.04em",
+            textTransform: "uppercase", margin: "4px 0 3px", letterSpacing: "0.04em",
           }}>
             Cancha {p.cancha}
           </p>
         )}
         {p.sedes?.nombre && (
-          <p style={{
+          <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 9, color: color, fontWeight: 700,
-            textTransform: "uppercase", margin: 0, letterSpacing: "0.04em",
+            fontSize: 9, color: "#fff", fontWeight: 700, background: color,
+            textTransform: "uppercase", letterSpacing: "0.05em",
+            padding: "2px 6px", borderRadius: "4px", display: "inline-block"
           }}>
             {p.sedes.nombre}
-          </p>
+          </span>
         )}
       </div>
 
       {/* Teams */}
       <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-        <span style={{
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 12, fontWeight: 700, color: "#0f172a",
-          flex: 1, textAlign: "right",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
-          {formatPareja(p.pareja1)}
-        </span>
+        <div style={{ flex: 1, display: "flex",flexDirection: "column", alignItems: "flex-end", gap: 6, minWidth: 0 }}>
+          <span onClick={(e) => toggleFavorito && p.pareja1_id && toggleFavorito(p.pareja1_id, e)} style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 12, fontWeight: 700, color: "#0f172a",
+            textAlign: "right",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            width: "100%", cursor: toggleFavorito ? "pointer" : "default", WebkitTapHighlightColor: "transparent"
+          }}>
+            {favoritoId === p.pareja1_id && <span style={{ color: "#22c55e", marginRight: 4 }}>★</span>}
+            {formatPareja(p.pareja1)}
+          </span>
+          <span onClick={(e) => toggleFavorito && p.pareja2_id && toggleFavorito(p.pareja2_id, e)} style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 12, fontWeight: 700, color: "#0f172a",
+            textAlign: "right",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            width: "100%", cursor: toggleFavorito ? "pointer" : "default", WebkitTapHighlightColor: "transparent"
+          }}>
+            {favoritoId === p.pareja2_id && <span style={{ color: "#22c55e", marginRight: 4 }}>★</span>}
+            {formatPareja(p.pareja2)}
+          </span>
+        </div>
 
         {score ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 2 }}>
@@ -413,15 +462,10 @@ function PartidoCard({ partido: p, index }: { partido: Partido; index: number })
             vs
           </span>
         )}
-
-        <span style={{
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 12, fontWeight: 700, color: "#0f172a",
-          flex: 1,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
-          {formatPareja(p.pareja2)}
-        </span>
+        {p.pareja2 && (
+          // Omitimos la segunda etiqueta suelta, ya incluimos p.pareja2 arriba en la columna
+          null
+        )}
       </div>
     </div>
   )

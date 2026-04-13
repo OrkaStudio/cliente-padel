@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "motion/react"
 import { ResultadoSheet } from "./ResultadoSheet"
 import { marcarEnVivoAction } from "@/actions/partidos.actions"
+import { Toast } from "@/components/ui/Toast"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Partido = any
@@ -27,6 +28,7 @@ export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[
   const [sheetPartido, setSheetPartido] = useState<Partido | null>(null)
   const [iniciando, startInicio] = useTransition()
   const [iniciandoId, setIniciandoId] = useState<string | null>(null)
+  const [toastMsg, setToastMsg] = useState<string | null>(null)
 
   const hoy = new Date().toISOString().slice(0, 10)
 
@@ -46,8 +48,13 @@ export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[
   const handleIniciar = (p: Partido) => {
     setIniciandoId(p.id)
     startInicio(async () => {
-      await marcarEnVivoAction({ partidoId: p.id })
+      const [, err] = await marcarEnVivoAction({ partidoId: p.id })
       setIniciandoId(null)
+      if (err) {
+        setToastMsg(err.message ?? "No se pudo iniciar el partido")
+        return
+      }
+      router.refresh()
     })
   }
 
@@ -105,11 +112,25 @@ export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[
           </Section>
         )}
 
-        {/* PRÓXIMOS — sin botón, se inician solos por hora */}
+        {/* PRÓXIMOS — con botón manual para iniciar */}
         {proximos.length > 0 && (
           <Section label="Próximos">
             {proximos.map((p: Partido, i: number) => (
-              <PartidoCard key={p.id} partido={p} index={i} />
+              <PartidoCard
+                key={p.id} partido={p} index={i}
+                accion={
+                  <motion.button
+                    onClick={() => handleIniciar(p)}
+                    disabled={iniciando && iniciandoId === p.id}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.16, type: "spring", stiffness: 300, damping: 20 }}
+                    style={btnStyle("#f1f5f9", "#0f172a", iniciando && iniciandoId === p.id)}
+                  >
+                    <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, lineHeight: 1 }}>play_arrow</span>
+                    {iniciando && iniciandoId === p.id ? "Iniciando..." : "Iniciar partido"}
+                  </motion.button>
+                }
+              />
             ))}
           </Section>
         )}
@@ -152,6 +173,7 @@ export function VeedorView({ partidos, sedeName, isAdmin }: { partidos: Partido[
         onClose={() => setSheetPartido(null)}
         onSuccess={() => { setSheetPartido(null); router.refresh() }}
       />
+      <Toast message={toastMsg} type="error" onDismiss={() => setToastMsg(null)} />
     </div>
   )
 }
@@ -189,22 +211,28 @@ function PartidoCard({ partido: p, index, accion, finalizado }: {
 
   return (
     <div style={{
-      background: "#fff",
+      background: isLive ? "#0f172a" : "#fff",
       border: `1px solid ${isLive ? "#bcff00" : "#e2e8f0"}`,
       borderRadius: 12,
       overflow: "hidden",
       opacity: finalizado ? 0.7 : 1,
       animation: "fadeUp 300ms cubic-bezier(0.23,1,0.32,1) both",
-      animationDelay: `${index * 40}ms`,
+      animationDelay: `${Math.min(index, 8) * 40}ms`,
     }}>
       {/* Header */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "8px 12px",
-        background: isLive ? "#0f172a" : "#f8fafc",
-        borderBottom: "1px solid #f1f5f9",
+        background: isLive ? "rgba(255,255,255,0.05)" : "#f8fafc",
+        borderBottom: `1px solid ${isLive ? "rgba(255,255,255,0.1)" : "#f1f5f9"}`,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {isLive && (
+            <div style={{
+              width: 6, height: 6, borderRadius: "50%", background: "#bcff00",
+              boxShadow: "0 0 8px #bcff00", animation: "pulseLive 2s infinite"
+            }} />
+          )}
           <span style={{
             fontFamily: "var(--font-anton), Anton, sans-serif",
             fontSize: 13, color: isLive ? "#fff" : "#0f172a",
@@ -214,9 +242,9 @@ function PartidoCard({ partido: p, index, accion, finalizado }: {
           {p.cancha && (
             <span style={{
               fontSize: 10, fontWeight: 700,
-              color: isLive ? "#bcff00" : "#64748b",
+              color: isLive ? "#0f172a" : "#64748b",
               fontFamily: "var(--font-space-grotesk), sans-serif",
-              background: isLive ? "rgba(188,255,0,0.15)" : "#f1f5f9",
+              background: isLive ? "#bcff00" : "#f1f5f9",
               padding: "2px 6px", borderRadius: 3,
             }}>
               C{p.cancha}
@@ -225,7 +253,7 @@ function PartidoCard({ partido: p, index, accion, finalizado }: {
         </div>
         {p.categorias?.nombre && (
           <span style={{
-            fontSize: 9, fontWeight: 900, color: isLive ? "#94a3b8" : "#94a3b8",
+            fontSize: 9, fontWeight: 900, color: isLive ? "#bcff00" : "#94a3b8",
             fontFamily: "var(--font-space-grotesk), sans-serif",
             textTransform: "uppercase", letterSpacing: "0.05em",
           }}>
@@ -236,19 +264,19 @@ function PartidoCard({ partido: p, index, accion, finalizado }: {
 
       {/* Equipos */}
       <div style={{ padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", lineHeight: 1.3 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: isLive ? "#f8fafc" : "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", lineHeight: 1.3 }}>
           {nombrePareja(p.pareja1)}
         </span>
         <span style={{
           fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: score ? 18 : 12, color: score ? "#0f172a" : "#94a3b8",
+          fontSize: score ? 18 : 12, color: score && isLive ? "#0f172a" : score ? "#0f172a" : (isLive ? "#64748b" : "#94a3b8"),
           background: score && isLive ? "#bcff00" : score ? "#f1f5f9" : "transparent",
           padding: score ? "2px 8px" : "0",
           borderRadius: 4, textAlign: "center", minWidth: 48,
         }}>
           {score ?? "VS"}
         </span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", lineHeight: 1.3, textAlign: "right" }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: isLive ? "#f8fafc" : "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", lineHeight: 1.3, textAlign: "right" }}>
           {nombrePareja(p.pareja2)}
         </span>
       </div>

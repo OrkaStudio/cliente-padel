@@ -1,21 +1,14 @@
-export const dynamic = "force-dynamic"
+export const revalidate = 15
 
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { TablaView } from "@/components/torneos/TablaView"
 
-export default async function TablaPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ cat?: string }>
-}) {
+export default async function TablaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { cat } = await searchParams
   const supabase = await createClient()
 
-  // Categorías del torneo
+  // Categorías primero (necesitamos sus IDs para la query de grupos)
   const { data: torneoCategorias } = await supabase
     .from("torneo_categorias")
     .select(`id, categoria_id, categorias ( id, nombre, tipo, orden )`)
@@ -24,10 +17,9 @@ export default async function TablaPage({
 
   if (!torneoCategorias) notFound()
 
-  // Grupos con sus parejas y posiciones
-  const { data: grupos } = await supabase
-    .from("grupos")
-    .select(`
+  // Grupos y partidos en paralelo
+  const [{ data: grupos }, { data: partidos }] = await Promise.all([
+    supabase.from("grupos").select(`
       id, nombre,
       torneo_categoria_id,
       grupo_parejas (
@@ -38,16 +30,13 @@ export default async function TablaPage({
           jugador2:jugadores!jugador2_id ( nombre, apellido )
         )
       )
-    `)
-    .in("torneo_categoria_id", torneoCategorias.map(tc => tc.id))
-
-  // Partidos finalizados para calcular stats
-  const { data: partidos } = await supabase
-    .from("partidos")
-    .select("id, pareja1_id, pareja2_id, resultado, estado, categoria_id")
-    .eq("torneo_id", id)
-    .eq("tipo", "grupo")
-    .eq("estado", "finalizado")
+    `).in("torneo_categoria_id", torneoCategorias.map(tc => tc.id)),
+    supabase.from("partidos")
+      .select("id, pareja1_id, pareja2_id, resultado, estado, categoria_id")
+      .eq("torneo_id", id)
+      .eq("tipo", "grupo")
+      .eq("estado", "finalizado"),
+  ])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const categorias = (torneoCategorias ?? []).map(tc => ({
@@ -64,7 +53,7 @@ export default async function TablaPage({
       categorias={categorias}
       grupos={grupos ?? []}
       partidos={partidos ?? []}
-      initialCatId={cat ?? null}
+      initialCatId={null}
     />
   )
 }

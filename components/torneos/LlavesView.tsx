@@ -64,15 +64,19 @@ export function LlavesView({ partidos, categorias, initialCatId }: {
   const searchParams = useSearchParams()
   const selCatId = searchParams.get("cat") ?? categorias[0]?.id ?? null
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectCat = (id: string | null) => {
     const url = id ? `${pathname}?cat=${id}` : pathname
-    router.replace(url, { scroll: false })
+    router.replace(url as any, { scroll: false })
   }
 
-  const filtrados = useMemo(
-    () => selCatId ? partidos.filter((p: Partido) => p.categorias?.id === selCatId) : partidos,
-    [partidos, selCatId]
-  )
+  const filtrados = useMemo(() => {
+    const porCategoria = selCatId
+      ? partidos.filter((p: Partido) => p.categorias?.id === selCatId)
+      : partidos
+    // Solo mostrar partidos que tienen ronda asignada (playoff)
+    return porCategoria.filter((p: Partido) => p.ronda != null)
+  }, [partidos, selCatId])
 
   const rondas = useMemo(() => detectRonda(filtrados), [filtrados])
 

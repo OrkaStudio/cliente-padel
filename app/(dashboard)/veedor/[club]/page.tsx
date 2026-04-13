@@ -49,7 +49,7 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
     )
   }
 
-  // Buscar sede del club en este torneo
+  // Primero buscamos la sede (necesitamos su ID para filtrar partidos en DB)
   const { data: sedes } = await supabase
     .from("sedes")
     .select("id, nombre")
@@ -67,7 +67,7 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
     )
   }
 
-  // Partidos de esta sede
+  // Traemos solo los partidos de esta sede, filtrando en DB
   const { data: partidos } = await supabase
     .from("partidos")
     .select(`
@@ -82,7 +82,6 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
         jugador2:jugadores!jugador2_id ( nombre, apellido )
       )
     `)
-    .eq("torneo_id", torneo.id)
     .eq("sede_id", sede.id)
     .order("horario")
 

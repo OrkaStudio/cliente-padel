@@ -39,7 +39,6 @@ export default async function AdminPage() {
       jugados:     partidos?.filter(p => p.estado === "finalizado").length ?? 0,
       enVivo:      partidos?.filter(p => p.estado === "en_vivo").length ?? 0,
       pendientes:  partidos?.filter(p => p.estado === "pendiente").length ?? 0,
-      recaudacion: (parejas ?? 0) * (activo.costo_inscripcion ?? 0),
     }
   }
 
@@ -107,43 +106,73 @@ export default async function AdminPage() {
             )}
           </div>
 
-          {/* Métricas */}
+          {/* Bento Box Operativo */}
           <div style={{
             display: "grid", gridTemplateColumns: "1fr 1fr",
-            gap: 10, marginBottom: 20,
+            gap: 12, marginBottom: 28,
           }}>
-            <MetricCard icon="group" label="Parejas" value={String(metricas.parejas)} />
-            <MetricCard icon="payments" label="Recaudado" value={`$${(metricas.recaudacion / 1000).toFixed(0)}K`} accent />
-            <MetricCard icon="check_circle" label="Jugados" value={String(metricas.jugados)} />
-            <MetricCard icon="schedule" label="Pendientes" value={String(metricas.pendientes)} />
-          </div>
-          {metricas.enVivo > 0 && (
-            <div style={{
-              background: "#bcff00", borderRadius: 10, padding: "12px 16px",
-              display: "flex", alignItems: "center", gap: 10, marginBottom: 20,
-            }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0f172a" }} />
-              <span style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 13, fontWeight: 900, color: "#0f172a",
+            {metricas.enVivo > 0 ? (
+              <div style={{
+                gridColumn: "span 2", background: "#bcff00", borderRadius: 16, padding: "20px 24px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                boxShadow: "0 8px 32px rgba(188,255,0,0.15)"
               }}>
-                {metricas.enVivo} partido{metricas.enVivo > 1 ? "s" : ""} en vivo ahora
-              </span>
-            </div>
-          )}
+                <div>
+                  <span style={{
+                    fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 900,
+                    textTransform: "uppercase", color: "#166534", letterSpacing: "0.06em", display: "block", marginBottom: 4
+                  }}>
+                    Operando Ahora
+                  </span>
+                  <p style={{
+                    fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 40,
+                    color: "#0f172a", margin: 0, lineHeight: 1
+                  }}>
+                    {metricas.enVivo} EN VIVO
+                  </p>
+                </div>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 52, opacity: 0.8, color: "#166534" }}>stadium</span>
+              </div>
+            ) : (
+              <div style={{
+                gridColumn: "span 2", background: "#0f172a", borderRadius: 16, padding: "20px 24px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.15)"
+              }}>
+                <div>
+                  <span style={{
+                    fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 900,
+                    textTransform: "uppercase", color: "#94a3b8", letterSpacing: "0.06em", display: "block", marginBottom: 4
+                  }}>
+                    Por jugar
+                  </span>
+                  <p style={{
+                    fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 44,
+                    color: "#fff", margin: 0, lineHeight: 1
+                  }}>
+                    {metricas.pendientes}
+                  </p>
+                </div>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 52, color: "#bcff00" }}>schedule</span>
+              </div>
+            )}
 
-          {/* Links rápidos */}
+            <MetricCard icon="group" label="Parejas" value={String(metricas.parejas)} />
+            <MetricCard icon="fact_check" label="Completados" value={String(metricas.jugados)} />
+          </div>
+
+          {/* Acciones principales (Botones táctiles enormes) */}
           <p style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 10, fontWeight: 900, color: "#94a3b8",
-            textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10,
+            fontSize: 11, fontWeight: 900, color: "#94a3b8",
+            textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12,
           }}>
-            Gestión
+            Panel de Control
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <AdminLink href={`/admin/torneo/${activo.id}`} icon="sports_tennis" label="Monitor de canchas" desc="Ver y cargar resultados de todos los partidos" />
-            <AdminLink href={`/admin/torneo/${activo.id}/fixture`} icon="edit_calendar" label="Editor de fixture" desc="Cambiar horarios y canchas de partidos" />
-            <AdminLink href={`/admin/torneo/${activo.id}/inscripcion`} icon="person_add" label="Inscripciones" desc="Gestionar parejas inscritas" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <AdminLink href={`/admin/torneo/${activo.id}`} icon="sports_tennis" label="Monitor de Canchas" desc="Cargar resultados de los partidos en juego" accent />
+            <AdminLink href={`/admin/torneo/${activo.id}/fixture`} icon="edit_calendar" label="Editar Horarios" desc="Resolver atrasos y reasignar canchas" />
+            <AdminLink href={`/admin/torneo/${activo.id}/inscripcion`} icon="person_add" label="Inscripciones" desc="Ver o agregar parejas y jugadores" />
           </div>
         </>
       )}
@@ -212,32 +241,33 @@ function MetricCard({ icon, label, value, accent }: { icon: string; label: strin
   )
 }
 
-function AdminLink({ href, icon, label, desc }: { href: string; icon: string; label: string; desc: string }) {
+function AdminLink({ href, icon, label, desc, accent }: { href: string; icon: string; label: string; desc: string; accent?: boolean }) {
   return (
     <Link href={href as never} style={{ textDecoration: "none" }}>
       <div style={{
-        background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0",
-        padding: "14px 16px",
-        display: "flex", alignItems: "center", gap: 14,
+        background: accent ? "#0f172a" : "#fff",
+        borderRadius: 16, border: `1px solid ${accent ? "transparent" : "#e2e8f0"}`,
+        padding: "18px 20px", display: "flex", alignItems: "center", gap: 16,
+        boxShadow: accent ? "0 12px 24px rgba(0,0,0,0.15)" : "none",
       }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 10,
-          background: "#f1f5f9", flexShrink: 0,
+          width: 48, height: 48, borderRadius: 12,
+          background: accent ? "#bcff00" : "#f1f5f9", flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#0f172a", lineHeight: 1 }}>{icon}</span>
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 24, color: "#0f172a", lineHeight: 1 }}>{icon}</span>
         </div>
         <div style={{ flex: 1 }}>
           <p style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0,
+            fontSize: 15, fontWeight: 900, color: accent ? "#fff" : "#0f172a", margin: "0 0 2px",
           }}>{label}</p>
           <p style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 11, color: "#94a3b8", margin: "2px 0 0",
+            fontSize: 12, color: accent ? "#94a3b8" : "#64748b", margin: 0, lineHeight: 1.3
           }}>{desc}</p>
         </div>
-        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, color: "#cbd5e1" }}>chevron_right</span>
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 24, color: accent ? "#334155" : "#cbd5e1" }}>chevron_right</span>
       </div>
     </Link>
   )

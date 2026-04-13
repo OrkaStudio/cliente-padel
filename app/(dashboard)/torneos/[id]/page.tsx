@@ -9,11 +9,13 @@ import { LiveMatchBanner } from "@/components/torneos/LiveMatchBanner"
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyHref = any
 
+export const revalidate = 30
+
 export default async function TorneoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
 
-  // Torneo + sedes
+  // Torneo primero (necesario para notFound)
   const { data: torneo } = await supabase
     .from("torneos")
     .select("id, nombre, fecha_inicio, fecha_fin, estado, costo_inscripcion")
@@ -22,43 +24,20 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
 
   if (!torneo) notFound()
 
-  const { data: sedes } = await supabase
-    .from("sedes")
-    .select("id, nombre")
-    .eq("torneo_id", id)
-
-  // Categorías activas con conteo de parejas
-  const { data: torneoCategorias } = await supabase
-    .from("torneo_categorias")
-    .select(`
-      id,
-      categoria_id,
-      categorias ( id, nombre, tipo, orden )
-    `)
-    .eq("torneo_id", id)
-    .order("categorias(orden)")
-
-  // Conteo total de parejas
-  const { count: totalParejas } = await supabase
-    .from("parejas")
-    .select("*", { count: "exact", head: true })
-    .eq("torneo_id", id)
-
-  // Contar parejas por categoría
-  const { data: parejasPorCat } = await supabase
-    .from("parejas")
-    .select("categoria_id")
-    .eq("torneo_id", id)
-
-  const parejasCountMap: Record<string, number> = {}
-  parejasPorCat?.forEach(p => {
-    parejasCountMap[p.categoria_id] = (parejasCountMap[p.categoria_id] ?? 0) + 1
-  })
-
-  // Partido en vivo (si existe)
-  const { data: partidoEnVivo } = await supabase
-    .from("partidos")
-    .select(`
+  // Resto en paralelo
+  const [
+    { data: sedes },
+    { data: torneoCategorias },
+    { data: parejasPorCat },
+    { data: partidoEnVivo },
+  ] = await Promise.all([
+    supabase.from("sedes").select("id, nombre").eq("torneo_id", id),
+    supabase.from("torneo_categorias")
+      .select("id, categoria_id, categorias ( id, nombre, tipo, orden )")
+      .eq("torneo_id", id)
+      .order("categorias(orden)"),
+    supabase.from("parejas").select("categoria_id").eq("torneo_id", id),
+    supabase.from("partidos").select(`
       id, horario, cancha,
       sedes ( nombre ),
       pareja1:parejas!pareja1_id (
@@ -69,11 +48,13 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
         jugador1:jugadores!jugador1_id ( nombre, apellido ),
         jugador2:jugadores!jugador2_id ( nombre, apellido )
       )
-    `)
-    .eq("torneo_id", id)
-    .eq("estado", "en_vivo")
-    .limit(1)
-    .maybeSingle()
+    `).eq("torneo_id", id).eq("estado", "en_vivo").limit(1).maybeSingle(),
+  ])
+
+  const parejasCountMap: Record<string, number> = {}
+  parejasPorCat?.forEach(p => {
+    parejasCountMap[p.categoria_id] = (parejasCountMap[p.categoria_id] ?? 0) + 1
+  })
 
   const categorias = (torneoCategorias ?? []).map(tc => ({
     id: tc.categoria_id,
@@ -90,12 +71,12 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
     <div style={{ paddingBottom: 100 }}>
 
       {/* Back */}
-      <div style={{ padding: "10px 18px 0" }}>
+      <div style={{ padding: "16px 18px 10px", background: "#0f172a" }}>
         <Link
           href={"/torneos" as AnyHref}
           style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            color: "#64748b", textDecoration: "none",
+            color: "#94a3b8", textDecoration: "none",
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 12, fontWeight: 800, textTransform: "uppercase",
             WebkitTapHighlightColor: "transparent",
@@ -106,56 +87,89 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
         </Link>
       </div>
 
-      {/* Hero */}
-      <div style={{ padding: "32px 18px 40px", position: "relative", overflow: "hidden" }}>
-        {/* Texto decorativo de fondo */}
+      {/* Hero Premium */}
+      <div style={{
+        padding: "20px 18px 40px", position: "relative", overflow: "hidden",
+        background: "#0f172a", borderRadius: "0 0 32px 32px",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.15)"
+      }}>
+        {/* Mesh glow effects */}
         <div style={{
-          position: "absolute", top: 20, right: -30,
-          fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: 160, color: "rgba(0,0,0,0.04)", lineHeight: 1,
-          userSelect: "none", pointerEvents: "none",
-          transform: "rotate(-10deg)", fontWeight: 400,
-        }}>
-          2026
-        </div>
+          position: "absolute", top: -80, right: -60,
+          width: 250, height: 250, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(188,255,0,0.15) 0%, rgba(188,255,0,0) 70%)",
+          filter: "blur(40px)", pointerEvents: "none"
+        }} />
+        <div style={{
+          position: "absolute", bottom: -60, left: -40,
+          width: 200, height: 200, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(188,255,0,0.08) 0%, rgba(188,255,0,0) 70%)",
+          filter: "blur(40px)", pointerEvents: "none"
+        }} />
 
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
             <StatusBadge status={torneo.estado} />
+            {torneo.estado === "en_curso" && (
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900,
+                color: "#15803d", background: "#bbf7d0", padding: "2px 8px", borderRadius: 100, textTransform: "uppercase", letterSpacing: "0.05em"
+              }}>Active</span>
+            )}
           </div>
 
           <h1 style={{
             fontFamily: "var(--font-anton), Anton, sans-serif",
             fontSize: 52,
             lineHeight: 0.88,
-            color: "#0f172a",
+            color: "#fff",
             textTransform: "uppercase",
             letterSpacing: "-0.02em",
             fontWeight: 400,
             margin: 0,
+            textShadow: "0 4px 24px rgba(0,0,0,0.3)"
           }}>
             {torneo.nombre.split(" ").map((word: string, i: number) => (
               <span key={i} style={{ display: "block" }}>{word}</span>
             ))}
           </h1>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 20 }}>
-            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#bcff00", lineHeight: 1 }}>calendar_month</span>
-            <span style={{
-              fontSize: 13, fontWeight: 700,
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              color: "#64748b", letterSpacing: "0.04em",
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 24, flexWrap: "wrap" }}>
+            <div style={{
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)",
+              padding: "6px 12px", borderRadius: 100, display: "flex", alignItems: "center", gap: 6
             }}>
-              {torneo.fecha_inicio} → {torneo.fecha_fin}
-              {sedeNombres ? ` · ${sedeNombres}` : ""}
-            </span>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#bcff00", lineHeight: 1 }}>calendar_month</span>
+              <span style={{
+                fontSize: 12, fontWeight: 700,
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                color: "#f8fafc", letterSpacing: "0.02em",
+              }}>
+                {torneo.fecha_inicio} → {torneo.fecha_fin}
+              </span>
+            </div>
+            {sedeNombres && (
+              <div style={{
+                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)",
+                padding: "6px 12px", borderRadius: 100, display: "flex", alignItems: "center", gap: 6
+              }}>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 15, color: "#bcff00", lineHeight: 1 }}>location_on</span>
+                <span style={{
+                  fontSize: 12, fontWeight: 700,
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  color: "#f8fafc", letterSpacing: "0.02em",
+                }}>
+                  {sedeNombres}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Stats Marquee */}
       <StatsMarquee
-        parejas={totalParejas ?? 0}
+        parejas={parejasPorCat?.length ?? 0}
         categorias={categorias.length}
         costo={torneo.costo_inscripcion}
       />

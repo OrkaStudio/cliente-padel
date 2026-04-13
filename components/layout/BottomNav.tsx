@@ -49,20 +49,21 @@ export function BottomNav() {
   return (
     <nav style={{
       position: "fixed",
-      bottom: 0,
+      bottom: 24,
       left: "50%",
       transform: "translateX(-50%)",
-      width: "100%",
-      maxWidth: 430,
+      width: "calc(100% - 32px)",
+      maxWidth: 400,
       display: "flex",
       justifyContent: "space-around",
-      padding: "6px 6px 22px",
-      background: "rgba(255,255,255,0.92)",
-      backdropFilter: "blur(20px)",
-      WebkitBackdropFilter: "blur(20px)",
-      borderTop: "1px solid #e2e8f0",
+      padding: "8px 6px",
+      background: "rgba(15, 23, 42, 0.8)",
+      backdropFilter: "blur(24px)",
+      WebkitBackdropFilter: "blur(24px)",
+      border: "1px solid rgba(255, 255, 255, 0.08)",
+      boxShadow: "0 16px 32px rgba(0,0,0,0.3)",
       zIndex: 100,
-      borderRadius: "24px 24px 0 0",
+      borderRadius: "100px",
     }}>
       {items.map(it => {
         const active = isActive(it.href)
@@ -74,14 +75,14 @@ export function BottomNav() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 1,
+              gap: 2,
               background: active ? "rgba(188,255,0,0.12)" : "transparent",
-              borderRadius: 12,
-              padding: "5px 20px",
+              borderRadius: 30, // Pill inner
+              padding: "6px 16px",
               cursor: "pointer",
               textDecoration: "none",
-              minWidth: 64,
-              // Emil: no transition en nav — se usa constantemente en mobile
+              minWidth: 56,
+              // Emil: no transition en nav mobile
               WebkitTapHighlightColor: "transparent",
             }}
           >
@@ -89,7 +90,7 @@ export function BottomNav() {
               fontFamily: "'Material Symbols Outlined'",
               fontVariationSettings: `'FILL' ${active ? 1 : 0}, 'wght' 400`,
               fontSize: 22,
-              color: active ? "#bcff00" : "#64748b",
+              color: active ? "#bcff00" : "#94a3b8",
               lineHeight: 1,
             }}>
               {it.icon}
@@ -99,7 +100,7 @@ export function BottomNav() {
               fontWeight: 900,
               letterSpacing: "0.04em",
               textTransform: "uppercase",
-              color: active ? "#bcff00" : "#64748b",
+              color: active ? "#bcff00" : "#94a3b8",
               fontFamily: "var(--font-space-grotesk), Space Grotesk, sans-serif",
             }}>
               {it.label}

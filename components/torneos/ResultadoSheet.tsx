@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { actualizarResultadoAction } from "@/actions/partidos.actions"
+import { Toast } from "@/components/ui/Toast"
 
 interface Pareja {
   jugador1: { nombre: string; apellido: string } | null
@@ -20,48 +21,48 @@ type SetScore = { p1: number; p2: number }
 
 function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-      {/* Flecha arriba — siempre visible */}
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* Flecha abajo (-) */}
       <button
-        onClick={() => onChange(value + 1)}
+        onClick={() => onChange(value - 1)}
+        disabled={value === 0}
         style={{
-          width: 44, height: 44, borderRadius: 10,
-          border: "1.5px solid #e2e8f0", background: "#f8fafc",
-          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          WebkitTapHighlightColor: "transparent",
+          width: 44, height: 48, borderRadius: 12,
+          border: "1px solid #e2e8f0", background: "#f8fafc",
+          cursor: value === 0 ? "default" : "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          opacity: value === 0 ? 0.4 : 1,
+          pointerEvents: value === 0 ? "none" : "auto",
+          WebkitTapHighlightColor: "transparent", flexShrink: 0,
         }}
       >
-        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#0f172a", lineHeight: 1 }}>
-          keyboard_arrow_up
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 24, color: "#64748b", lineHeight: 1 }}>
+          remove
         </span>
       </button>
 
       {/* Número */}
       <span style={{
         fontFamily: "var(--font-anton), Anton, sans-serif",
-        fontSize: 40, fontWeight: 400, color: "#0f172a",
-        lineHeight: 1, minWidth: 44, textAlign: "center",
+        fontSize: 36, fontWeight: 400, color: "#0f172a",
+        lineHeight: 1, minWidth: 28, textAlign: "center",
       }}>
         {value}
       </span>
 
-      {/* Flecha abajo — solo si value > 0, pero reserva espacio siempre */}
+      {/* Flecha arriba (+) MASIVA */}
       <button
-        onClick={() => onChange(value - 1)}
-        disabled={value === 0}
+        onClick={() => onChange(value + 1)}
         style={{
-          width: 44, height: 44, borderRadius: 10,
-          border: "1.5px solid #e2e8f0", background: "#f8fafc",
-          cursor: value === 0 ? "default" : "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          opacity: value === 0 ? 0 : 1,
-          pointerEvents: value === 0 ? "none" : "auto",
-          transition: "opacity 150ms ease",
-          WebkitTapHighlightColor: "transparent",
+          width: 56, height: 48, borderRadius: 12,
+          border: "none", background: "#0f172a",
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          WebkitTapHighlightColor: "transparent", flexShrink: 0,
+          boxShadow: "0 4px 12px rgba(15,23,42,0.15)",
         }}
       >
-        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#0f172a", lineHeight: 1 }}>
-          keyboard_arrow_down
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 28, color: "#bcff00", lineHeight: 1 }}>
+          add
         </span>
       </button>
     </div>
@@ -194,7 +195,9 @@ export function ResultadoSheet({
   }
 
   return (
-    <AnimatePresence>
+    <>
+      <Toast message={error} type="error" onDismiss={() => setError(null)} />
+      <AnimatePresence>
       {partido && (
         <>
           <motion.div
@@ -309,10 +312,6 @@ export function ResultadoSheet({
               )}
             </div>
 
-            {error && (
-              <p style={{ fontSize: 12, color: "#ef4444", fontFamily: "var(--font-space-grotesk), sans-serif", marginBottom: 12, textAlign: "center" }}>{error}</p>
-            )}
-
             {/* Botones */}
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={onClose} style={{
@@ -324,25 +323,26 @@ export function ResultadoSheet({
               </button>
               <motion.button
                 onClick={handleGuardar}
-                disabled={pending || !hayGanador}
+                disabled={pending}
                 whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.16, type: "spring", stiffness: 300, damping: 20 }}
                 style={{
                   flex: 2, padding: "14px", borderRadius: 10, border: "none",
-                  background: pending || !hayGanador ? "#94a3b8" : "#0f172a",
-                  color: "#fff",
+                  background: pending ? "#94a3b8" : (hayGanador ? "#166534" : "#0f172a"),
+                  color: hayGanador ? "#bcff00" : "#fff",
                   fontFamily: "var(--font-space-grotesk), sans-serif",
                   fontSize: 13, fontWeight: 900,
-                  cursor: pending || !hayGanador ? "not-allowed" : "pointer",
+                  cursor: pending ? "not-allowed" : "pointer",
                   letterSpacing: "0.04em",
                 }}
               >
-                {pending ? "Guardando..." : "Guardar resultado"}
+                {pending ? "Guardando..." : (hayGanador ? "🏆 Finalizar Partido" : "💾 Guardar Parcial")}
               </motion.button>
             </div>
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </>
   )
 }

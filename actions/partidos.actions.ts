@@ -12,6 +12,12 @@ export const marcarEnVivoAction = createServerAction()
   .input(z.object({ partidoId: z.string().uuid() }))
   .handler(async ({ input }) => {
     const supabase = createAdminClient()
+    const { data: partido } = await supabase
+      .from("partidos")
+      .select("estado")
+      .eq("id", input.partidoId)
+      .single()
+    if (partido?.estado !== "pendiente") throw new Error("El partido no está pendiente")
     const { error } = await supabase
       .from("partidos")
       .update({ estado: "en_vivo" })
@@ -33,14 +39,15 @@ export const actualizarResultadoAction = createServerAction()
     const sets_pareja1 = input.sets.filter(s => s.p1 > s.p2).length
     const sets_pareja2 = input.sets.filter(s => s.p2 > s.p1).length
 
-    if (sets_pareja1 === sets_pareja2) throw new Error("No puede terminar empatado")
+    const hayGanador = (sets_pareja1 >= 2 || sets_pareja2 >= 2) && (sets_pareja1 !== sets_pareja2)
+    const nuevoEstado = hayGanador ? "finalizado" : "en_vivo"
 
     const supabase = createAdminClient()
     const { error } = await supabase
       .from("partidos")
       .update({
         resultado: { sets_pareja1, sets_pareja2, sets: input.sets },
-        estado: "finalizado",
+        estado: nuevoEstado,
       })
       .eq("id", input.partidoId)
     if (error) throw error

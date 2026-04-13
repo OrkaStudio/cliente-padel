@@ -1,14 +1,13 @@
 "use server"
 
 import { createServerAction } from "zsa"
-import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { buscarJugadoresInputSchema, crearJugadorInputSchema } from "@/validations/jugador.schema"
 
 export const buscarJugadoresAction = createServerAction()
   .input(buscarJugadoresInputSchema)
   .handler(async ({ input }) => {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     let query = supabase
       .from("jugadores")
       .select("id, nombre, apellido, categoria_id")

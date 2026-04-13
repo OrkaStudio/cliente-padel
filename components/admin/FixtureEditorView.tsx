@@ -197,7 +197,7 @@ function FilaPartido({ partido, todosPartidos }: { partido: Partido; todosPartid
             fontSize: 10, fontWeight: 900, color: "#64748b",
             textTransform: "uppercase", letterSpacing: "0.04em",
           }}>
-            Cambiar por
+            Reasignar Turno
           </span>
         </button>
       </div>
@@ -303,7 +303,7 @@ function SwapSheet({ partido, opciones, onClose }: {
             fontSize: 18, fontWeight: 400, color: "#0f172a",
             textTransform: "uppercase", margin: "0 0 2px",
           }}>
-            Cambiar por...
+            Destino del Mapeo
           </h3>
           <p style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
@@ -377,31 +377,46 @@ function SwapSheet({ partido, opciones, onClose }: {
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {opcionesFiltradas.map(p => {
                 const esSel = seleccionado?.id === p.id
+                const difCat = p.categorias?.id !== partido.categorias?.id
+                const difDia = p.horario && partido.horario && p.horario.slice(0, 10) !== partido.horario.slice(0, 10)
+                
                 return (
                   <button key={p.id} onClick={() => setSeleccionado(esSel ? null : p)}
                     style={{
                       width: "100%", padding: "10px 12px",
                       borderRadius: 10, cursor: "pointer", textAlign: "left",
                       border: esSel ? "2px solid #0f172a" : "1px solid #e2e8f0",
-                      background: esSel ? "#0f172a" : "#f8fafc",
+                      background: esSel ? "#0f172a" : (difCat ? "#fef2f2" : "#f8fafc"),
                       WebkitTapHighlightColor: "transparent",
                       display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
                     }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      {p.categorias?.nombre && (
-                        <p style={{
-                          fontFamily: "var(--font-space-grotesk), sans-serif",
-                          fontSize: 8, fontWeight: 900, margin: "0 0 2px",
-                          color: esSel ? "#bcff00" : "#94a3b8",
-                          textTransform: "uppercase", letterSpacing: "0.06em",
-                        }}>
-                          {p.categorias.nombre}
-                        </p>
-                      )}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                        {p.categorias?.nombre && (
+                          <span style={{
+                            fontFamily: "var(--font-space-grotesk), sans-serif",
+                            fontSize: 8, fontWeight: 900,
+                            color: esSel ? "#bcff00" : (difCat ? "#ef4444" : "#94a3b8"),
+                            textTransform: "uppercase", letterSpacing: "0.06em",
+                          }}>
+                            {p.categorias.nombre}
+                          </span>
+                        )}
+                        {difCat && !esSel && (
+                          <span style={{ fontSize: 9, background: "#fee2e2", color: "#b91c1c", padding: "2px 4px", borderRadius: 4, fontWeight: 700 }}>
+                            ⚠️ OTRA CATEGORÍA
+                          </span>
+                        )}
+                        {difDia && !esSel && (
+                          <span style={{ fontSize: 9, background: "#ffedd5", color: "#c2410c", padding: "2px 4px", borderRadius: 4, fontWeight: 700 }}>
+                            ⚠️ OTRO DÍA
+                          </span>
+                        )}
+                      </div>
                       <span style={{
                         fontFamily: "var(--font-space-grotesk), sans-serif",
                         fontSize: 12, fontWeight: 700,
-                        color: esSel ? "#fff" : "#0f172a",
+                        color: esSel ? "#fff" : "#0f172a", display: "block"
                       }}>
                         {nombrePareja(p.pareja1)}
                         <span style={{ fontWeight: 400, color: esSel ? "#94a3b8" : "#94a3b8", margin: "0 4px" }}>vs</span>

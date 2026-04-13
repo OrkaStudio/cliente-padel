@@ -213,4 +213,59 @@ begin
 
   end loop; -- categorías
 
+  -- ────────────────────────────────────────────────────────────
+  -- Playoff: cuartos, semis, final y 3er puesto por categoría
+  -- Usando las primeras 8 parejas de cada categoría como placeholder
+  -- ────────────────────────────────────────────────────────────
+  for c in 1..6 loop
+    select id into v_cat_id from categorias where nombre = cat_nombres[c] limit 1;
+    v_sede := case when c <= 3 then v_vol else v_mas end;
+    v_tc_id := ('bbbbbbbb-0000-0000-0000-' || lpad(to_hex(c), 12, '0'))::uuid;
+
+    -- Cuartos de final (4 partidos)
+    for m in 1..4 loop
+      v_par_a := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(m * 2 - 1), 12, '0'))::uuid;
+      v_par_b := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(m * 2),     12, '0'))::uuid;
+      v_pid   := ('aaaaaaaa-' || lpad(to_hex(c), 4, '0') || '-0001-0000-' || lpad(to_hex(m),         12, '0'))::uuid;
+      insert into partidos (id, torneo_id, categoria_id, sede_id, cancha, horario, pareja1_id, pareja2_id, resultado, estado, tipo, ronda)
+      values (v_pid, v_torneo, v_cat_id, v_sede, m,
+              ('2026-04-19 09:00:00-03:00')::timestamptz,
+              v_par_a, v_par_b, null, 'pendiente', 'playoff', 'cuartos')
+      on conflict (id) do nothing;
+    end loop;
+
+    -- Semifinales (2 partidos)
+    for m in 1..2 loop
+      v_par_a := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(m * 2 + 7),  12, '0'))::uuid;
+      v_par_b := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(m * 2 + 8),  12, '0'))::uuid;
+      v_pid   := ('aaaaaaaa-' || lpad(to_hex(c), 4, '0') || '-0002-0000-' || lpad(to_hex(m),           12, '0'))::uuid;
+      insert into partidos (id, torneo_id, categoria_id, sede_id, cancha, horario, pareja1_id, pareja2_id, resultado, estado, tipo, ronda)
+      values (v_pid, v_torneo, v_cat_id, v_sede, m,
+              ('2026-04-19 11:00:00-03:00')::timestamptz,
+              v_par_a, v_par_b, null, 'pendiente', 'playoff', 'semis')
+      on conflict (id) do nothing;
+    end loop;
+
+    -- Final (1 partido)
+    v_par_a := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(13), 12, '0'))::uuid;
+    v_par_b := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(14), 12, '0'))::uuid;
+    v_pid   := ('aaaaaaaa-' || lpad(to_hex(c), 4, '0') || '-0003-0000-000000000001')::uuid;
+    insert into partidos (id, torneo_id, categoria_id, sede_id, cancha, horario, pareja1_id, pareja2_id, resultado, estado, tipo, ronda)
+    values (v_pid, v_torneo, v_cat_id, v_sede, 1,
+            ('2026-04-19 13:00:00-03:00')::timestamptz,
+            v_par_a, v_par_b, null, 'pendiente', 'playoff', 'final')
+    on conflict (id) do nothing;
+
+    -- 3er puesto (1 partido)
+    v_par_a := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(15), 12, '0'))::uuid;
+    v_par_b := ('dddddddd-' || lpad(to_hex(c), 4, '0') || '-0000-0000-' || lpad(to_hex(16), 12, '0'))::uuid;
+    v_pid   := ('aaaaaaaa-' || lpad(to_hex(c), 4, '0') || '-0004-0000-000000000001')::uuid;
+    insert into partidos (id, torneo_id, categoria_id, sede_id, cancha, horario, pareja1_id, pareja2_id, resultado, estado, tipo, ronda)
+    values (v_pid, v_torneo, v_cat_id, v_sede, 2,
+            ('2026-04-19 13:00:00-03:00')::timestamptz,
+            v_par_a, v_par_b, null, 'pendiente', 'playoff', '3er_puesto')
+    on conflict (id) do nothing;
+
+  end loop; -- playoff
+
 end $$;
