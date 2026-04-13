@@ -1,23 +1,18 @@
 import Link from "next/link"
 import { HeroMarcador } from "@/components/torneos/interclub/HeroMarcador"
 import { CategoriasInterclub } from "@/components/torneos/interclub/CategoriasInterclub"
+import { PartidosEnVivoCarousel } from "@/components/torneos/interclub/PartidosEnVivoCarousel"
 import type { CategoriaInterclub, Club } from "@/components/torneos/interclub/CategoriasInterclub"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyHref = any
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
 
 const CLUB_A: Club = { nombre: "Voleando", color: "#0f172a", abbr: "VOL", logoUrl: "/clubes/voleando.logo.png" }
 const CLUB_B: Club = { nombre: "Más Pádel", color: "#b45309", abbr: "MP", logoUrl: "/clubes/mas-padel.logo.png" }
 
 const MOCK_CATEGORIAS: CategoriaInterclub[] = [
   {
-    id: "1",
-    nombre: "Suma 12",
-    estado: "finalizado",
-    ptsA: 3,
-    ptsB: 1,
+    id: "1", nombre: "Suma 12", estado: "finalizado", ptsA: 3, ptsB: 1,
     partidos: [
       { id: "p1", pairA: "Gómez / Ruiz", pairB: "López / Torres", resultado: "6-3 7-5", ganador: "A", estado: "finalizado" },
       { id: "p2", pairA: "Gómez / Ruiz", pairB: "Díaz / Funes", resultado: "6-1 6-3", ganador: "A", estado: "finalizado" },
@@ -26,11 +21,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "2",
-    nombre: "Suma 10",
-    estado: "en_vivo",
-    ptsA: 1,
-    ptsB: 1,
+    id: "2", nombre: "Suma 10", estado: "en_vivo", ptsA: 1, ptsB: 1,
     partidos: [
       { id: "p5", pairA: "Ferreyra / Ríos", pairB: "Campos / Bravo", resultado: "6-3 6-4", ganador: "A", estado: "finalizado" },
       { id: "p6", pairA: "Ferreyra / Ríos", pairB: "Herrera / Sosa", resultado: "3-6 4-6", ganador: "B", estado: "finalizado" },
@@ -39,11 +30,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "3",
-    nombre: "Mixtos A",
-    estado: "en_vivo",
-    ptsA: 0,
-    ptsB: 2,
+    id: "3", nombre: "Mixtos A", estado: "en_vivo", ptsA: 0, ptsB: 2,
     partidos: [
       { id: "p9", pairA: "García / Vega", pairB: "Martín / Paz", resultado: "3-6 2-6", ganador: "B", estado: "finalizado" },
       { id: "p10", pairA: "García / Vega", pairB: "Núñez / Reyes", resultado: "1-6 2-6", ganador: "B", estado: "finalizado" },
@@ -52,11 +39,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "4",
-    nombre: "Séptima",
-    estado: "finalizado",
-    ptsA: 4,
-    ptsB: 0,
+    id: "4", nombre: "Séptima", estado: "finalizado", ptsA: 4, ptsB: 0,
     partidos: [
       { id: "p13", pairA: "Romero / Pinto", pairB: "Acosta / Vera", resultado: "6-0 6-1", ganador: "A", estado: "finalizado" },
       { id: "p14", pairA: "Romero / Pinto", pairB: "Blanco / Ibáñez", resultado: "6-2 6-3", ganador: "A", estado: "finalizado" },
@@ -65,11 +48,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "5",
-    nombre: "Sexta",
-    estado: "finalizado",
-    ptsA: 2,
-    ptsB: 2,
+    id: "5", nombre: "Sexta", estado: "finalizado", ptsA: 2, ptsB: 2,
     partidos: [
       { id: "p17", pairA: "Domínguez / Soto", pairB: "Flores / Gil", resultado: "6-3 6-4", ganador: "A", estado: "finalizado" },
       { id: "p18", pairA: "Domínguez / Soto", pairB: "Ortega / Ramos", resultado: "4-6 3-6", ganador: "B", estado: "finalizado" },
@@ -78,11 +57,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "6",
-    nombre: "Quinta",
-    estado: "en_vivo",
-    ptsA: 1,
-    ptsB: 0,
+    id: "6", nombre: "Quinta", estado: "en_vivo", ptsA: 1, ptsB: 0,
     partidos: [
       { id: "p21", pairA: "Molina / Quiroga", pairB: "Espinoza / Vidal", resultado: "6-2 6-3", ganador: "A", estado: "finalizado" },
       { id: "p22", pairA: "Molina / Quiroga", pairB: "Aguilar / Rojas", resultado: "4-2", ganador: null, estado: "en_vivo" },
@@ -91,11 +66,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "7",
-    nombre: "Cuarta",
-    estado: "pendiente",
-    ptsA: 0,
-    ptsB: 0,
+    id: "7", nombre: "Cuarta", estado: "pendiente", ptsA: 0, ptsB: 0,
     partidos: [
       { id: "p25", pairA: "Álvarez / Carrizo", pairB: "Cabrera / Delgado", resultado: null, ganador: null, estado: "pendiente" },
       { id: "p26", pairA: "Álvarez / Carrizo", pairB: "Fuentes / Guerrero", resultado: null, ganador: null, estado: "pendiente" },
@@ -104,11 +75,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "8",
-    nombre: "Tercera",
-    estado: "pendiente",
-    ptsA: 0,
-    ptsB: 0,
+    id: "8", nombre: "Tercera", estado: "pendiente", ptsA: 0, ptsB: 0,
     partidos: [
       { id: "p29", pairA: "Heredia / Ávila", pairB: "Paredes / Solís", resultado: null, ganador: null, estado: "pendiente" },
       { id: "p30", pairA: "Heredia / Ávila", pairB: "Tapia / Contreras", resultado: null, ganador: null, estado: "pendiente" },
@@ -117,11 +84,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "9",
-    nombre: "Segunda",
-    estado: "pendiente",
-    ptsA: 0,
-    ptsB: 0,
+    id: "9", nombre: "Segunda", estado: "pendiente", ptsA: 0, ptsB: 0,
     partidos: [
       { id: "p33", pairA: "Córdoba / Mena", pairB: "Ríos / Sandoval", resultado: null, ganador: null, estado: "pendiente" },
       { id: "p34", pairA: "Córdoba / Mena", pairB: "Zamora / Villareal", resultado: null, ganador: null, estado: "pendiente" },
@@ -130,11 +93,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "10",
-    nombre: "Primera",
-    estado: "pendiente",
-    ptsA: 0,
-    ptsB: 0,
+    id: "10", nombre: "Primera", estado: "pendiente", ptsA: 0, ptsB: 0,
     partidos: [
       { id: "p37", pairA: "Muñoz / Serrano", pairB: "Cáceres / Valdivia", resultado: null, ganador: null, estado: "pendiente" },
       { id: "p38", pairA: "Muñoz / Serrano", pairB: "Jiménez / Pedraza", resultado: null, ganador: null, estado: "pendiente" },
@@ -143,11 +102,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     ],
   },
   {
-    id: "11",
-    nombre: "Mixtos B",
-    estado: "pendiente",
-    ptsA: 0,
-    ptsB: 0,
+    id: "11", nombre: "Mixtos B", estado: "pendiente", ptsA: 0, ptsB: 0,
     partidos: [
       { id: "p41", pairA: "Ibarra / Leiva", pairB: "Neira / Poblete", resultado: null, ganador: null, estado: "pendiente" },
       { id: "p42", pairA: "Ibarra / Leiva", pairB: "Quintero / Robles", resultado: null, ganador: null, estado: "pendiente" },
@@ -157,13 +112,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
   },
 ]
 
-// ─── Página ───────────────────────────────────────────────────────────────────
-
-export default async function InterclubPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function InterclubPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   const ptsA = MOCK_CATEGORIAS.reduce((s, c) => s + c.ptsA, 0)
@@ -172,58 +121,53 @@ export default async function InterclubPage({
   const finalizadas = MOCK_CATEGORIAS.filter((c) => c.estado === "finalizado").length
 
   return (
-    <div style={{ paddingBottom: 100 }}>
+    <div style={{ background: "#0d0d0d", minHeight: "100vh", paddingBottom: 40 }}>
       {/* Back */}
-      <div style={{ padding: "10px 18px 0" }}>
+      <div style={{ padding: "12px 18px 0", background: "#0d0d0d" }}>
         <Link
           href={`/torneos/${id}` as AnyHref}
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            color: "#64748b",
-            textDecoration: "none",
+            display: "inline-flex", alignItems: "center", gap: 6,
+            color: "rgba(255,255,255,0.4)", textDecoration: "none",
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12,
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
+            fontSize: 12, fontWeight: 800,
+            textTransform: "uppercase", letterSpacing: "0.06em",
             WebkitTapHighlightColor: "transparent",
           }}
         >
-          <span
-            style={{
-              fontFamily: "'Material Symbols Outlined'",
-              fontSize: 18,
-              lineHeight: 1,
-            }}
-          >
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, lineHeight: 1 }}>
             arrow_back
           </span>
           Volver al torneo
         </Link>
       </div>
 
-      {/* Hero marcador */}
-      <div style={{ margin: "12px 0 0" }}>
-        <HeroMarcador
-          torneoNombre="Copa Interclub"
-          torneoFecha="Abr 2026"
-          clubA={CLUB_A}
-          clubB={CLUB_B}
-          ptsA={ptsA}
-          ptsB={ptsB}
-          totalCategorias={MOCK_CATEGORIAS.length}
-          categoriasEnJuego={enJuego}
-          categoriasFinalizadas={finalizadas}
-        />
-      </div>
+      {/* Hero */}
+      <HeroMarcador
+        torneoNombre="Torneo Interclubes Abril"
+        torneoFecha="Abr 17–19, 2026"
+        clubA={CLUB_A}
+        clubB={CLUB_B}
+        ptsA={ptsA}
+        ptsB={ptsB}
+        totalCategorias={MOCK_CATEGORIAS.length}
+        categoriasEnJuego={enJuego}
+        categoriasFinalizadas={finalizadas}
+      />
 
-      {/* Categorías con accordion */}
+      {/* Carrusel en vivo */}
+      <PartidosEnVivoCarousel
+        categorias={MOCK_CATEGORIAS}
+        clubA={CLUB_A}
+        clubB={CLUB_B}
+      />
+
+      {/* Categorías */}
       <CategoriasInterclub
         categorias={MOCK_CATEGORIAS}
         clubA={CLUB_A}
         clubB={CLUB_B}
+        torneoId={id}
       />
     </div>
   )
