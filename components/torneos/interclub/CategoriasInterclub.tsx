@@ -44,7 +44,7 @@ function getSortKey(nombre: string): number {
 }
 
 function sortCategorias(cats: CategoriaInterclub[]): CategoriaInterclub[] {
-  return [...cats].sort((a, b) => getSortKey(a.nombre) - getSortKey(b.nombre))
+  return [...cats].sort((a, b) => getSortKey(b.nombre) - getSortKey(a.nombre))
 }
 
 // Ghost text: MASC para caballeros, FEM para damas
