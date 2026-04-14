@@ -69,23 +69,25 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
               boxShadow: "0 2px 12px rgba(22,163,74,0.1)",
             }}>
 
-              {/* Ghost VIVO — verde, arriba a la derecha */}
+              {/* Ghost VIVO — grande, abajo a la derecha */}
               <span aria-hidden style={{
                 position: "absolute",
-                right: 10, top: 8,
+                right: -4, bottom: -10,
                 fontFamily: "var(--font-anton), Anton, sans-serif",
-                fontSize: 22, fontWeight: 400, lineHeight: 1,
-                color: "#16a34a",
-                letterSpacing: "0.04em",
+                fontSize: 58, fontWeight: 400, lineHeight: 1,
+                color: "rgba(22,163,74,0.15)",
+                letterSpacing: "-0.02em",
                 pointerEvents: "none", userSelect: "none",
                 textTransform: "uppercase",
-                opacity: 0.9,
               }}>
                 VIVO
               </span>
 
-              {/* Top row: categoría + sede/hora */}
-              <div style={{ marginBottom: 12, paddingRight: 56 }}>
+              {/* Top row: categoría ← → sede/hora */}
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+                marginBottom: 12,
+              }}>
                 <div style={{
                   fontFamily: "var(--font-space-grotesk), sans-serif",
                   fontSize: 9, fontWeight: 900,
@@ -100,10 +102,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
                   {partido.categoriaNombre}
                 </div>
                 {(partido.sede || partido.horaInicio) && (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 3,
-                    marginTop: 3,
-                  }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
                     <span style={{
                       fontFamily: "'Material Symbols Outlined'",
                       fontSize: 10, lineHeight: 1, color: "#16a34a",
