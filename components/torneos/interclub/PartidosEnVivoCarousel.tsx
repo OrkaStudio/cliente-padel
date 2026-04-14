@@ -75,7 +75,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
                 right: -4, bottom: -10,
                 fontFamily: "var(--font-anton), Anton, sans-serif",
                 fontSize: 58, fontWeight: 400, lineHeight: 1,
-                color: "#BCFF00",
+                color: "rgba(188,255,0,0.35)",
                 letterSpacing: "-0.02em",
                 pointerEvents: "none", userSelect: "none",
                 textTransform: "uppercase",
