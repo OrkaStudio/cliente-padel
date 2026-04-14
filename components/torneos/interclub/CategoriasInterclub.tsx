@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { motion } from "framer-motion"
 
 export type Partido = {
   id: string
@@ -32,26 +33,45 @@ type Props = {
   torneoId: string
 }
 
+// ─────────────────────────────────────────
+// Helpers de color
+// ─────────────────────────────────────────
+function accentStyle(liderA: boolean, liderB: boolean, colorA: string, colorB: string) {
+  if (liderA) return { background: colorA }
+  if (liderB) return { background: colorB }
+  return { background: `linear-gradient(to right, ${colorA} 50%, ${colorB} 50%)` }
+}
+
+function progressColor(isLive: boolean, liderA: boolean, liderB: boolean, colorA: string, colorB: string) {
+  if (isLive) return "#BCFF00"
+  if (liderA) return colorA
+  if (liderB) return colorB
+  return "#cbd5e1"
+}
+
+// ─────────────────────────────────────────
+// Componente principal
+// ─────────────────────────────────────────
 export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todas")
 
   const filtradas =
     filtro === "todas" ? categorias : categorias.filter((c) => c.estado === filtro)
 
-  // Separar activas (live/fin) de pendientes para layout distinto
-  const activasFiltradas = filtradas.filter((c) => c.estado !== "pendiente")
+  const activasFiltradas  = filtradas.filter((c) => c.estado !== "pendiente")
   const pendientesFiltradas = filtradas.filter((c) => c.estado === "pendiente")
 
   const filtros: { key: Filtro; label: string }[] = [
-    { key: "todas", label: "Todas" },
-    { key: "en_vivo", label: "En juego" },
+    { key: "todas",      label: "Todas" },
+    { key: "en_vivo",    label: "En juego" },
     { key: "finalizado", label: "Fin" },
-    { key: "pendiente", label: "Pendientes" },
+    { key: "pendiente",  label: "Pendientes" },
   ]
 
   return (
-    <div style={{ background: "#f8fafc", padding: "24px 18px 32px" }}>
-      {/* Header */}
+    <div style={{ background: "#f8fafc", padding: "24px 18px 40px" }}>
+
+      {/* ── Título ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <h2 style={{
           fontFamily: "var(--font-anton), Anton, sans-serif",
@@ -64,9 +84,9 @@ export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Prop
         <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
       </div>
 
-      {/* Filtros */}
+      {/* ── Filtros ── */}
       <div style={{
-        display: "flex", gap: 6, marginBottom: 16,
+        display: "flex", gap: 6, marginBottom: 20,
         overflowX: "auto", paddingBottom: 4,
         msOverflowStyle: "none", scrollbarWidth: "none",
       }}>
@@ -107,7 +127,7 @@ export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Prop
         })}
       </div>
 
-      {/* Sin resultados */}
+      {/* ── Sin resultados ── */}
       {filtradas.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 0" }}>
           <span style={{
@@ -120,123 +140,183 @@ export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Prop
         </div>
       )}
 
-      {/* ── Cards activas (live/finalizadas) — full width ── */}
+      {/* ── Cards activas (live / finalizadas) — full width ── */}
       {activasFiltradas.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {activasFiltradas.map((cat) => {
-            const isLive = cat.estado === "en_vivo"
-            const isFin = cat.estado === "finalizado"
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {activasFiltradas.map((cat, i) => {
+            const isLive  = cat.estado === "en_vivo"
+            const isFin   = cat.estado === "finalizado"
+            const liderA  = cat.ptsA > cat.ptsB
+            const liderB  = cat.ptsB > cat.ptsA
+            const empate  = !liderA && !liderB
             const jugados = cat.partidos.filter((p) => p.estado === "finalizado").length
-            const liderA = cat.ptsA > cat.ptsB
-            const liderB = cat.ptsB > cat.ptsA
-            const empate = cat.ptsA === cat.ptsB && jugados > 0
+            const pct     = cat.partidos.length > 0 ? (jugados / cat.partidos.length) * 100 : 0
+            const accent  = accentStyle(liderA, liderB, clubA.color, clubB.color)
+            const progColor = progressColor(isLive, liderA, liderB, clubA.color, clubB.color)
 
             return (
-              <Link
+              <motion.div
                 key={cat.id}
-                href={`/torneos/${torneoId}/interclub/${cat.id}` as never}
-                style={{
-                  display: "block", textDecoration: "none",
-                  background: "#ffffff", borderRadius: 10,
-                  border: isLive ? "2px solid #BCFF00" : "1px solid #e2e8f0",
-                  padding: isLive ? "15px 16px" : "16px",
-                  WebkitTapHighlightColor: "transparent",
-                  boxShadow: isLive ? "0 2px 12px rgba(188,255,0,0.2)" : "0 1px 3px rgba(0,0,0,0.04)",
-                  transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
-                }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.055, duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Nombre + badge */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <Link
+                  href={`/torneos/${torneoId}/interclub/${cat.id}` as never}
+                  style={{
+                    display: "block", textDecoration: "none",
+                    background: "#ffffff",
+                    borderRadius: 12,
+                    border: isLive ? "1.5px solid rgba(188,255,0,0.5)" : "1px solid #e2e8f0",
+                    overflow: "hidden",
+                    boxShadow: isLive
+                      ? "0 4px 20px rgba(188,255,0,0.12), 0 1px 4px rgba(0,0,0,0.04)"
+                      : "0 1px 4px rgba(0,0,0,0.04)",
+                    WebkitTapHighlightColor: "transparent",
+                    transition: "transform 160ms cubic-bezier(0.23,1,0.32,1), box-shadow 160ms",
+                  }}
+                >
+                  {/* Top accent strip — 5px, leader's color */}
+                  <div style={{ height: 5, ...accent }} />
+
+                  <div style={{ padding: "14px 16px 16px" }}>
+
+                    {/* Row 1: nombre + badge */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                       <span style={{
                         fontFamily: "var(--font-anton), Anton, sans-serif",
-                        fontSize: 17, fontWeight: 400,
+                        fontSize: 18, fontWeight: 400,
                         color: "#0f172a", textTransform: "uppercase",
-                        letterSpacing: "0.02em",
+                        letterSpacing: "0.03em", lineHeight: 1,
                       }}>
                         {cat.nombre}
                       </span>
+
                       {isLive && (
                         <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
                           background: "#BCFF00", color: "#000",
-                          padding: "2px 7px", borderRadius: 2,
-                          fontSize: 8, fontWeight: 900,
+                          padding: "3px 8px", borderRadius: 3,
                           fontFamily: "var(--font-space-grotesk), sans-serif",
+                          fontSize: 8, fontWeight: 900,
                           textTransform: "uppercase", letterSpacing: "0.1em",
-                          display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
+                          flexShrink: 0,
                         }}>
-                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#000", flexShrink: 0 }} />
-                          Vivo
+                          <span className="live-dot" style={{
+                            width: 5, height: 5, borderRadius: "50%",
+                            background: "#000", flexShrink: 0,
+                            display: "inline-block",
+                          }} />
+                          En vivo
                         </span>
                       )}
                       {isFin && (
                         <span style={{
                           background: "#f1f5f9", color: "#64748b",
-                          padding: "2px 7px", borderRadius: 2,
-                          fontSize: 8, fontWeight: 900,
+                          padding: "3px 8px", borderRadius: 3,
                           fontFamily: "var(--font-space-grotesk), sans-serif",
-                          textTransform: "uppercase", letterSpacing: "0.1em", flexShrink: 0,
-                        }}>Finalizado</span>
+                          fontSize: 8, fontWeight: 900,
+                          textTransform: "uppercase", letterSpacing: "0.1em",
+                          flexShrink: 0,
+                        }}>
+                          Finalizado
+                        </span>
                       )}
                     </div>
 
-                    {/* Score chips */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {/* Row 2: score boxes */}
+                    <div style={{
+                      display: "flex", alignItems: "center",
+                      justifyContent: "center", gap: 10,
+                      marginBottom: 14,
+                    }}>
                       {/* Club A */}
                       <div style={{
-                        display: "inline-flex", alignItems: "baseline", gap: 5,
-                        background: liderA ? clubA.color : "#f1f5f9",
-                        borderRadius: 6, padding: "5px 10px",
+                        display: "flex", flexDirection: "column", alignItems: "center",
+                        background: liderA ? clubA.color : "#f8fafc",
+                        borderRadius: 10, padding: "10px 20px",
+                        flex: 1, border: liderA ? "none" : "1px solid #f1f5f9",
+                        transition: "background 200ms",
                       }}>
                         <span style={{
                           fontFamily: "var(--font-anton), Anton, sans-serif",
-                          fontSize: 28, lineHeight: 1,
-                          color: liderA ? "#ffffff" : "#cbd5e1",
+                          fontSize: 40, lineHeight: 1, fontWeight: 400,
+                          color: liderA ? "#ffffff" : "#d1d9e0",
+                          letterSpacing: "-0.02em",
                         }}>
                           {cat.ptsA}
                         </span>
                         <span style={{
                           fontFamily: "var(--font-space-grotesk), sans-serif",
-                          fontSize: 8, fontWeight: 900,
-                          color: liderA ? "rgba(255,255,255,0.6)" : "#b8c4d0",
-                          textTransform: "uppercase", letterSpacing: "0.08em",
+                          fontSize: 9, fontWeight: 900,
+                          textTransform: "uppercase", letterSpacing: "0.1em",
+                          color: liderA ? "rgba(255,255,255,0.55)" : "#b8c4d0",
+                          marginTop: 4,
                         }}>
                           {clubA.abbr}
                         </span>
                       </div>
 
-                      <span style={{ color: "#e2e8f0", fontSize: 14 }}>—</span>
+                      {/* Separador */}
+                      <span style={{
+                        fontFamily: "var(--font-space-grotesk), sans-serif",
+                        fontSize: 16, fontWeight: 300,
+                        color: "#d1d5db", flexShrink: 0,
+                        lineHeight: 1,
+                      }}>
+                        —
+                      </span>
 
                       {/* Club B */}
                       <div style={{
-                        display: "inline-flex", alignItems: "baseline", gap: 5,
-                        background: liderB ? clubB.color : "#f1f5f9",
-                        borderRadius: 6, padding: "5px 10px",
+                        display: "flex", flexDirection: "column", alignItems: "center",
+                        background: liderB ? clubB.color : "#f8fafc",
+                        borderRadius: 10, padding: "10px 20px",
+                        flex: 1, border: liderB ? "none" : "1px solid #f1f5f9",
+                        transition: "background 200ms",
                       }}>
                         <span style={{
                           fontFamily: "var(--font-anton), Anton, sans-serif",
-                          fontSize: 28, lineHeight: 1,
-                          color: liderB ? "#ffffff" : "#cbd5e1",
+                          fontSize: 40, lineHeight: 1, fontWeight: 400,
+                          color: liderB ? "#ffffff" : "#d1d9e0",
+                          letterSpacing: "-0.02em",
                         }}>
                           {cat.ptsB}
                         </span>
                         <span style={{
                           fontFamily: "var(--font-space-grotesk), sans-serif",
-                          fontSize: 8, fontWeight: 900,
-                          color: liderB ? "rgba(255,255,255,0.6)" : "#b8c4d0",
-                          textTransform: "uppercase", letterSpacing: "0.08em",
+                          fontSize: 9, fontWeight: 900,
+                          textTransform: "uppercase", letterSpacing: "0.1em",
+                          color: liderB ? "rgba(255,255,255,0.55)" : "#b8c4d0",
+                          marginTop: 4,
                         }}>
                           {clubB.abbr}
                         </span>
                       </div>
+                    </div>
 
-                      {empate && (
+                    {/* Row 3: progress + empate label + fraction + chevron */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {/* Mini progress bar */}
+                      <div style={{
+                        flex: 1, height: 4, background: "#f1f5f9",
+                        borderRadius: 4, overflow: "hidden",
+                      }}>
+                        <div style={{
+                          width: `${pct}%`, height: "100%",
+                          background: progColor,
+                          borderRadius: 4,
+                          transition: "width 400ms cubic-bezier(0.23,1,0.32,1)",
+                        }} />
+                      </div>
+
+                      {empate && jugados > 0 && (
                         <span style={{
                           fontFamily: "var(--font-space-grotesk), sans-serif",
-                          fontSize: 8, fontWeight: 900, color: "#64748b",
+                          fontSize: 8, fontWeight: 900, color: "#94a3b8",
                           textTransform: "uppercase", letterSpacing: "0.08em",
-                          background: "#f1f5f9", borderRadius: 4, padding: "3px 6px",
+                          background: "#f1f5f9", borderRadius: 3,
+                          padding: "2px 5px", flexShrink: 0,
                         }}>
                           Empate
                         </span>
@@ -244,38 +324,38 @@ export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Prop
 
                       <span style={{
                         fontFamily: "var(--font-space-grotesk), sans-serif",
-                        fontSize: 9, fontWeight: 700, color: "#cbd5e1",
-                        marginLeft: "auto",
+                        fontSize: 9, fontWeight: 700, color: "#94a3b8",
+                        flexShrink: 0,
                       }}>
                         {jugados}/{cat.partidos.length}
                       </span>
-                    </div>
-                  </div>
 
-                  <span style={{
-                    fontFamily: "'Material Symbols Outlined'",
-                    fontSize: 20, lineHeight: 1, flexShrink: 0,
-                    color: isLive ? "#0f172a" : "#d1d5db",
-                  }}>
-                    chevron_right
-                  </span>
-                </div>
-              </Link>
+                      <span style={{
+                        fontFamily: "'Material Symbols Outlined'",
+                        fontSize: 18, lineHeight: 1, flexShrink: 0,
+                        color: isLive ? "#0f172a" : "#d1d5db",
+                      }}>
+                        chevron_right
+                      </span>
+                    </div>
+
+                  </div>
+                </Link>
+              </motion.div>
             )
           })}
         </div>
       )}
 
-      {/* ── Cards pendientes — grilla 2 columnas ── */}
+      {/* ── Sección pendientes ── */}
       {pendientesFiltradas.length > 0 && (
         <>
           {activasFiltradas.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "20px 0 10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "24px 0 12px" }}>
               <span style={{
                 fontFamily: "var(--font-space-grotesk), sans-serif",
                 fontSize: 8, fontWeight: 900, color: "#94a3b8",
-                textTransform: "uppercase", letterSpacing: "0.12em",
-                flexShrink: 0,
+                textTransform: "uppercase", letterSpacing: "0.12em", flexShrink: 0,
               }}>
                 Pendientes
               </span>
@@ -284,59 +364,92 @@ export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Prop
           )}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {pendientesFiltradas.map((cat) => (
-              <Link
+            {pendientesFiltradas.map((cat, i) => (
+              <motion.div
                 key={cat.id}
-                href={`/torneos/${torneoId}/interclub/${cat.id}` as never}
-                style={{
-                  display: "block", textDecoration: "none",
-                  background: "#ffffff", borderRadius: 10,
-                  border: "1px solid #e2e8f0",
-                  padding: "14px 12px",
-                  WebkitTapHighlightColor: "transparent",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-                  transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: (activasFiltradas.length * 0.055) + i * 0.04,
+                  duration: 0.24,
+                  ease: [0.23, 1, 0.32, 1],
                 }}
               >
-                {/* Nombre categoría */}
-                <div style={{
-                  fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 15, fontWeight: 400,
-                  color: "#0f172a", textTransform: "uppercase",
-                  letterSpacing: "0.02em", marginBottom: 10,
-                  lineHeight: 1.1,
-                }}>
-                  {cat.nombre}
-                </div>
+                <Link
+                  href={`/torneos/${torneoId}/interclub/${cat.id}` as never}
+                  style={{
+                    display: "block", textDecoration: "none",
+                    background: "#ffffff", borderRadius: 12,
+                    border: "1px solid #e2e8f0", overflow: "hidden",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                    WebkitTapHighlightColor: "transparent",
+                    transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
+                    height: "100%",
+                  }}
+                >
+                  {/* Dual-color strip — balanced, both clubs */}
+                  <div style={{ height: 4, display: "flex" }}>
+                    <div style={{ flex: 1, background: clubA.color, opacity: 0.35 }} />
+                    <div style={{ flex: 1, background: clubB.color, opacity: 0.45 }} />
+                  </div>
 
-                {/* Info fila */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{
-                    fontFamily: "var(--font-space-grotesk), sans-serif",
-                    fontSize: 8, fontWeight: 900, color: "#94a3b8",
-                    textTransform: "uppercase", letterSpacing: "0.1em",
-                    background: "#f8fafc", border: "1px solid #e2e8f0",
-                    borderRadius: 3, padding: "2px 6px",
-                  }}>
-                    Pendiente
-                  </span>
-                  <span style={{
-                    fontFamily: "'Material Symbols Outlined'",
-                    fontSize: 16, lineHeight: 1, color: "#d1d5db",
-                  }}>
-                    chevron_right
-                  </span>
-                </div>
+                  <div style={{ padding: "12px 12px 14px" }}>
+                    {/* Nombre */}
+                    <div style={{
+                      fontFamily: "var(--font-anton), Anton, sans-serif",
+                      fontSize: 15, fontWeight: 400,
+                      color: "#0f172a", textTransform: "uppercase",
+                      letterSpacing: "0.02em", lineHeight: 1.1,
+                      marginBottom: 10,
+                    }}>
+                      {cat.nombre}
+                    </div>
 
-                {/* Conteo partidos */}
-                <div style={{
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 9, fontWeight: 700, color: "#cbd5e1",
-                  marginTop: 6,
-                }}>
-                  {cat.partidos.length} partidos
-                </div>
-              </Link>
+                    {/* Club pills */}
+                    <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
+                      <span style={{
+                        background: clubA.color,
+                        color: "#fff",
+                        padding: "2px 7px", borderRadius: 3,
+                        fontFamily: "var(--font-space-grotesk), sans-serif",
+                        fontSize: 8, fontWeight: 900,
+                        textTransform: "uppercase", letterSpacing: "0.08em",
+                        opacity: 0.8,
+                      }}>
+                        {clubA.abbr}
+                      </span>
+                      <span style={{
+                        background: clubB.color,
+                        color: "#fff",
+                        padding: "2px 7px", borderRadius: 3,
+                        fontFamily: "var(--font-space-grotesk), sans-serif",
+                        fontSize: 8, fontWeight: 900,
+                        textTransform: "uppercase", letterSpacing: "0.08em",
+                        opacity: 0.8,
+                      }}>
+                        {clubB.abbr}
+                      </span>
+                    </div>
+
+                    {/* Footer: partidos + chevron */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{
+                        fontFamily: "var(--font-space-grotesk), sans-serif",
+                        fontSize: 9, fontWeight: 700, color: "#b0bec5",
+                        textTransform: "uppercase", letterSpacing: "0.06em",
+                      }}>
+                        {cat.partidos.length} partidos
+                      </span>
+                      <span style={{
+                        fontFamily: "'Material Symbols Outlined'",
+                        fontSize: 15, lineHeight: 1, color: "#d1d5db",
+                      }}>
+                        chevron_right
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
             ))}
           </div>
         </>

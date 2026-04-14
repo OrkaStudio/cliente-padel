@@ -137,6 +137,18 @@
   }
 }
 
+/* ── Live dot pulse ── */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.75); }
+}
+.live-dot {
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; opacity: 1; }
+}
+
 @layer utilities {
   .font-heading {
     font-family: 'Anton', sans-serif;
