@@ -35,12 +35,37 @@ type Props = {
 
 const ACCENT_COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#8b5cf6", "#f43f5e", "#06b6d4"]
 
+const ORDINAL_MAP: Record<string, number> = {
+  PRIMER: 1, PRIMERA: 1,
+  SEGUND: 2, SEGUNDA: 2,
+  TERCER: 3, TERCERA: 3,
+  CUART:  4, CUARTA:  4,
+  QUINT:  5, QUINTA:  5,
+  SEXT:   6, SEXTA:   6,
+  SEPTIM: 7, SÉPTIM:  7, SEPTIMA: 7, SÉPTIMA: 7,
+  OCTAV:  8, OCTAVA:  8,
+  NOVEN:  9, NOVENA:  9,
+  DECIM: 10, DÉCIM:  10, DECIMA: 10, DÉCIMA: 10,
+}
+
 function getSortKey(nombre: string): number {
   const n = nombre.toUpperCase()
   const isDamas = n.includes("DAMA")
-  const num = parseInt(n.match(/\d+/)?.[0] ?? "99")
-  // Ordenar por nivel numérico; dentro del mismo nivel, caballeros antes que damas
-  return num * 10 + (isDamas ? 1 : 0)
+  const suffix = isDamas ? 1 : 0
+
+  // Categorías especiales al final
+  if (n.includes("SUMA") || n.includes("MIXTO")) return 900 + suffix
+
+  // Nombres ordinales (PRIMERA, SEGUNDA, etc.)
+  for (const [word, num] of Object.entries(ORDINAL_MAP)) {
+    if (n.includes(word)) return num * 10 + suffix
+  }
+
+  // Numérico abreviado (2DA, 4TA, 4+5, etc.)
+  const numMatch = n.match(/\d+/)
+  if (numMatch) return parseInt(numMatch[0]) * 10 + suffix
+
+  return 990
 }
 
 function sortCategorias(cats: CategoriaInterclub[]): CategoriaInterclub[] {
