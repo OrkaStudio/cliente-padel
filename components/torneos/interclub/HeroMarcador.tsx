@@ -101,7 +101,7 @@ export function HeroMarcador({
         <div style={{
           flex: 1,
           position: "relative",
-          background: "#f8fafc",
+          background: "#ffffff",
           display: "flex", flexDirection: "column",
           alignItems: "flex-start", justifyContent: "flex-end",
           padding: "20px 20px 22px",
@@ -129,7 +129,7 @@ export function HeroMarcador({
         {/* VS divider */}
         <div style={{
           width: 48,
-          background: "#f8fafc",
+          background: "#ffffff",
           flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
           position: "relative",
@@ -146,7 +146,7 @@ export function HeroMarcador({
             width: 34, height: 34, borderRadius: "50%",
             background: "#0f172a",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 0 3px #f8fafc, 0 4px 12px rgba(0,0,0,0.18)",
+            boxShadow: "0 0 0 3px #ffffff, 0 4px 12px rgba(0,0,0,0.18)",
           }}>
             <span style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
@@ -161,7 +161,7 @@ export function HeroMarcador({
         <div style={{
           flex: 1,
           position: "relative",
-          background: "#f8fafc",
+          background: "#ffffff",
           display: "flex", flexDirection: "column",
           alignItems: "flex-end", justifyContent: "flex-end",
           padding: "20px 20px 22px",
