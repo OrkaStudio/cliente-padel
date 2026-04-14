@@ -11,10 +11,10 @@ export function BottomNav() {
 
   // Detectar contexto: admin torneo, admin general, o torneo público
   const adminTorneoMatch = pathname.match(/^\/admin\/torneo\/([^/]+)/)
-  const adminTorneoId = adminTorneoMatch?.[1]
+  const adminTorneoId = adminTorneoMatch?.[1]?.includes("[") ? undefined : adminTorneoMatch?.[1]
 
   const torneoMatch = pathname.match(/\/torneos\/([^/]+)/)
-  const torneoId = torneoMatch?.[1]
+  const torneoId = torneoMatch?.[1]?.includes("[") ? undefined : torneoMatch?.[1]
 
   const items = adminTorneoId
     ? [
