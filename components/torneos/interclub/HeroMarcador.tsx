@@ -113,7 +113,7 @@ export function HeroMarcador({
               <Image
                 src={clubA.logoUrl} alt=""
                 fill
-                style={{ objectFit: "contain", padding: 20, opacity: 0.09 }}
+                style={{ objectFit: "contain", padding: 20 }}
               />
             </div>
           )}
@@ -173,7 +173,7 @@ export function HeroMarcador({
               <Image
                 src={clubB.logoUrl} alt=""
                 fill
-                style={{ objectFit: "contain", padding: 20, opacity: 0.09 }}
+                style={{ objectFit: "contain", padding: 20 }}
               />
             </div>
           )}
