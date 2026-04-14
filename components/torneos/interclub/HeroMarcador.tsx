@@ -1,4 +1,6 @@
 import Image from "next/image"
+import { InfiniteSlider } from "@/components/ui/infinite-slider"
+import { ProgressiveBlur } from "@/components/ui/progressive-blur"
 
 type Club = { nombre: string; color: string; abbr: string; logoUrl?: string }
 
@@ -29,6 +31,13 @@ export function HeroMarcador({
   const liderB = ptsB > ptsA
   const pendientes = totalCategorias - categoriasEnJuego - categoriasFinalizadas
   const isLive = categoriasEnJuego > 0
+
+  const stats = [
+    { label: "Categorías", value: totalCategorias },
+    { label: "En juego", value: categoriasEnJuego, live: categoriasEnJuego > 0 },
+    { label: "Finalizadas", value: categoriasFinalizadas },
+    { label: "Pendientes", value: pendientes },
+  ]
 
   return (
     <div style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0" }}>
@@ -178,41 +187,39 @@ export function HeroMarcador({
         </div>
       </div>
 
-      {/* Stats strip — 3 pills simples */}
-      <div style={{
-        display: "flex", gap: 0,
-        borderTop: "1px solid #f1f5f9",
-        padding: "12px 18px 14px",
-      }}>
-        {[
-          { label: "En juego", value: categoriasEnJuego, live: true },
-          { label: "Finalizadas", value: categoriasFinalizadas },
-          { label: "Pendientes", value: pendientes },
-        ].map((stat, i, arr) => (
-          <div key={stat.label} style={{
-            flex: 1,
-            display: "flex", flexDirection: "column", alignItems: "center",
-            padding: "0 8px",
-            borderRight: i < arr.length - 1 ? "1px solid #f1f5f9" : "none",
-          }}>
-            <span style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 22, fontWeight: 900, lineHeight: 1,
-              color: stat.live && stat.value > 0 ? "#000" : "#0f172a",
-              background: stat.live && stat.value > 0 ? "#BCFF00" : "transparent",
-              borderRadius: stat.live && stat.value > 0 ? 4 : 0,
-              padding: stat.live && stat.value > 0 ? "0 6px" : 0,
-              letterSpacing: "-0.03em",
-              display: "inline-block",
-            }}>{stat.value}</span>
-            <span style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 8, fontWeight: 700, color: "#94a3b8",
-              textTransform: "uppercase", letterSpacing: "0.1em",
-              marginTop: 4,
-            }}>{stat.label}</span>
-          </div>
-        ))}
+      {/* Stats strip — carrusel infinito */}
+      <div style={{ position: "relative", borderTop: "1px solid #f1f5f9", overflow: "hidden" }}>
+        <InfiniteSlider gap={0} duration={18} className="py-3">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "0 28px",
+                borderRight: "1px solid #f1f5f9",
+                flexShrink: 0,
+              }}
+            >
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 20, fontWeight: 900, lineHeight: 1,
+                color: stat.live ? "#000" : "#0f172a",
+                background: stat.live ? "#BCFF00" : "transparent",
+                borderRadius: stat.live ? 4 : 0,
+                padding: stat.live ? "1px 6px" : 0,
+                display: "inline-block",
+                letterSpacing: "-0.03em",
+              }}>{stat.value}</span>
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 9, fontWeight: 700, color: "#94a3b8",
+                textTransform: "uppercase", letterSpacing: "0.12em",
+              }}>{stat.label}</span>
+            </div>
+          ))}
+        </InfiniteSlider>
+        <ProgressiveBlur blurIntensity={0.6} className="pointer-events-none absolute top-0 left-0 h-full w-16" direction="left" />
+        <ProgressiveBlur blurIntensity={0.6} className="pointer-events-none absolute top-0 right-0 h-full w-16" direction="right" />
       </div>
 
     </div>
