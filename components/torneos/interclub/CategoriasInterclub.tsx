@@ -64,8 +64,7 @@ export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Prop
   const [filtro, setFiltro] = useState<Filtro>("todas")
 
   const sorted = sortCategorias(categorias)
-  const accentMap    = new Map(sorted.map((c, i) => [c.id, ACCENT_COLORS[i % ACCENT_COLORS.length]]))
-  const positionMap  = new Map(sorted.map((c, i) => [c.id, i + 1]))
+  const accentMap = new Map(sorted.map((c, i) => [c.id, ACCENT_COLORS[i % ACCENT_COLORS.length]]))
 
   // Primera y última del sorted son featured (full width, dark)
   const featuredIds = new Set([sorted[0]?.id, sorted[sorted.length - 1]?.id].filter(Boolean))
@@ -144,10 +143,9 @@ export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Prop
       {/* Grid — 2 columnas, featured full-width */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {filtradas.map((cat, i) => {
-          const isFeatured  = featuredIds.has(cat.id)
-          const accent      = accentMap.get(cat.id) ?? "#3b82f6"
-          const ghost       = getGhostText(cat.nombre)
-          const position    = positionMap.get(cat.id) ?? i + 1
+          const isFeatured = featuredIds.has(cat.id)
+          const accent     = accentMap.get(cat.id) ?? "#3b82f6"
+          const ghost      = getGhostText(cat.nombre)
           const resultLabel = getResultLabel(cat, clubA, clubB)
           const statusText  = resultLabel
             ? resultLabel
@@ -200,28 +198,19 @@ export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Prop
                   {ghost}
                 </span>
 
-                {/* Número + Nombre */}
-                <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <span style={{
-                    fontFamily: "var(--font-space-grotesk), sans-serif",
-                    fontSize: 9, fontWeight: 900,
-                    color: isFeatured ? "rgba(255,255,255,0.4)" : "#94a3b8",
-                    textTransform: "uppercase", letterSpacing: "0.14em",
-                    marginBottom: 4,
-                  }}>
-                    N° {position}
-                  </span>
-                  <div style={{
-                    fontFamily: "var(--font-anton), Anton, sans-serif",
-                    fontSize: isFeatured ? 28 : 20,
-                    fontWeight: 400,
-                    color: isFeatured ? "#ffffff" : "#0f172a",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.01em",
-                    lineHeight: 1,
-                  }}>
-                    {cat.nombre}
-                  </div>
+                {/* Nombre */}
+                <div style={{
+                  position: "relative", zIndex: 1, flex: 1,
+                  display: "flex", alignItems: "center",
+                  fontFamily: "var(--font-anton), Anton, sans-serif",
+                  fontSize: isFeatured ? 28 : 20,
+                  fontWeight: 400,
+                  color: isFeatured ? "#ffffff" : "#0f172a",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.01em",
+                  lineHeight: 1,
+                }}>
+                  {cat.nombre}
                 </div>
 
                 {/* Footer */}
