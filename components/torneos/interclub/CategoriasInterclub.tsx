@@ -11,6 +11,8 @@ export type Partido = {
   resultado: string | null
   ganador: "A" | "B" | null
   estado: "pendiente" | "en_vivo" | "finalizado"
+  horaInicio?: string
+  sede?: string
 }
 
 export type CategoriaInterclub = {

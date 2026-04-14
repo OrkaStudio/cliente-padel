@@ -14,6 +14,8 @@ type PartidoVivo = {
   pairB: string
   resultado: string | null
   categoriaNombre: string
+  horaInicio?: string
+  sede?: string
 }
 
 export function PartidosEnVivoCarousel({ categorias }: Props) {
@@ -52,107 +54,127 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
         msOverflowStyle: "none", scrollbarWidth: "none",
       }}>
         {partidos.map((partido) => {
-          // "4-3" → scoreA=4, scoreB=3  |  multi-set "6-3 4-3" → last set
           const lastSet = partido.resultado?.trim().split(/\s+/).at(-1) ?? null
           const [scoreA, scoreB] = lastSet ? lastSet.split("-") : ["–", "–"]
 
           return (
-          <div key={partido.id} style={{
-            flexShrink: 0, width: 280,
-            background: "#BCFF00",
-            borderRadius: 14, padding: "14px 16px",
-            scrollSnapAlign: "start",
-            position: "relative",
-            overflow: "hidden",
-          }}>
-            {/* Ghost VIVO */}
-            <span aria-hidden style={{
-              position: "absolute",
-              right: -4, bottom: -10,
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 58, fontWeight: 400, lineHeight: 1,
-              color: "rgba(0,0,0,0.08)",
-              letterSpacing: "-0.02em",
-              pointerEvents: "none", userSelect: "none",
-              textTransform: "uppercase",
+            <div key={partido.id} style={{
+              flexShrink: 0, width: 280,
+              background: "#ffffff",
+              border: "1.5px solid #16a34a",
+              borderRadius: 14, padding: "13px 14px",
+              scrollSnapAlign: "start",
+              position: "relative",
+              overflow: "hidden",
+              boxShadow: "0 2px 12px rgba(22,163,74,0.1)",
             }}>
-              VIVO
-            </span>
 
-            {/* Categoría */}
-            <div style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 9, fontWeight: 900,
-              color: "rgba(0,0,0,0.5)",
-              textTransform: "uppercase", letterSpacing: "0.12em",
-              marginBottom: 12,
-              display: "flex", alignItems: "center", gap: 5,
-            }}>
-              <span style={{
-                width: 5, height: 5, borderRadius: "50%",
-                background: "#000", display: "inline-block", flexShrink: 0,
-              }} />
-              {partido.categoriaNombre}
-            </div>
-
-            {/* Parejas + score — apiladas */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative", zIndex: 1 }}>
-
-              {/* Fila A */}
-              <div style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                gap: 10, paddingBottom: 8,
+              {/* Ghost VIVO — verde, arriba a la derecha */}
+              <span aria-hidden style={{
+                position: "absolute",
+                right: 10, top: 8,
+                fontFamily: "var(--font-anton), Anton, sans-serif",
+                fontSize: 22, fontWeight: 400, lineHeight: 1,
+                color: "#16a34a",
+                letterSpacing: "0.04em",
+                pointerEvents: "none", userSelect: "none",
+                textTransform: "uppercase",
+                opacity: 0.9,
               }}>
-                <span style={{
+                VIVO
+              </span>
+
+              {/* Top row: categoría + sede/hora */}
+              <div style={{ marginBottom: 12, paddingRight: 56 }}>
+                <div style={{
                   fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 13, fontWeight: 900, color: "#000",
-                  lineHeight: 1.2, textTransform: "uppercase",
-                  flex: 1, minWidth: 0,
+                  fontSize: 9, fontWeight: 900,
+                  color: "rgba(0,0,0,0.45)",
+                  textTransform: "uppercase", letterSpacing: "0.12em",
+                  display: "flex", alignItems: "center", gap: 5,
                 }}>
-                  {partido.pairA}
-                </span>
-                <span style={{
-                  fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 16, fontWeight: 400,
-                  color: "#fff", background: "#000",
-                  borderRadius: 6, padding: "3px 10px",
-                  display: "inline-block", whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}>
-                  {scoreA}
-                </span>
+                  <span style={{
+                    width: 5, height: 5, borderRadius: "50%",
+                    background: "#16a34a", display: "inline-block", flexShrink: 0,
+                  }} />
+                  {partido.categoriaNombre}
+                </div>
+                {(partido.sede || partido.horaInicio) && (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 3,
+                    marginTop: 3,
+                  }}>
+                    <span style={{
+                      fontFamily: "'Material Symbols Outlined'",
+                      fontSize: 10, lineHeight: 1, color: "#16a34a",
+                    }}>location_on</span>
+                    <span style={{
+                      fontFamily: "var(--font-space-grotesk), sans-serif",
+                      fontSize: 9, fontWeight: 700,
+                      color: "#16a34a", letterSpacing: "0.03em",
+                    }}>
+                      {[partido.sede, partido.horaInicio].filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Separador */}
-              <div style={{ height: 1, background: "rgba(0,0,0,0.1)", marginBottom: 8 }} />
+              {/* Scoreboard */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
 
-              {/* Fila B */}
-              <div style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                gap: 10,
-              }}>
-                <span style={{
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 13, fontWeight: 900, color: "#000",
-                  lineHeight: 1.2, textTransform: "uppercase",
-                  flex: 1, minWidth: 0,
+                {/* Fila A */}
+                <div style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  gap: 10, paddingBottom: 8,
                 }}>
-                  {partido.pairB}
-                </span>
-                <span style={{
-                  fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 16, fontWeight: 400,
-                  color: "#fff", background: "#000",
-                  borderRadius: 6, padding: "3px 10px",
-                  display: "inline-block", whiteSpace: "nowrap",
-                  flexShrink: 0,
+                  <span style={{
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 13, fontWeight: 900, color: "#0f172a",
+                    lineHeight: 1.2, textTransform: "uppercase",
+                    flex: 1, minWidth: 0,
+                  }}>
+                    {partido.pairA}
+                  </span>
+                  <span style={{
+                    fontFamily: "var(--font-anton), Anton, sans-serif",
+                    fontSize: 16, fontWeight: 400,
+                    color: "#fff", background: "#16a34a",
+                    borderRadius: 6, padding: "3px 10px",
+                    display: "inline-block", whiteSpace: "nowrap", flexShrink: 0,
+                  }}>
+                    {scoreA}
+                  </span>
+                </div>
+
+                {/* Separador */}
+                <div style={{ height: 1, background: "#f1f5f9", marginBottom: 8 }} />
+
+                {/* Fila B */}
+                <div style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  gap: 10,
                 }}>
-                  {scoreB}
-                </span>
+                  <span style={{
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 13, fontWeight: 900, color: "#0f172a",
+                    lineHeight: 1.2, textTransform: "uppercase",
+                    flex: 1, minWidth: 0,
+                  }}>
+                    {partido.pairB}
+                  </span>
+                  <span style={{
+                    fontFamily: "var(--font-anton), Anton, sans-serif",
+                    fontSize: 16, fontWeight: 400,
+                    color: "#fff", background: "#16a34a",
+                    borderRadius: 6, padding: "3px 10px",
+                    display: "inline-block", whiteSpace: "nowrap", flexShrink: 0,
+                  }}>
+                    {scoreB}
+                  </span>
+                </div>
+
               </div>
-
             </div>
-          </div>
           )
         })}
       </div>
