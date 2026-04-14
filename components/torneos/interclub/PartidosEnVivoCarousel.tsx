@@ -16,7 +16,7 @@ type PartidoVivo = {
   categoriaNombre: string
 }
 
-export function PartidosEnVivoCarousel({ categorias, clubA, clubB }: Props) {
+export function PartidosEnVivoCarousel({ categorias }: Props) {
   const partidos: PartidoVivo[] = categorias.flatMap((cat) =>
     cat.partidos
       .filter((p) => p.estado === "en_vivo")
@@ -51,97 +51,110 @@ export function PartidosEnVivoCarousel({ categorias, clubA, clubB }: Props) {
         scrollSnapType: "x mandatory",
         msOverflowStyle: "none", scrollbarWidth: "none",
       }}>
-        {partidos.map((partido) => (
+        {partidos.map((partido) => {
+          // "4-3" → scoreA=4, scoreB=3  |  multi-set "6-3 4-3" → last set
+          const lastSet = partido.resultado?.trim().split(/\s+/).at(-1) ?? null
+          const [scoreA, scoreB] = lastSet ? lastSet.split("-") : ["–", "–"]
+
+          return (
           <div key={partido.id} style={{
             flexShrink: 0, width: 280,
-            background: "#ffffff",
-            border: "2px solid #BCFF00",
-            borderRadius: 10, padding: "12px 14px",
+            background: "#BCFF00",
+            borderRadius: 14, padding: "14px 16px",
             scrollSnapAlign: "start",
-            boxShadow: "0 2px 8px rgba(188,255,0,0.15)",
+            position: "relative",
+            overflow: "hidden",
           }}>
+            {/* Ghost VIVO */}
+            <span aria-hidden style={{
+              position: "absolute",
+              right: -4, bottom: -10,
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontSize: 58, fontWeight: 400, lineHeight: 1,
+              color: "rgba(0,0,0,0.08)",
+              letterSpacing: "-0.02em",
+              pointerEvents: "none", userSelect: "none",
+              textTransform: "uppercase",
+            }}>
+              VIVO
+            </span>
+
             {/* Categoría */}
             <div style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 8, fontWeight: 900,
-              color: "#64748b",
+              fontSize: 9, fontWeight: 900,
+              color: "rgba(0,0,0,0.5)",
               textTransform: "uppercase", letterSpacing: "0.12em",
-              marginBottom: 8,
+              marginBottom: 12,
+              display: "flex", alignItems: "center", gap: 5,
             }}>
+              <span style={{
+                width: 5, height: 5, borderRadius: "50%",
+                background: "#000", display: "inline-block", flexShrink: 0,
+              }} />
               {partido.categoriaNombre}
             </div>
 
-            {/* Parejas */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center" }}>
+            {/* Parejas + score — apiladas */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative", zIndex: 1 }}>
+
+              {/* Fila A */}
               <div style={{
-                borderLeft: `2px solid ${clubA.color}`,
-                paddingLeft: 8,
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                gap: 10, paddingBottom: 8,
               }}>
-                <div style={{
+                <span style={{
                   fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 8, fontWeight: 900,
-                  color: clubA.color,
-                  textTransform: "uppercase", letterSpacing: "0.1em",
-                  marginBottom: 3,
-                }}>
-                  {clubA.abbr}
-                </div>
-                <div style={{
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 12, fontWeight: 800,
-                  color: "#0f172a", lineHeight: 1.3,
+                  fontSize: 13, fontWeight: 900, color: "#000",
+                  lineHeight: 1.2, textTransform: "uppercase",
+                  flex: 1, minWidth: 0,
                 }}>
                   {partido.pairA}
-                </div>
-              </div>
-
-              <div style={{ textAlign: "center" }}>
-                <div style={{
+                </span>
+                <span style={{
                   fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 22, fontWeight: 400,
-                  color: "#0f172a", lineHeight: 1,
-                  background: "#BCFF00",
-                  borderRadius: 6,
-                  padding: "2px 8px",
+                  fontSize: 16, fontWeight: 400,
+                  color: "#fff", background: "#000",
+                  borderRadius: 6, padding: "3px 10px",
+                  display: "inline-block", whiteSpace: "nowrap",
+                  flexShrink: 0,
                 }}>
-                  {partido.resultado ?? "–"}
-                </div>
-                <div style={{
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 7, fontWeight: 900,
-                  color: "#16a34a",
-                  textTransform: "uppercase", letterSpacing: "0.08em",
-                  marginTop: 4,
-                }}>
-                  en vivo
-                </div>
+                  {scoreA}
+                </span>
               </div>
 
+              {/* Separador */}
+              <div style={{ height: 1, background: "rgba(0,0,0,0.1)", marginBottom: 8 }} />
+
+              {/* Fila B */}
               <div style={{
-                textAlign: "right",
-                borderRight: `2px solid ${clubB.color}`,
-                paddingRight: 8,
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                gap: 10,
               }}>
-                <div style={{
+                <span style={{
                   fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 8, fontWeight: 900,
-                  color: clubB.color,
-                  textTransform: "uppercase", letterSpacing: "0.1em",
-                  marginBottom: 3,
-                }}>
-                  {clubB.abbr}
-                </div>
-                <div style={{
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 12, fontWeight: 800,
-                  color: "#0f172a", lineHeight: 1.3, textAlign: "right",
+                  fontSize: 13, fontWeight: 900, color: "#000",
+                  lineHeight: 1.2, textTransform: "uppercase",
+                  flex: 1, minWidth: 0,
                 }}>
                   {partido.pairB}
-                </div>
+                </span>
+                <span style={{
+                  fontFamily: "var(--font-anton), Anton, sans-serif",
+                  fontSize: 16, fontWeight: 400,
+                  color: "#fff", background: "#000",
+                  borderRadius: 6, padding: "3px 10px",
+                  display: "inline-block", whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}>
+                  {scoreB}
+                </span>
               </div>
+
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
