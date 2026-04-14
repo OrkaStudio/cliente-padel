@@ -34,7 +34,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
         <span style={{
           width: 7, height: 7, borderRadius: "50%", background: "#16a34a",
           flexShrink: 0, display: "inline-block",
-          boxShadow: "0 0 8px rgba(22,163,74,0.5)",
+          boxShadow: "0 0 8px rgba(188,255,0,0.6)",
         }} />
         <span style={{
           fontFamily: "var(--font-space-grotesk), sans-serif",
@@ -42,7 +42,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
           color: "#16a34a",
           textTransform: "uppercase", letterSpacing: "0.12em",
         }}>
-          En cancha ahora · {partidos.length} {partidos.length === 1 ? "partido" : "partidos"}
+          En cancha ahora
         </span>
       </div>
 
@@ -66,16 +66,16 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
               scrollSnapAlign: "start",
               position: "relative",
               overflow: "hidden",
-              boxShadow: "0 2px 12px rgba(22,163,74,0.1)",
+              boxShadow: "0 2px 12px rgba(22,163,74,0.12)",
             }}>
 
-              {/* Ghost VIVO — grande, abajo a la derecha */}
+              {/* Ghost VIVO */}
               <span aria-hidden style={{
                 position: "absolute",
                 right: -4, bottom: -10,
                 fontFamily: "var(--font-anton), Anton, sans-serif",
                 fontSize: 58, fontWeight: 400, lineHeight: 1,
-                color: "rgba(188,255,0,0.35)",
+                color: "rgba(22,163,74,0.35)",
                 letterSpacing: "-0.02em",
                 pointerEvents: "none", userSelect: "none",
                 textTransform: "uppercase",
@@ -91,7 +91,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
                 <div style={{
                   fontFamily: "var(--font-space-grotesk), sans-serif",
                   fontSize: 9, fontWeight: 900,
-                  color: "rgba(0,0,0,0.45)",
+                  color: "#0f172a",
                   textTransform: "uppercase", letterSpacing: "0.12em",
                   display: "flex", alignItems: "center", gap: 5,
                 }}>
@@ -105,12 +105,12 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
                   <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
                     <span style={{
                       fontFamily: "'Material Symbols Outlined'",
-                      fontSize: 10, lineHeight: 1, color: "#16a34a",
+                      fontSize: 10, lineHeight: 1, color: "#0f172a",
                     }}>location_on</span>
                     <span style={{
                       fontFamily: "var(--font-space-grotesk), sans-serif",
                       fontSize: 9, fontWeight: 700,
-                      color: "#16a34a", letterSpacing: "0.03em",
+                      color: "#0f172a", letterSpacing: "0.03em",
                     }}>
                       {[partido.sede, partido.horaInicio].filter(Boolean).join(" · ")}
                     </span>
@@ -137,7 +137,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
                   <span style={{
                     fontFamily: "var(--font-anton), Anton, sans-serif",
                     fontSize: 16, fontWeight: 400,
-                    color: "#fff", background: "#16a34a",
+                    color: "#0f172a", background: "#e2e8f0",
                     borderRadius: 6, padding: "3px 10px",
                     display: "inline-block", whiteSpace: "nowrap", flexShrink: 0,
                   }}>
@@ -146,7 +146,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
                 </div>
 
                 {/* Separador */}
-                <div style={{ height: 1, background: "#f1f5f9", marginBottom: 8 }} />
+                <div style={{ height: 1, background: "#e2e8f0", marginBottom: 8 }} />
 
                 {/* Fila B */}
                 <div style={{
@@ -164,7 +164,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
                   <span style={{
                     fontFamily: "var(--font-anton), Anton, sans-serif",
                     fontSize: 16, fontWeight: 400,
-                    color: "#fff", background: "#16a34a",
+                    color: "#0f172a", background: "#e2e8f0",
                     borderRadius: 6, padding: "3px 10px",
                     display: "inline-block", whiteSpace: "nowrap", flexShrink: 0,
                   }}>

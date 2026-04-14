@@ -49,34 +49,29 @@ export function HeroMarcador({
         alignItems: "center",
         justifyContent: "space-between",
       }}>
-        <span style={{
-          background: "#0f172a", color: "#fff",
-          padding: "3px 10px", borderRadius: 2,
-          fontSize: 9, fontWeight: 900,
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          textTransform: "uppercase", letterSpacing: "0.12em",
-        }}>Interclub</span>
+        {isLive && (
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            background: "#16a34a", color: "#fff",
+            padding: "3px 10px", borderRadius: 2,
+            fontSize: 9, fontWeight: 900,
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            textTransform: "uppercase", letterSpacing: "0.12em",
+          }}>
+            <span className="live-dot" style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: "#fff", display: "inline-block", flexShrink: 0,
+              boxShadow: "0 0 6px rgba(255,255,255,0.7)",
+            }} />
+            En vivo
+          </span>
+        )}
 
         <div style={{
           display: "flex", alignItems: "center", gap: 5,
           fontFamily: "var(--font-space-grotesk), sans-serif",
           fontSize: 10, fontWeight: 700, color: "#94a3b8",
         }}>
-          {isLive && (
-            <span style={{
-              display: "inline-flex", alignItems: "center", gap: 4,
-              color: "#16a34a", fontWeight: 900,
-              fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em",
-              marginRight: 4,
-            }}>
-              <span className="live-dot" style={{
-                width: 6, height: 6, borderRadius: "50%",
-                background: "#16a34a", display: "inline-block",
-                boxShadow: "0 0 6px rgba(22,163,74,0.7)",
-              }} />
-              En vivo
-            </span>
-          )}
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1 }}>
             calendar_today
           </span>
@@ -109,7 +104,7 @@ export function HeroMarcador({
           minHeight: 160,
         }}>
           {clubA.logoUrl && (
-            <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+            <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.85 }}>
               <Image
                 src={clubA.logoUrl} alt=""
                 fill
@@ -120,7 +115,7 @@ export function HeroMarcador({
           <span style={{
             position: "relative", zIndex: 1,
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: liderA ? 62 : 44, fontWeight: 900, lineHeight: 1,
+            fontSize: 52, fontWeight: 900, lineHeight: 1,
             color: "#0f172a",
             letterSpacing: "-0.04em",
           }}>{ptsA}</span>
@@ -169,7 +164,7 @@ export function HeroMarcador({
           minHeight: 160,
         }}>
           {clubB.logoUrl && (
-            <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+            <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.85 }}>
               <Image
                 src={clubB.logoUrl} alt=""
                 fill
@@ -180,7 +175,7 @@ export function HeroMarcador({
           <span style={{
             position: "relative", zIndex: 1,
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: liderB ? 62 : 44, fontWeight: 900, lineHeight: 1,
+            fontSize: 52, fontWeight: 900, lineHeight: 1,
             color: "#0f172a",
             letterSpacing: "-0.04em",
           }}>{ptsB}</span>
@@ -203,8 +198,8 @@ export function HeroMarcador({
               <span style={{
                 fontFamily: "var(--font-space-grotesk), sans-serif",
                 fontSize: 20, fontWeight: 900, lineHeight: 1,
-                color: stat.live ? "#000" : "#0f172a",
-                background: stat.live ? "#BCFF00" : "transparent",
+                color: stat.live ? "#fff" : "#0f172a",
+                background: stat.live ? "#16a34a" : "transparent",
                 borderRadius: stat.live ? 4 : 0,
                 padding: stat.live ? "1px 6px" : 0,
                 display: "inline-block",
