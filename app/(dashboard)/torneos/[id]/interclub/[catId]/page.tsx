@@ -25,7 +25,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     partidos: [
       { id: "p5", pairA: "Ferreyra / Ríos", pairB: "Campos / Bravo", resultado: "6-3 6-4", ganador: "A", estado: "finalizado" },
       { id: "p6", pairA: "Ferreyra / Ríos", pairB: "Herrera / Sosa", resultado: "3-6 4-6", ganador: "B", estado: "finalizado" },
-      { id: "p7", pairA: "Peralta / Luna", pairB: "Campos / Bravo", resultado: "6-3 4-3", ganador: null, estado: "en_vivo", horaInicio: "14:30", cancha: "Cancha 1" },
+      { id: "p7", pairA: "Peralta / Luna", pairB: "Campos / Bravo", resultado: "6-3 4-3", ganador: null, estado: "en_vivo", horaInicio: "14:30", sede: "Voleando" },
       { id: "p8", pairA: "Peralta / Luna", pairB: "Herrera / Sosa", resultado: null, ganador: null, estado: "pendiente" },
     ],
   },
@@ -34,7 +34,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     partidos: [
       { id: "p9", pairA: "García / Vega", pairB: "Martín / Paz", resultado: "3-6 2-6", ganador: "B", estado: "finalizado" },
       { id: "p10", pairA: "García / Vega", pairB: "Núñez / Reyes", resultado: "1-6 2-6", ganador: "B", estado: "finalizado" },
-      { id: "p11", pairA: "Castro / Medina", pairB: "Martín / Paz", resultado: "5-4", ganador: null, estado: "en_vivo", horaInicio: "14:30", cancha: "Cancha 2" },
+      { id: "p11", pairA: "Castro / Medina", pairB: "Martín / Paz", resultado: "5-4", ganador: null, estado: "en_vivo", horaInicio: "14:30", sede: "+Pádel" },
       { id: "p12", pairA: "Castro / Medina", pairB: "Núñez / Reyes", resultado: null, ganador: null, estado: "pendiente" },
     ],
   },
@@ -60,7 +60,7 @@ const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     id: "6", nombre: "Quinta", estado: "en_vivo", ptsA: 1, ptsB: 0,
     partidos: [
       { id: "p21", pairA: "Molina / Quiroga", pairB: "Espinoza / Vidal", resultado: "6-2 6-3", ganador: "A", estado: "finalizado" },
-      { id: "p22", pairA: "Molina / Quiroga", pairB: "Aguilar / Rojas", resultado: "4-2", ganador: null, estado: "en_vivo", horaInicio: "15:00", cancha: "Cancha 3" },
+      { id: "p22", pairA: "Molina / Quiroga", pairB: "Aguilar / Rojas", resultado: "4-2", ganador: null, estado: "en_vivo", horaInicio: "15:00", sede: "Voleando" },
       { id: "p23", pairA: "Navarro / Palacios", pairB: "Espinoza / Vidal", resultado: null, ganador: null, estado: "pendiente" },
       { id: "p24", pairA: "Navarro / Palacios", pairB: "Aguilar / Rojas", resultado: null, ganador: null, estado: "pendiente" },
     ],
@@ -328,7 +328,7 @@ export default async function CategoriaInterclubPage({
                   estado="en_vivo"
                   ganador={null}
                   horaInicio={p.horaInicio}
-                  cancha={p.cancha}
+                  sede={p.sede}
                 />
               ))}
             </div>
@@ -412,7 +412,7 @@ function parseSets(resultado: string | null): string[] {
 }
 
 function PartidoCard({
-  pairA, pairB, resultado, estado, ganador, horaInicio, cancha,
+  pairA, pairB, resultado, estado, ganador, horaInicio, sede,
 }: {
   pairA: string
   pairB: string
@@ -420,7 +420,7 @@ function PartidoCard({
   estado: "pendiente" | "en_vivo" | "finalizado"
   ganador: "A" | "B" | null
   horaInicio?: string
-  cancha?: string
+  sede?: string
 }) {
   const isLive = estado === "en_vivo"
   const isFin = estado === "finalizado"
@@ -446,43 +446,23 @@ function PartidoCard({
         : "0 1px 4px rgba(0,0,0,0.04)",
     }}>
 
-      {/* Hora + cancha (solo en vivo o pendiente con datos) */}
-      {(horaInicio || cancha) && (
+      {/* Hora + sede */}
+      {(horaInicio || sede) && (
         <div style={{
-          display: "flex", gap: 8, alignItems: "center",
+          display: "flex", gap: 6, alignItems: "center",
           marginBottom: 10,
         }}>
-          {horaInicio && (
-            <span style={{
-              display: "inline-flex", alignItems: "center", gap: 3,
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 8, fontWeight: 700,
-              color: isLive ? "rgba(255,255,255,0.4)" : "#94a3b8",
-              textTransform: "uppercase", letterSpacing: "0.08em",
-            }}>
-              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1 }}>
-                schedule
-              </span>
-              {horaInicio}
-            </span>
-          )}
-          {horaInicio && cancha && (
-            <span style={{ color: isLive ? "rgba(255,255,255,0.15)" : "#e2e8f0", fontSize: 8 }}>·</span>
-          )}
-          {cancha && (
-            <span style={{
-              display: "inline-flex", alignItems: "center", gap: 3,
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 8, fontWeight: 700,
-              color: isLive ? "rgba(255,255,255,0.4)" : "#94a3b8",
-              textTransform: "uppercase", letterSpacing: "0.08em",
-            }}>
-              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1 }}>
-                sports_tennis
-              </span>
-              {cancha}
-            </span>
-          )}
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1, color: isLive ? "rgba(255,255,255,0.4)" : "#94a3b8" }}>
+            location_on
+          </span>
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 8, fontWeight: 700,
+            color: isLive ? "rgba(255,255,255,0.4)" : "#94a3b8",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+          }}>
+            {[sede, horaInicio].filter(Boolean).join(" · ")}
+          </span>
         </div>
       )}
 

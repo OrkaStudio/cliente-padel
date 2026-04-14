@@ -12,7 +12,7 @@ export type Partido = {
   ganador: "A" | "B" | null
   estado: "pendiente" | "en_vivo" | "finalizado"
   horaInicio?: string  // "14:30"
-  cancha?: string      // "Cancha 1"
+  sede?: string        // "Voleando" | "+Pádel"
 }
 
 export type CategoriaInterclub = {
