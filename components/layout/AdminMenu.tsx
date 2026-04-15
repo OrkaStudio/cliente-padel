@@ -103,53 +103,6 @@ export function AdminMenu() {
                 boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
               }}
             >
-              {/* Admin */}
-              <motion.button
-                onClick={() => { setOpen(false); router.push("/admin") }}
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0, type: "spring", stiffness: 300, damping: 22 }}
-                whileTap={{ scale: 0.97 }}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  width: "100%", padding: "10px 12px",
-                  borderRadius: 8, border: "none",
-                  background: "#f8fafc",
-                  cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                  textAlign: "left", marginBottom: 6,
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")}
-                onMouseLeave={e => (e.currentTarget.style.background = "#f8fafc")}
-              >
-                <span style={{
-                  fontFamily: "'Material Symbols Outlined'",
-                  fontSize: 18, color: "#0f172a", lineHeight: 1,
-                }}>
-                  admin_panel_settings
-                </span>
-                <div>
-                  <p style={{
-                    fontFamily: "var(--font-space-grotesk), sans-serif",
-                    fontSize: 12, fontWeight: 900, color: "#0f172a",
-                    margin: 0, letterSpacing: "0.02em",
-                  }}>
-                    Modo Admin
-                  </p>
-                  <p style={{
-                    fontFamily: "var(--font-space-grotesk), sans-serif",
-                    fontSize: 10, color: "#94a3b8", margin: 0,
-                  }}>
-                    Cristián — Organizador
-                  </p>
-                </div>
-              </motion.button>
-
-              {/* Separador */}
-              <div style={{
-                height: 1, background: "#f1f5f9",
-                margin: "2px 4px 8px",
-              }} />
-
               {/* Label veedores */}
               <p style={{
                 fontFamily: "var(--font-space-grotesk), sans-serif",

@@ -29,18 +29,14 @@ export function BottomNav() {
       ]
     : torneoId
     ? [
-        { href: `/torneos/${torneoId}`,         icon: "home",           label: "Torneo"  },
-        { href: `/torneos/${torneoId}/fixture`,  icon: "calendar_today", label: "Fixture" },
-        { href: `/torneos/${torneoId}/tabla`,    icon: "leaderboard",    label: "Tabla"   },
-        { href: `/torneos/${torneoId}/llaves`,   icon: "account_tree",   label: "Llaves"  },
+        { href: `/torneos/${torneoId}/interclub`, icon: "home",           label: "Torneo"  },
+        { href: `/torneos/${torneoId}/fixture`,   icon: "calendar_today", label: "Fixture" },
       ]
     : [
         { href: "/torneos", icon: "home", label: "Torneos" },
       ]
 
   const isActive = (href: string) => {
-    // Exact match para raíces de sección
-    if (href === `/torneos/${torneoId}`) return pathname === href
     if (href === `/admin/torneo/${adminTorneoId}`) return pathname === href
     if (href === "/admin") return pathname === "/admin"
     return pathname.startsWith(href)

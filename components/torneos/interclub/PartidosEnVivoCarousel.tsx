@@ -57,8 +57,6 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
         {partidos.map((partido, i) => {
           const sets = partido.resultado?.trim().split(/\s+/) ?? []
           const parsed = sets.map(s => { const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" } })
-          const showVivo = i === 0
-
           return (
             <div key={partido.id} style={{
               flexShrink: 0, width: 280,
@@ -71,8 +69,8 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
               boxShadow: "0 2px 12px rgba(188,255,0,0.12)",
             }}>
 
-              {/* Ghost VIVO — detrás de todo (solo card 0 para comparar) */}
-              {showVivo && (
+              {/* Ghost VIVO — detrás de todo */}
+              {(
                 <span aria-hidden style={{
                   position: "absolute", zIndex: 0,
                   right: -4, bottom: -10,
