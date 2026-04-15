@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header style={{
         position: "sticky",
         top: 0,
-        zIndex: 50,
+        zIndex: 200,
         background: "rgba(255,255,255,0.85)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",

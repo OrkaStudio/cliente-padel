@@ -1,13 +1,13 @@
 import Link from "next/link"
-import Image from "next/image"
 import { notFound } from "next/navigation"
+import { HeroMarcador } from "@/components/torneos/interclub/HeroMarcador"
 import type { CategoriaInterclub, Club } from "@/components/torneos/interclub/CategoriasInterclub"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyHref = any
 
 const CLUB_A: Club = { nombre: "Voleando", color: "#0f172a", abbr: "VOL", logoUrl: "/clubes/voleando.logo.png" }
-const CLUB_B: Club = { nombre: "Más Pádel", color: "#b45309", abbr: "MP", logoUrl: "/clubes/mas-padel.logo.png" }
+const CLUB_B: Club = { nombre: "Más Pádel", color: "#b45309", abbr: "+P", logoUrl: "/clubes/mas-padel.logo.png" }
 
 // Mismo mock que la página padre — en producción vendrá de Supabase
 const MOCK_CATEGORIAS: CategoriaInterclub[] = [
@@ -123,16 +123,10 @@ export default async function CategoriaInterclubPage({
 
   const isLive = cat.estado === "en_vivo"
   const isFin  = cat.estado === "finalizado"
-  const liderA = cat.ptsA > cat.ptsB
-  const liderB = cat.ptsB > cat.ptsA
 
   const enVivo      = cat.partidos.filter((p) => p.estado === "en_vivo")
   const finalizados = cat.partidos.filter((p) => p.estado === "finalizado")
   const pendientes  = cat.partidos.filter((p) => p.estado === "pendiente")
-
-  // Parejas únicas por club
-  const parejasA = [...new Set(cat.partidos.map((p) => p.pairA))]
-  const parejasB = [...new Set(cat.partidos.map((p) => p.pairB))]
 
   return (
     <div style={{ background: "#f8fafc", minHeight: "100vh", paddingBottom: 60 }}>
@@ -140,180 +134,102 @@ export default async function CategoriaInterclubPage({
       {/* ── Sticky header ── */}
       <div style={{
         background: "#ffffff",
-        borderBottom: "1px solid #e2e8f0",
-        padding: "12px 18px",
-        position: "sticky", top: 0, zIndex: 10,
-        display: "flex", alignItems: "center", gap: 10,
+        borderBottom: "1px solid #f1f5f9",
+        position: "sticky", top: 45, zIndex: 50,
+        display: "flex", alignItems: "center",
+        padding: "0 18px", height: 52,
+        gap: 12,
       }}>
+        {/* Back */}
         <Link
           href={`/torneos/${id}/interclub` as AnyHref}
           style={{
             display: "inline-flex", alignItems: "center", gap: 4,
-            color: "#64748b", textDecoration: "none",
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, fontWeight: 700,
-            WebkitTapHighlightColor: "transparent",
+            color: "#94a3b8", textDecoration: "none",
+            WebkitTapHighlightColor: "transparent", flexShrink: 0,
           }}
         >
-          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, lineHeight: 1 }}>
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, lineHeight: 1 }}>
             arrow_back
           </span>
-          Interclubes
         </Link>
 
-        {isLive && (
+        {/* Separador */}
+        <div style={{ width: 1, height: 20, background: "#e2e8f0", flexShrink: 0 }} />
+
+        {/* Categoría + score */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", minWidth: 0 }}>
           <span style={{
-            display: "inline-flex", alignItems: "center", gap: 4,
-            background: "#BCFF00", color: "#000",
-            padding: "2px 8px", borderRadius: 100,
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 900,
-            textTransform: "uppercase", letterSpacing: "0.1em",
-          }}>
-            <span className="live-dot" style={{
-              width: 5, height: 5, borderRadius: "50%", background: "#000",
-            }} />
-            En vivo
-          </span>
-        )}
-        {isFin && (
-          <span style={{
-            background: "#f1f5f9", color: "#64748b",
-            padding: "2px 8px", borderRadius: 100,
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 900,
-            textTransform: "uppercase", letterSpacing: "0.1em",
-          }}>
-            Finalizado
-          </span>
-        )}
+            fontFamily: "var(--font-anton), Anton, sans-serif",
+            fontSize: 16, fontWeight: 400, lineHeight: 1,
+            color: "#0f172a", textTransform: "uppercase",
+            letterSpacing: "0.02em",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>{cat.nombre}</span>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginLeft: 10 }}>
+            <span style={{
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontSize: 18, lineHeight: 1, color: "#0f172a",
+            }}>{cat.ptsA}</span>
+            <span style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 9, fontWeight: 700, color: "#cbd5e1",
+            }}>–</span>
+            <span style={{
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontSize: 18, lineHeight: 1, color: "#0f172a",
+            }}>{cat.ptsB}</span>
+
+            {isLive && (
+              <span className="live-dot" style={{
+                width: 6, height: 6, borderRadius: "50%",
+                background: "#bcff00", flexShrink: 0, display: "inline-block",
+                boxShadow: "0 0 6px rgba(188,255,0,0.6)",
+              }} />
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* ── Marcador — split layout igual a HeroMarcador ── */}
-      <div style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0" }}>
+      {/* ── Marcador ── */}
+      <HeroMarcador
+        compact
+        clubA={CLUB_A}
+        clubB={CLUB_B}
+        ptsA={cat.ptsA}
+        ptsB={cat.ptsB}
+      />
 
-        {/* Nombre categoría */}
-        <div style={{ padding: "14px 18px 0", textAlign: "center" }}>
-          <h2 style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 20, fontWeight: 400, lineHeight: 1,
-            color: "#0f172a", textTransform: "uppercase",
-            letterSpacing: "0.03em", margin: 0,
-          }}>{cat.nombre}</h2>
-        </div>
-
-        {/* Split marcador */}
-        <div style={{
-          display: "flex", alignItems: "stretch",
-          margin: "14px 14px 0",
-          borderRadius: 16, overflow: "hidden",
-          boxShadow: "0 2px 20px rgba(0,0,0,0.07)",
-        }}>
-          {/* Club A */}
+      {/* Progress bar */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "10px 18px 12px",
+        background: "#f8fafc", borderBottom: "1px solid #e2e8f0",
+      }}>
+        <div style={{ flex: 1, height: 3, background: "#e2e8f0", borderRadius: 2, overflow: "hidden" }}>
           <div style={{
-            flex: 1, position: "relative",
-            background: "#f8fafc",
-            display: "flex", flexDirection: "column",
-            alignItems: "flex-start", justifyContent: "flex-end",
-            padding: "20px 20px 22px",
-            overflow: "hidden", minHeight: 130,
-          }}>
-            {CLUB_A.logoUrl && (
-              <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-                <Image src={CLUB_A.logoUrl} alt="" fill style={{ objectFit: "contain", padding: 16, opacity: 0.45 }} />
-              </div>
-            )}
-            <span style={{
-              position: "relative", zIndex: 1,
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: liderA ? 62 : 44, fontWeight: 900, lineHeight: 1,
-              color: "#0f172a", letterSpacing: "-0.04em",
-            }}>{cat.ptsA}</span>
-          </div>
-
-          {/* VS divider */}
-          <div style={{
-            width: 48, background: "#f8fafc", flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            position: "relative",
-          }}>
-            <div style={{
-              position: "absolute", top: 0, bottom: 0, left: "50%",
-              width: 1, background: "#e2e8f0", transform: "translateX(-50%)",
-            }} />
-            <div style={{
-              position: "relative", zIndex: 1,
-              width: 34, height: 34, borderRadius: "50%",
-              background: "#0f172a",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 0 3px #f8fafc, 0 4px 12px rgba(0,0,0,0.18)",
-            }}>
-              <span style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 9, fontWeight: 900, color: "#BCFF00",
-                textTransform: "uppercase", letterSpacing: "0.06em",
-              }}>vs</span>
-            </div>
-          </div>
-
-          {/* Club B */}
-          <div style={{
-            flex: 1, position: "relative",
-            background: "#f8fafc",
-            display: "flex", flexDirection: "column",
-            alignItems: "flex-end", justifyContent: "flex-end",
-            padding: "20px 20px 22px",
-            overflow: "hidden", minHeight: 130,
-          }}>
-            {CLUB_B.logoUrl && (
-              <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-                <Image src={CLUB_B.logoUrl} alt="" fill style={{ objectFit: "contain", padding: 16, opacity: 0.45 }} />
-              </div>
-            )}
-            <span style={{
-              position: "relative", zIndex: 1,
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: liderB ? 62 : 44, fontWeight: 900, lineHeight: 1,
-              color: "#0f172a", letterSpacing: "-0.04em",
-            }}>{cat.ptsB}</span>
-          </div>
+            height: "100%",
+            width: `${cat.partidos.length > 0 ? (finalizados.length / cat.partidos.length) * 100 : 0}%`,
+            background: isLive ? "#bcff00" : "#0f172a",
+            borderRadius: 2,
+          }} />
         </div>
-
-        {/* Progress bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px 14px" }}>
-          <div style={{ flex: 1, height: 3, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
-            <div style={{
-              height: "100%",
-              width: `${cat.partidos.length > 0 ? (finalizados.length / cat.partidos.length) * 100 : 0}%`,
-              background: isLive ? "#bcff00" : "#0f172a",
-              borderRadius: 2,
-            }} />
-          </div>
-          <span style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 9, fontWeight: 700, color: "#94a3b8", whiteSpace: "nowrap",
-          }}>{finalizados.length}/{cat.partidos.length} jugados</span>
-        </div>
+        <span style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 9, fontWeight: 700, color: "#94a3b8", whiteSpace: "nowrap",
+        }}>{finalizados.length}/{cat.partidos.length} jugados</span>
       </div>
 
       {/* ── Contenido ── */}
       <div style={{ padding: "0 14px 8px" }}>
 
-        {/* 1. EN VIVO — card lime igual al carousel */}
+        {/* 1. EN VIVO */}
         {enVivo.map((p) => (
-          <LiveCard key={p.id} partido={p} clubA={CLUB_A} clubB={CLUB_B} />
+          <LiveCard key={p.id} partido={p} />
         ))}
 
-        {/* 2. EQUIPOS — 2 cards con las parejas */}
-        <section style={{ paddingTop: 16 }}>
-          <SectionLabel label="Equipos" />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
-            <EquipoCard club={CLUB_A} parejas={parejasA} />
-            <EquipoCard club={CLUB_B} parejas={parejasB} />
-          </div>
-        </section>
-
-        {/* 3. FIXTURE */}
+        {/* 2. FIXTURE */}
         {(pendientes.length > 0 || finalizados.length > 0) && (
           <section style={{ paddingTop: 20 }}>
             <SectionLabel label="Fixture" />
@@ -325,7 +241,7 @@ export default async function CategoriaInterclubPage({
                   <PartidoCard
                     key={p.id} index={i}
                     pairA={p.pairA} pairB={p.pairB}
-                    resultado={null} estado="pendiente" ganador={null}
+                    resultado={null} ganador={null}
                     horaInicio={p.horaInicio} sede={p.sede}
                     clubA={CLUB_A} clubB={CLUB_B}
                   />
@@ -352,7 +268,7 @@ export default async function CategoriaInterclubPage({
                     <PartidoCard
                       key={p.id} index={i}
                       pairA={p.pairA} pairB={p.pairB}
-                      resultado={p.resultado} estado="finalizado" ganador={p.ganador}
+                      resultado={p.resultado} ganador={p.ganador}
                       horaInicio={p.horaInicio} sede={p.sede}
                       clubA={CLUB_A} clubB={CLUB_B}
                     />
@@ -386,229 +302,149 @@ export default async function CategoriaInterclubPage({
 
 // ─── Sub-componentes ────────────────────────────────────────────────────────
 
-function SectionLabel({ label, accent }: { label: string; accent?: boolean }) {
+function SectionLabel({ label }: { label: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-      {accent ? (
-        <span className="live-dot" style={{
-          width: 6, height: 6, borderRadius: "50%",
-          background: "#16a34a", flexShrink: 0,
-          display: "inline-block",
-          boxShadow: "0 0 6px rgba(22,163,74,0.6)",
-        }} />
-      ) : (
-        <div style={{ width: 12, height: 2, borderRadius: 1, background: "#cbd5e1", flexShrink: 0 }} />
-      )}
-      <span style={{
-        fontFamily: "var(--font-space-grotesk), sans-serif",
-        fontSize: 10, fontWeight: 900,
-        textTransform: "uppercase", letterSpacing: "0.1em",
-        color: accent ? "#16a34a" : "#94a3b8",
-      }}>{label}</span>
-    </div>
+    <span style={{
+      fontFamily: "var(--font-space-grotesk), sans-serif",
+      fontSize: 10, fontWeight: 900,
+      textTransform: "uppercase", letterSpacing: "0.1em",
+      color: "#94a3b8",
+    }}>{label}</span>
   )
 }
 
-// ─── LiveCard ────────────────────────────────────────────────────────────────
+// ─── LiveCard — idéntica al carousel ─────────────────────────────────────────
 
-function LiveCard({ partido: p, clubA, clubB }: {
+function LiveCard({ partido: p }: {
   partido: { id: string; pairA: string; pairB: string; resultado: string | null; horaInicio?: string; sede?: string }
-  clubA: Club; clubB: Club
 }) {
-  const sets = p.resultado ? p.resultado.trim().split(/\s+/) : []
+  const sets = p.resultado?.trim().split(/\s+/) ?? []
+  const parsed = sets.map(s => { const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" } })
 
   return (
     <div style={{ paddingTop: 16 }}>
       <div style={{
-        background: "#BCFF00", borderRadius: 14,
-        padding: "14px 16px 12px",
+        background: "#ffffff",
+        border: "1.5px solid #bcff00",
+        borderRadius: 14, padding: "13px 14px",
         position: "relative", overflow: "hidden",
+        boxShadow: "0 2px 12px rgba(188,255,0,0.12)",
       }}>
         {/* Ghost VIVO */}
         <span aria-hidden style={{
-          position: "absolute", right: -6, bottom: -10,
+          position: "absolute", zIndex: 0,
+          right: -4, bottom: -10,
           fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: 52, fontWeight: 400, lineHeight: 1,
-          color: "rgba(0,0,0,0.07)", letterSpacing: "-0.02em",
+          fontSize: 58, fontWeight: 400, lineHeight: 1,
+          color: "rgba(188,255,0,0.32)", letterSpacing: "-0.02em",
           pointerEvents: "none", userSelect: "none", textTransform: "uppercase",
         }}>VIVO</span>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 10 }}>
-          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#000", display: "inline-block" }} />
-          <span style={{
+        {/* Degradado sobre VIVO */}
+        <div aria-hidden style={{
+          position: "absolute", zIndex: 1,
+          inset: 0, pointerEvents: "none",
+          background: "linear-gradient(to bottom right, transparent 40%, rgba(255,255,255,0.6) 100%)",
+        }} />
+
+        {/* Top row: label ← → sede/hora */}
+        <div style={{
+          position: "relative", zIndex: 2,
+          display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+          marginBottom: 12,
+        }}>
+          <div style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 900, color: "rgba(0,0,0,0.55)",
+            fontSize: 9, fontWeight: 900, color: "#0f172a",
             textTransform: "uppercase", letterSpacing: "0.12em",
-          }}>En cancha ahora</span>
-        </div>
-
-        {/* Parejas + score */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center", marginBottom: 12 }}>
-          <div>
-            <span style={{
-              display: "inline-block",
-              border: "1px solid rgba(0,0,0,0.18)", color: "rgba(0,0,0,0.45)",
-              padding: "1px 5px", borderRadius: 3,
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 7, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em",
-              marginBottom: 4,
-            }}>{clubA.abbr}</span>
-            <div style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 13, fontWeight: 900, color: "#000",
-              lineHeight: 1.2, textTransform: "uppercase",
-            }}>{p.pairA}</div>
-          </div>
-
-          {/* Score */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-            {sets.length === 0 ? (
-              <span style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)",
-              }}>vs</span>
-            ) : (
-              <>
-                {sets.slice(0, -1).map((set, idx) => (
-                  <span key={idx} style={{
-                    fontFamily: "var(--font-anton), Anton, sans-serif",
-                    fontSize: 10, color: "rgba(255,255,255,0.85)",
-                    background: "rgba(0,0,0,0.45)",
-                    borderRadius: 4, padding: "1px 6px",
-                    display: "inline-block", whiteSpace: "nowrap",
-                  }}>{set}</span>
-                ))}
-                <span style={{
-                  fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 15, color: "#fff", background: "#000",
-                  borderRadius: 6, padding: "2px 9px",
-                  display: "inline-block", whiteSpace: "nowrap",
-                }}>{sets[sets.length - 1]}</span>
-              </>
-            )}
-          </div>
-
-          <div style={{ textAlign: "right" }}>
-            <span style={{
-              display: "inline-block",
-              border: "1px solid rgba(0,0,0,0.18)", color: "rgba(0,0,0,0.45)",
-              padding: "1px 5px", borderRadius: 3,
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 7, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em",
-              marginBottom: 4,
-            }}>{clubB.abbr}</span>
-            <div style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 13, fontWeight: 900, color: "#000",
-              lineHeight: 1.2, textTransform: "uppercase", textAlign: "right",
-            }}>{p.pairB}</div>
-          </div>
-        </div>
-
-        {/* Footer: sede + hora */}
-        {(p.sede || p.horaInicio) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1, color: "rgba(0,0,0,0.5)" }}>
-              location_on
-            </span>
-            <span style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.55)", letterSpacing: "0.04em",
-            }}>
-              {[p.sede, p.horaInicio].filter(Boolean).join(" · ")}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── EquipoCard ───────────────────────────────────────────────────────────────
-
-function EquipoCard({ club, parejas }: { club: Club; parejas: string[] }) {
-  return (
-    <div style={{
-      background: "#ffffff",
-      border: "1px solid #e2e8f0",
-      borderRadius: 12,
-      overflow: "hidden",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-    }}>
-      {/* Header del club */}
-      <div style={{
-        background: "#0f172a",
-        padding: "8px 12px",
-        display: "flex", alignItems: "center", gap: 6,
-      }}>
-        <span style={{
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 9, fontWeight: 900, color: "#fff",
-          textTransform: "uppercase", letterSpacing: "0.1em",
-        }}>{club.nombre}</span>
-      </div>
-
-      {/* Lista de parejas */}
-      <div style={{ padding: "8px 0" }}>
-        {parejas.map((pareja, i) => (
-          <div key={i} style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "6px 12px",
-            borderBottom: i < parejas.length - 1 ? "1px solid #f8fafc" : "none",
+            display: "flex", alignItems: "center", gap: 5,
           }}>
             <span style={{
-              width: 18, height: 18, borderRadius: "50%",
-              background: "#f1f5f9",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 8, fontWeight: 900, color: "#94a3b8",
-              flexShrink: 0,
-            }}>{i + 1}</span>
+              width: 5, height: 5, borderRadius: "50%",
+              background: "#0f172a", display: "inline-block", flexShrink: 0,
+            }} />
+            En cancha
+          </div>
+          {(p.sede || p.horaInicio) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1, color: "#0f172a" }}>
+                location_on
+              </span>
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 9, fontWeight: 700, color: "#0f172a", letterSpacing: "0.03em",
+              }}>
+                {[p.sede, p.horaInicio].filter(Boolean).join(" · ")}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Scoreboard */}
+        <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
+          {/* Fila A */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 8 }}>
             <span style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 11, fontWeight: 700, color: "#0f172a",
-              lineHeight: 1.3,
-            }}>{pareja}</span>
+              fontSize: 13, fontWeight: 900, color: "#0f172a",
+              lineHeight: 1.2, textTransform: "uppercase",
+              flex: 1, minWidth: 0,
+            }}>{p.pairA}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              {parsed.map((s, idx) => (
+                <span key={idx} style={{
+                  fontFamily: "var(--font-anton), Anton, sans-serif",
+                  fontSize: 18, fontWeight: 400, lineHeight: 1,
+                  color: "#0f172a", minWidth: 16, textAlign: "center",
+                }}>{s.a}</span>
+              ))}
+              <span className="live-dot" style={{
+                width: 7, height: 7, borderRadius: "50%",
+                background: "#0f172a", flexShrink: 0,
+              }} />
+            </div>
           </div>
-        ))}
+
+          {/* Separador */}
+          <div style={{ height: 1, background: "#f1f5f9", marginBottom: 8 }} />
+
+          {/* Fila B */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 13, fontWeight: 900, color: "#0f172a",
+              lineHeight: 1.2, textTransform: "uppercase",
+              flex: 1, minWidth: 0,
+            }}>{p.pairB}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              {parsed.map((s, idx) => (
+                <span key={idx} style={{
+                  fontFamily: "var(--font-anton), Anton, sans-serif",
+                  fontSize: 18, fontWeight: 400, lineHeight: 1,
+                  color: "#0f172a", minWidth: 16, textAlign: "center",
+                }}>{s.b}</span>
+              ))}
+              <span className="live-dot" style={{
+                width: 7, height: 7, borderRadius: "50%",
+                background: "#0f172a", flexShrink: 0,
+              }} />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-// ─── Score helpers ────────────────────────────────────────────────────────────
 
-function getScoreInfo(
-  resultado: string | null,
-  ganador: "A" | "B" | null,
-  estado: "pendiente" | "en_vivo" | "finalizado"
-): { main: string; detail: string } | null {
-  if (!resultado) return null
-  const sets = resultado.trim().split(/\s+/)
-  if (estado === "en_vivo") {
-    const current = sets[sets.length - 1] ?? "–"
-    const prev    = sets.slice(0, -1).join(" · ")
-    return { main: current, detail: prev }
-  }
-  if (!ganador) return { main: sets.join(" · "), detail: "" }
-  let wA = 0, wB = 0
-  sets.forEach(s => {
-    const parts = s.split("-").map(Number)
-    const a = parts[0] ?? NaN
-    const b = parts[1] ?? NaN
-    if (!isNaN(a) && !isNaN(b)) { if (a > b) wA++; else if (b > a) wB++ }
-  })
-  return { main: `${wA} – ${wB}`, detail: sets.join(" · ") }
-}
+// ─── PartidoCard ──────────────────────────────────────────────────────────────
 
 function PartidoCard({
-  pairA, pairB, resultado, estado, ganador, horaInicio, sede, clubA, clubB, index,
+  pairA, pairB, resultado, ganador, horaInicio, sede, clubA, clubB, index,
 }: {
   pairA: string
   pairB: string
   resultado: string | null
-  estado: "pendiente" | "en_vivo" | "finalizado"
   ganador: "A" | "B" | null
   horaInicio?: string
   sede?: string
@@ -616,113 +452,113 @@ function PartidoCard({
   clubB: Club
   index: number
 }) {
-  const isLive   = estado === "en_vivo"
-  const isFin    = estado === "finalizado"
   const ganadorA = ganador === "A"
   const ganadorB = ganador === "B"
-
-  // Borde izquierdo por sede: dos tonos del mismo gris-azul de la app
-  const sedeColor = sede === "Voleando" ? "#0f172a" : sede ? "#64748b" : "#e2e8f0"
-  const accentColor = isLive ? "#bcff00" : sedeColor
-
-  const scoreInfo = getScoreInfo(resultado, ganador, estado)
+  const sets = resultado?.trim().split(/\s+/) ?? []
+  const parsed = sets.map(s => { const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" } })
+  const hasScore = parsed.length > 0
+  const sedeColor = sede === "Voleando" ? clubA.color : sede ? clubB.color : "#e2e8f0"
 
   return (
     <div style={{
-      background: "#fff",
-      border: "1px solid #e2e8f0",
-      boxShadow: `inset 4px 0 0 ${accentColor}`,
+      background: "#ffffff",
+      border: "1px solid #f1f5f9",
       borderRadius: 12,
-      padding: "10px 14px",
+      padding: "12px 14px",
       animation: "fadeUp 250ms cubic-bezier(0.23,1,0.32,1) both",
       animationDelay: `${Math.min(index, 8) * 40}ms`,
     }}>
 
-      {/* Metadata: hora · sede */}
+      {/* Hora · sede */}
       {(horaInicio || sede) && (
         <div style={{
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 9, fontWeight: 700,
-          color: "#94a3b8", letterSpacing: "0.04em",
-          marginBottom: 8,
-        }}>{[horaInicio, sede].filter(Boolean).join(" · ")}</div>
+          display: "flex", alignItems: "center", gap: 4, marginBottom: 10,
+        }}>
+          <span style={{
+            fontFamily: "'Material Symbols Outlined'",
+            fontSize: 11, lineHeight: 1, color: sedeColor, flexShrink: 0,
+          }}>location_on</span>
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.04em",
+            color: sedeColor,
+          }}>{sede}</span>
+          {horaInicio && (
+            <span style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 9, fontWeight: 600, color: "#94a3b8",
+            }}>· {horaInicio}</span>
+          )}
+        </div>
       )}
 
-      {/* Grid: Club A | score | Club B */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr auto 1fr",
-        alignItems: "center",
-        gap: 10,
-      }}>
-
-        {/* Club A */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+      {/* Fila A */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 8 }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
           <span style={{
-            display: "inline-block", alignSelf: "flex-start",
-            border: "1px solid #e2e8f0", color: "#94a3b8",
-            padding: "1px 4px", borderRadius: 3,
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 7, fontWeight: 900,
             textTransform: "uppercase", letterSpacing: "0.08em",
+            color: "#94a3b8", border: "1px solid #e2e8f0",
+            borderRadius: 3, padding: "1px 4px", flexShrink: 0,
           }}>{clubA.abbr}</span>
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, fontWeight: ganadorA ? 900 : 700,
+            fontSize: 12, lineHeight: 1.3,
+            fontWeight: ganadorA ? 900 : 600,
             color: ganadorB ? "#94a3b8" : "#0f172a",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{pairA}</span>
         </div>
-
-        {/* Score / vs — centrado */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
-          {scoreInfo ? (
-            <>
-              <span style={{
+        {hasScore && (
+          <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+            {parsed.map((s, idx) => (
+              <span key={idx} style={{
                 fontFamily: "var(--font-anton), Anton, sans-serif",
-                fontSize: 14, fontWeight: 400,
-                color: isLive ? "#0f172a" : "#64748b",
-                background: isLive ? "#bcff00" : isFin ? "#f1f5f9" : "transparent",
-                padding: "1px 8px", borderRadius: 4,
-                whiteSpace: "nowrap",
-              }}>{scoreInfo.main}</span>
-              {scoreInfo.detail && (
-                <span style={{
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 8, color: "#94a3b8", fontWeight: 600,
-                  letterSpacing: "0.02em", whiteSpace: "nowrap",
-                }}>{scoreInfo.detail}</span>
-              )}
-            </>
-          ) : (
-            <span style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 9, fontWeight: 900, color: "#cbd5e1",
-              letterSpacing: "0.08em",
-            }}>vs</span>
-          )}
-        </div>
+                fontSize: 16, fontWeight: 400, lineHeight: 1,
+                color: ganadorA ? "#0f172a" : "#94a3b8",
+                minWidth: 14, textAlign: "center",
+              }}>{s.a}</span>
+            ))}
+          </div>
+        )}
+      </div>
 
-        {/* Club B */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "flex-end", minWidth: 0 }}>
+      {/* Separador */}
+      <div style={{ height: 1, background: "#f8fafc", marginBottom: 8 }} />
+
+      {/* Fila B */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
           <span style={{
-            display: "inline-block", alignSelf: "flex-end",
-            border: "1px solid #e2e8f0", color: "#94a3b8",
-            padding: "1px 4px", borderRadius: 3,
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 7, fontWeight: 900,
             textTransform: "uppercase", letterSpacing: "0.08em",
+            color: "#94a3b8", border: "1px solid #e2e8f0",
+            borderRadius: 3, padding: "1px 4px", flexShrink: 0,
           }}>{clubB.abbr}</span>
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, fontWeight: ganadorB ? 900 : 700,
+            fontSize: 12, lineHeight: 1.3,
+            fontWeight: ganadorB ? 900 : 600,
             color: ganadorA ? "#94a3b8" : "#0f172a",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            textAlign: "right",
           }}>{pairB}</span>
         </div>
-
+        {hasScore && (
+          <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+            {parsed.map((s, idx) => (
+              <span key={idx} style={{
+                fontFamily: "var(--font-anton), Anton, sans-serif",
+                fontSize: 16, fontWeight: 400, lineHeight: 1,
+                color: ganadorB ? "#0f172a" : "#94a3b8",
+                minWidth: 14, textAlign: "center",
+              }}>{s.b}</span>
+            ))}
+          </div>
+        )}
       </div>
+
     </div>
   )
 }

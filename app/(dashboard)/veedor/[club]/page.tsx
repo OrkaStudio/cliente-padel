@@ -5,6 +5,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import Image from "next/image"
 import { VeedorView } from "@/components/torneos/VeedorView"
+import { VeedorInterclubView } from "@/components/torneos/interclub/VeedorInterclubView"
 import { aplicarEstadoAuto } from "@/lib/partidos"
 
 const CLUB_INFO: Record<string, { nombre: string; logo: string; sedeKeyword: string }> = {
@@ -33,18 +34,45 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
     .single()
 
   if (!torneo) {
+    // Fallback interclub — mock hasta conectar Supabase
     return (
-      <div style={{ textAlign: "center", padding: "80px 24px" }}>
-        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 48, color: "#cbd5e1", display: "block" }}>
-          sports_tennis
-        </span>
-        <p style={{
-          fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: 20, color: "#94a3b8",
-          textTransform: "uppercase", marginTop: 12,
+      <div>
+        <div style={{
+          padding: "14px 16px 12px",
+          background: "#fff", borderBottom: "1px solid #e2e8f0",
+          display: "flex", alignItems: "center", gap: 12,
         }}>
-          Sin torneo en curso
-        </p>
+          <div style={{
+            width: 44, height: 44, borderRadius: 10,
+            background: "#f8fafc", border: "1px solid #e2e8f0",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            overflow: "hidden", flexShrink: 0,
+          }}>
+            <Image src={info.logo} alt={info.nombre} width={36} height={36} style={{ objectFit: "contain" }} />
+          </div>
+          <div>
+            <p style={{
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontSize: 18, fontWeight: 400, color: "#0f172a",
+              textTransform: "uppercase", margin: 0,
+            }}>{info.nombre}</p>
+            <p style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 11, color: "#64748b", fontWeight: 700, margin: 0,
+            }}>Torneo Interclubes Abril</p>
+          </div>
+          <div style={{
+            marginLeft: "auto",
+            background: "#bcff00", borderRadius: 4, padding: "4px 10px",
+          }}>
+            <span style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 9, fontWeight: 900, color: "#0f172a",
+              textTransform: "uppercase", letterSpacing: "0.06em",
+            }}>Veedor</span>
+          </div>
+        </div>
+        <VeedorInterclubView club={club} />
       </div>
     )
   }

@@ -36,19 +36,16 @@ export function AdminMenu() {
           border: "1px solid #e2e8f0",
           borderRadius: 8,
           padding: "6px 12px",
-          background: open ? "#0f172a" : "#fff",
+          background: "#fff",
           cursor: "pointer",
           WebkitTapHighlightColor: "transparent",
-          transition: "background 160ms cubic-bezier(0.23,1,0.32,1), border-color 160ms cubic-bezier(0.23,1,0.32,1)",
-          borderColor: open ? "#0f172a" : "#e2e8f0",
         }}
       >
         <span style={{
           fontFamily: "'Material Symbols Outlined'",
           fontSize: 15,
-          color: open ? "#bcff00" : "#64748b",
+          color: "#64748b",
           lineHeight: 1,
-          transition: "color 160ms cubic-bezier(0.23,1,0.32,1)",
         }}>
           manage_accounts
         </span>
@@ -58,8 +55,7 @@ export function AdminMenu() {
           fontWeight: 900,
           letterSpacing: "0.06em",
           textTransform: "uppercase",
-          color: open ? "#fff" : "#0f172a",
-          transition: "color 160ms cubic-bezier(0.23,1,0.32,1)",
+          color: "#0f172a",
         }}>
           Acceso
         </span>
@@ -69,7 +65,7 @@ export function AdminMenu() {
           style={{
             fontFamily: "'Material Symbols Outlined'",
             fontSize: 14,
-            color: open ? "#fff" : "#94a3b8",
+            color: "#94a3b8",
             lineHeight: 1,
             display: "block",
           }}
@@ -82,34 +78,35 @@ export function AdminMenu() {
       <AnimatePresence>
         {open && (
           <>
+            {/* Backdrop */}
             <div
               onClick={() => setOpen(false)}
-              style={{ position: "fixed", inset: 0, zIndex: 40 }}
+              style={{ position: "fixed", inset: 0, zIndex: 190 }}
             />
 
+            {/* Dropdown — fixed para escapar stacking context del header */}
             <motion.div
-              initial={{ opacity: 0, y: -8, filter: "blur(8px)", scale: 0.95 }}
+              initial={{ opacity: 0, y: -8, filter: "blur(6px)", scale: 0.97 }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
-              exit={{ opacity: 0, y: -8, filter: "blur(8px)", scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              exit={{ opacity: 0, y: -8, filter: "blur(6px)", scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 340, damping: 24 }}
               style={{
-                position: "absolute",
-                top: "calc(100% + 8px)",
-                right: 0,
-                zIndex: 50,
-                background: "#0f172a",
+                position: "fixed",
+                top: 56,
+                right: 16,
+                zIndex: 210,
+                background: "#ffffff",
                 borderRadius: 14,
-                border: "1px solid #1e293b",
+                border: "1px solid #e2e8f0",
                 padding: 8,
                 minWidth: 210,
-                boxShadow: "0 8px 32px rgba(0,0,0,0.28)",
-                overflow: "hidden",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
               }}
             >
               {/* Admin */}
               <motion.button
                 onClick={() => { setOpen(false); router.push("/admin") }}
-                initial={{ opacity: 0, x: 12 }}
+                initial={{ opacity: 0, x: 8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0, type: "spring", stiffness: 300, damping: 22 }}
                 whileTap={{ scale: 0.97 }}
@@ -117,30 +114,30 @@ export function AdminMenu() {
                   display: "flex", alignItems: "center", gap: 10,
                   width: "100%", padding: "10px 12px",
                   borderRadius: 8, border: "none",
-                  background: "rgba(188,255,0,0.08)",
+                  background: "#f8fafc",
                   cursor: "pointer", WebkitTapHighlightColor: "transparent",
                   textAlign: "left", marginBottom: 6,
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(188,255,0,0.15)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "rgba(188,255,0,0.08)")}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")}
+                onMouseLeave={e => (e.currentTarget.style.background = "#f8fafc")}
               >
                 <span style={{
                   fontFamily: "'Material Symbols Outlined'",
-                  fontSize: 18, color: "#bcff00", lineHeight: 1,
+                  fontSize: 18, color: "#0f172a", lineHeight: 1,
                 }}>
                   admin_panel_settings
                 </span>
                 <div>
                   <p style={{
                     fontFamily: "var(--font-space-grotesk), sans-serif",
-                    fontSize: 12, fontWeight: 900, color: "#fff",
+                    fontSize: 12, fontWeight: 900, color: "#0f172a",
                     margin: 0, letterSpacing: "0.02em",
                   }}>
                     Modo Admin
                   </p>
                   <p style={{
                     fontFamily: "var(--font-space-grotesk), sans-serif",
-                    fontSize: 10, color: "#64748b", margin: 0,
+                    fontSize: 10, color: "#94a3b8", margin: 0,
                   }}>
                     Cristián — Organizador
                   </p>
@@ -149,14 +146,14 @@ export function AdminMenu() {
 
               {/* Separador */}
               <div style={{
-                height: 1, background: "#1e293b",
+                height: 1, background: "#f1f5f9",
                 margin: "2px 4px 8px",
               }} />
 
               {/* Label veedores */}
               <p style={{
                 fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 9, fontWeight: 900, color: "#475569",
+                fontSize: 9, fontWeight: 900, color: "#94a3b8",
                 textTransform: "uppercase", letterSpacing: "0.08em",
                 padding: "0 12px", marginBottom: 6,
               }}>
@@ -168,7 +165,7 @@ export function AdminMenu() {
                 <motion.button
                   key={club.slug}
                   onClick={() => { setOpen(false); router.push(club.href) }}
-                  initial={{ opacity: 0, x: 12 }}
+                  initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: (i + 1) * 0.05, type: "spring", stiffness: 300, damping: 22 }}
                   whileTap={{ scale: 0.97 }}
@@ -181,13 +178,12 @@ export function AdminMenu() {
                     textAlign: "left",
                     marginBottom: i < CLUBES.length - 1 ? 2 : 0,
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
-                  {/* Logo del club */}
                   <div style={{
                     width: 36, height: 36, borderRadius: 8,
-                    background: "#fff",
+                    background: "#f8fafc",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     overflow: "hidden", flexShrink: 0,
                     border: "1px solid #e2e8f0",
@@ -203,21 +199,21 @@ export function AdminMenu() {
                   <div>
                     <p style={{
                       fontFamily: "var(--font-space-grotesk), sans-serif",
-                      fontSize: 12, fontWeight: 700, color: "#fff",
+                      fontSize: 12, fontWeight: 700, color: "#0f172a",
                       margin: 0,
                     }}>
                       {club.nombre}
                     </p>
                     <p style={{
                       fontFamily: "var(--font-space-grotesk), sans-serif",
-                      fontSize: 10, color: "#64748b", margin: 0,
+                      fontSize: 10, color: "#94a3b8", margin: 0,
                     }}>
                       Acceso veedor
                     </p>
                   </div>
                   <span style={{
                     fontFamily: "'Material Symbols Outlined'",
-                    fontSize: 14, color: "#334155",
+                    fontSize: 14, color: "#cbd5e1",
                     marginLeft: "auto", lineHeight: 1,
                   }}>
                     chevron_right

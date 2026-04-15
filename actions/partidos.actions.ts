@@ -204,3 +204,13 @@ export const verificarPinAdminAction = createServerAction()
     })
     return { ok: true }
   })
+
+// ─── Cerrar sesión veedor ─────────────────────────────────────────────────────
+
+export const cerrarSesionVeedorAction = createServerAction()
+  .input(z.object({ club: z.enum(["voleando", "mas-padel"]) }))
+  .handler(async ({ input }) => {
+    const cookieStore = await cookies()
+    cookieStore.delete(`veedor_pin_${input.club}`)
+    return { ok: true }
+  })
