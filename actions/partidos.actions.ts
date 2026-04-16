@@ -188,6 +188,46 @@ export const verificarPinAction = createServerAction()
     return { ok: true }
   })
 
+// ─── Interclub: mover partido (organizador) ───────────────────────────────────
+
+export const moverPartidoInterclubAction = createServerAction()
+  .input(z.object({
+    id:     z.string(),
+    hora:   z.string(),
+    cancha: z.number().int(),
+    fecha:  z.string(),
+    sede:   z.string(),
+  }))
+  .handler(async ({ input }) => {
+    const supabase = createAdminClient()
+    const { error } = await supabase
+      .from("interclub_partidos")
+      .upsert({ id: input.id, hora: input.hora, cancha: input.cancha, fecha: input.fecha, sede: input.sede, updated_at: new Date().toISOString() }, { onConflict: "id" })
+    if (error) throw error
+    revalidatePath("/torneos/123/interclub")
+    return { ok: true }
+  })
+
+// ─── Interclub: swap dos partidos (organizador) ───────────────────────────────
+
+export const swapPartidosInterclubAction = createServerAction()
+  .input(z.object({
+    idA: z.string(), horaA: z.string(), canchaA: z.number().int(), fechaA: z.string(), sedeA: z.string(),
+    idB: z.string(), horaB: z.string(), canchaB: z.number().int(), fechaB: z.string(), sedeB: z.string(),
+  }))
+  .handler(async ({ input }) => {
+    const supabase = createAdminClient()
+    const { error } = await supabase
+      .from("interclub_partidos")
+      .upsert([
+        { id: input.idA, hora: input.horaA, cancha: input.canchaA, fecha: input.fechaA, sede: input.sedeA, updated_at: new Date().toISOString() },
+        { id: input.idB, hora: input.horaB, cancha: input.canchaB, fecha: input.fechaB, sede: input.sedeB, updated_at: new Date().toISOString() },
+      ], { onConflict: "id" })
+    if (error) throw error
+    revalidatePath("/torneos/123/interclub")
+    return { ok: true }
+  })
+
 // ─── Verificar PIN admin ──────────────────────────────────────────────────────
 
 export const verificarPinAdminAction = createServerAction()
@@ -204,6 +244,31 @@ export const verificarPinAdminAction = createServerAction()
       maxAge: 60 * 60 * 8, // 8 horas
       path: "/",
     })
+    return { ok: true }
+  })
+
+// ─── Interclub: guardar resultado (parcial o final) ───────────────────────────
+
+export const guardarResultadoInterclubAction = createServerAction()
+  .input(z.object({
+    id:        z.string(),
+    resultado: z.string().nullable(),
+    ganador:   z.enum(["A", "B"]).nullable(),
+    estado:    z.enum(["pendiente", "en_vivo", "finalizado"]),
+  }))
+  .handler(async ({ input }) => {
+    const supabase = createAdminClient()
+    const { error } = await supabase
+      .from("interclub_partidos")
+      .upsert({
+        id:         input.id,
+        resultado:  input.resultado,
+        ganador:    input.ganador,
+        estado:     input.estado,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "id" })
+    if (error) throw error
+    revalidatePath("/torneos/123/interclub")
     return { ok: true }
   })
 

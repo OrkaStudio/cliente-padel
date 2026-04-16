@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import Image from "next/image"
 import { MOCK_CATEGORIAS } from "./interclub-mock"
-import { cerrarSesionVeedorAction } from "@/actions/partidos.actions"
+import { cerrarSesionVeedorAction, moverPartidoInterclubAction, swapPartidosInterclubAction } from "@/actions/partidos.actions"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,24 +24,41 @@ type PartidoFlat = {
   cancha: number
 }
 
-// ─── Flatten mock ─────────────────────────────────────────────────────────────
+// ─── Live row type (campos mutables de Supabase) ──────────────────────────────
 
-function flattenMock(): PartidoFlat[] {
+export type OrganizadorLiveRow = {
+  id:        string
+  resultado: string | null
+  ganador:   string | null
+  estado:    string
+  hora:      string | null
+  cancha:    number | null
+  fecha:     string | null
+  sede:      string | null
+}
+
+// ─── Build partidos mergeando mock + live data ────────────────────────────────
+
+function buildPartidos(liveRows: OrganizadorLiveRow[]): PartidoFlat[] {
+  const liveMap = new Map(liveRows.map(r => [r.id, r]))
   return MOCK_CATEGORIAS.flatMap(cat =>
-    cat.partidos.map(p => ({
-      id:        p.id,
-      categoria: cat.nombre,
-      genero:    cat.genero,
-      pairA:     p.pairA,
-      pairB:     p.pairB,
-      resultado: p.resultado,
-      ganador:   p.ganador,
-      estado:    p.estado,
-      fecha:     p.fecha      ?? "2026-04-17",
-      hora:      p.horaInicio ?? "10:00",
-      sede:      p.sede       ?? "Voleando",
-      cancha:    p.cancha     ?? 1,
-    }))
+    cat.partidos.map(p => {
+      const live = liveMap.get(p.id)
+      return {
+        id:        p.id,
+        categoria: cat.nombre,
+        genero:    cat.genero,
+        pairA:     p.pairA,
+        pairB:     p.pairB,
+        resultado: live?.resultado ?? p.resultado,
+        ganador:   (live?.ganador  ?? p.ganador) as "A" | "B" | null,
+        estado:    (live?.estado   ?? p.estado)  as PartidoFlat["estado"],
+        fecha:     live?.fecha     ?? p.fecha      ?? "2026-04-17",
+        hora:      live?.hora      ?? p.horaInicio ?? "10:00",
+        sede:      live?.sede      ?? p.sede       ?? "Voleando",
+        cancha:    live?.cancha    ?? p.cancha     ?? 1,
+      }
+    })
   )
 }
 
@@ -109,13 +126,14 @@ function FilterChip({
 // ─── Slot Grid ────────────────────────────────────────────────────────────────
 
 function SlotGrid({
-  partidos, movendoId, fecha, sede, onSelect,
+  partidos, movendoId, fecha, sede, onMover, onSwap,
 }: {
   partidos:  PartidoFlat[]
   movendoId: string
   fecha:     string
   sede:      string
-  onSelect:  (hora: string, cancha: number) => void
+  onMover:   (hora: string, cancha: number) => void
+  onSwap:    (idB: string) => void
 }) {
   const moviendo = partidos.find(p => p.id === movendoId)!
 
@@ -130,10 +148,28 @@ function SlotGrid({
     moviendo.fecha === fecha && moviendo.sede === sede &&
     moviendo.hora === hora   && moviendo.cancha === cancha
 
+  // First name of each player in a pair: "Gómez / Ruiz" → ["Gómez", "Ruiz"]
+  const pairNames = (pair: string) => pair.split(" / ").map(s => s.trim())
+
   return (
     <div>
+      {/* Legend */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+        {[
+          { color: "#16a34a", bg: "#f0fdf4", border: "1.5px dashed #86efac", label: "Libre — mover acá" },
+          { color: "#64748b", bg: "#f8fafc", border: "1.5px solid #e2e8f0",  label: "Pendiente — intercambiar" },
+          { color: "#94a3b8", bg: "#f8fafc", border: "1px solid #f1f5f9",    label: "Bloqueado" },
+        ].map(({ color, bg, border, label }) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 3, background: bg, border, flexShrink: 0 }} />
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 600, color }}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Header canchas */}
       <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ width: 50, flexShrink: 0 }} />
+        <div style={{ width: 44, flexShrink: 0 }} />
         {CANCHAS.map(c => (
           <div key={c} style={{
             flex: 1, textAlign: "center",
@@ -148,7 +184,7 @@ function SlotGrid({
         {HORAS.map(hora => (
           <div key={hora} style={{ display: "flex", alignItems: "stretch", gap: 6 }}>
             <div style={{
-              width: 50, flexShrink: 0, display: "flex", alignItems: "center",
+              width: 44, flexShrink: 0, display: "flex", alignItems: "center",
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: 10, fontWeight: 700, color: "#94a3b8",
             }}>{hora}</div>
@@ -157,39 +193,83 @@ function SlotGrid({
               const ocupante = ocupados.get(`${hora}__${cancha}`)
               const actual   = isActual(hora, cancha)
 
+              // ── Slot actual del partido que estamos moviendo ──
               if (actual) return (
                 <div key={cancha} style={{
-                  flex: 1, minHeight: 56, borderRadius: 10,
+                  flex: 1, minHeight: 68, borderRadius: 10,
                   border: "2px dashed #fbbf24", background: "#fffbeb",
                   display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center", gap: 3,
+                  alignItems: "center", justifyContent: "center", gap: 3, padding: "6px 4px",
                 }}>
                   <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, color: "#d97706", lineHeight: 1 }}>schedule</span>
                   <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: "#d97706", textTransform: "uppercase", letterSpacing: "0.08em" }}>Actual</span>
                 </div>
               )
 
-              if (ocupante) return (
-                <div key={cancha} style={{
-                  flex: 1, minHeight: 56, borderRadius: 10,
-                  border: "1px solid #e2e8f0", background: "#f8fafc",
-                  display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center", padding: "4px 6px",
-                }}>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.04em", textAlign: "center", lineHeight: 1.3 }}>{ocupante.categoria}</span>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 7, fontWeight: 700, color: "#cbd5e1", textAlign: "center", lineHeight: 1.2, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{ocupante.pairA.split(" / ")[0]}</span>
-                </div>
-              )
+              // ── Slot ocupado ──
+              if (ocupante) {
+                const canSwap = ocupante.estado === "pendiente"
+                const isLive  = ocupante.estado === "en_vivo"
+                const [pA1, pA2] = pairNames(ocupante.pairA)
+                const [pB1, pB2] = pairNames(ocupante.pairB)
 
+                if (canSwap) return (
+                  <motion.button key={cancha} whileTap={{ scale: 0.96 }} onClick={() => onSwap(ocupante.id)}
+                    style={{
+                      flex: 1, minHeight: 68, borderRadius: 10,
+                      border: "1.5px solid #cbd5e1", background: "#ffffff",
+                      display: "flex", flexDirection: "column",
+                      alignItems: "flex-start", justifyContent: "center",
+                      padding: "6px 7px", gap: 2,
+                      cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                      textAlign: "left",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: 2 }}>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 7, fontWeight: 900, color: GENERO_COLOR[ocupante.genero], textTransform: "uppercase", letterSpacing: "0.06em" }}>{ocupante.categoria}</span>
+                      <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, color: "#cbd5e1", lineHeight: 1 }}>swap_horiz</span>
+                    </div>
+                    <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 700, color: "#0f172a", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{pA1} · {pA2}</span>
+                    <div style={{ height: 1, background: "#f1f5f9", width: "100%", margin: "1px 0" }} />
+                    <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 700, color: "#0f172a", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{pB1} · {pB2}</span>
+                  </motion.button>
+                )
+
+                // Bloqueado (en_vivo o finalizado)
+                return (
+                  <div key={cancha} style={{
+                    flex: 1, minHeight: 68, borderRadius: 10,
+                    border: isLive ? "1.5px solid #bcff00" : "1px solid #f1f5f9",
+                    background: isLive ? "#f0fdf4" : "#f8fafc",
+                    display: "flex", flexDirection: "column",
+                    alignItems: "flex-start", justifyContent: "center",
+                    padding: "6px 7px", gap: 2,
+                    opacity: 0.65,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: 2 }}>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 7, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{ocupante.categoria}</span>
+                      {isLive
+                        ? <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, color: "#16a34a", lineHeight: 1 }}>sports_tennis</span>
+                        : <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, color: "#22c55e", lineHeight: 1, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      }
+                    </div>
+                    <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 700, color: "#94a3b8", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{pA1} · {pA2}</span>
+                    <div style={{ height: 1, background: "#e2e8f0", width: "100%", margin: "1px 0" }} />
+                    <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 700, color: "#94a3b8", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{pB1} · {pB2}</span>
+                  </div>
+                )
+              }
+
+              // ── Slot libre ──
               return (
-                <motion.button key={cancha} whileTap={{ scale: 0.95 }} onClick={() => onSelect(hora, cancha)} style={{
-                  flex: 1, minHeight: 56, borderRadius: 10,
+                <motion.button key={cancha} whileTap={{ scale: 0.95 }} onClick={() => onMover(hora, cancha)} style={{
+                  flex: 1, minHeight: 68, borderRadius: 10,
                   border: "1.5px dashed #86efac", background: "#f0fdf4",
                   display: "flex", flexDirection: "column",
                   alignItems: "center", justifyContent: "center", gap: 3,
                   cursor: "pointer", WebkitTapHighlightColor: "transparent",
                 }}>
-                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 15, color: "#16a34a", lineHeight: 1 }}>add</span>
+                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#16a34a", lineHeight: 1 }}>add</span>
                   <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.08em" }}>Libre</span>
                 </motion.button>
               )
@@ -212,13 +292,8 @@ function MoverSheet({
   onMover:  (id: string, hora: string, cancha: number, fecha: string, sede: string) => void
   onSwap:   (idA: string, idB: string) => void
 }) {
-  const [mode,  setMode]  = useState<"slot" | "swap">("slot")
   const [fecha, setFecha] = useState(partido.fecha)
   const [sede,  setSede]  = useState(partido.sede)
-
-  const swapCandidates = partidos
-    .filter(p => p.id !== partido.id && p.estado !== "finalizado")
-    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora))
 
   return (
     <AnimatePresence>
@@ -233,14 +308,16 @@ function MoverSheet({
         style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 301,
           background: "#ffffff", borderRadius: "20px 20px 0 0",
-          maxHeight: "90dvh", display: "flex", flexDirection: "column",
+          maxHeight: "92dvh", display: "flex", flexDirection: "column",
           paddingBottom: "env(safe-area-inset-bottom, 16px)",
         }}
       >
+        {/* Drag handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "14px 0 4px", flexShrink: 0 }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0" }} />
         </div>
 
+        {/* Partido que se mueve */}
         <div style={{ padding: "8px 20px 14px", borderBottom: "1px solid #f1f5f9", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
             <span style={{ display: "inline-flex", alignItems: "center", background: SEDE_COLOR[partido.sede] ?? "#0f172a", color: "#fff", padding: "2px 7px", borderRadius: 4, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>
@@ -259,113 +336,49 @@ function MoverSheet({
           </div>
         </div>
 
+        {/* Fecha + Sede selectors */}
         <div style={{ padding: "12px 20px 0", flexShrink: 0 }}>
-          <div style={{ display: "flex", gap: 5, background: "#f8fafc", borderRadius: 12, padding: 4 }}>
-            {[
-              { key: "slot" as const, label: "Nuevo slot",   icon: "grid_view"  },
-              { key: "swap" as const, label: "Intercambiar", icon: "swap_horiz" },
-            ].map(({ key, label, icon }) => (
-              <button key={key} onClick={() => setMode(key)} style={{
-                flex: 1, padding: "9px 0", borderRadius: 9, border: "none",
-                background: mode === key ? "#ffffff" : "transparent",
-                boxShadow: mode === key ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+            {FECHAS.map(f => (
+              <button key={f} onClick={() => setFecha(f)} style={{
+                flex: 1, padding: "7px 0", borderRadius: 8, border: "none",
+                background: fecha === f ? "#0f172a" : "#f1f5f9",
                 fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 10, fontWeight: 800, color: mode === key ? "#0f172a" : "#94a3b8",
+                fontSize: 9, fontWeight: 800,
+                color: fecha === f ? "#bcff00" : "#64748b",
                 textTransform: "uppercase", letterSpacing: "0.06em",
                 cursor: "pointer", transition: "all 150ms ease",
                 WebkitTapHighlightColor: "transparent",
-              }}>
-                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, lineHeight: 1 }}>{icon}</span>
-                {label}
-              </button>
+              }}>{fmtFechaCorta(f)}</button>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+            {SEDES.map(s => (
+              <button key={s} onClick={() => setSede(s)} style={{
+                flex: 1, padding: "8px 0", borderRadius: 8,
+                border: sede === s ? `2px solid ${SEDE_COLOR[s]}` : "1.5px solid #e2e8f0",
+                background: sede === s ? `${SEDE_COLOR[s]}10` : "transparent",
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 10, fontWeight: 800,
+                color: sede === s ? (SEDE_COLOR[s] ?? "#0f172a") : "#94a3b8",
+                textTransform: "uppercase", letterSpacing: "0.06em",
+                cursor: "pointer", transition: "all 150ms ease",
+                WebkitTapHighlightColor: "transparent",
+              }}>{s}</button>
             ))}
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "14px 20px 20px" }}>
-          {mode === "slot" ? (
-            <div>
-              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                {FECHAS.map(f => (
-                  <button key={f} onClick={() => setFecha(f)} style={{
-                    flex: 1, padding: "7px 0", borderRadius: 8, border: "none",
-                    background: fecha === f ? "#0f172a" : "#f1f5f9",
-                    fontFamily: "var(--font-space-grotesk), sans-serif",
-                    fontSize: 9, fontWeight: 800,
-                    color: fecha === f ? "#bcff00" : "#64748b",
-                    textTransform: "uppercase", letterSpacing: "0.06em",
-                    cursor: "pointer", transition: "all 150ms ease",
-                    WebkitTapHighlightColor: "transparent",
-                  }}>{fmtFechaCorta(f)}</button>
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-                {SEDES.map(s => (
-                  <button key={s} onClick={() => setSede(s)} style={{
-                    flex: 1, padding: "8px 0", borderRadius: 8,
-                    border: sede === s ? `2px solid ${SEDE_COLOR[s]}` : "1.5px solid #e2e8f0",
-                    background: sede === s ? `${SEDE_COLOR[s]}10` : "transparent",
-                    fontFamily: "var(--font-space-grotesk), sans-serif",
-                    fontSize: 10, fontWeight: 800,
-                    color: sede === s ? (SEDE_COLOR[s] ?? "#0f172a") : "#94a3b8",
-                    textTransform: "uppercase", letterSpacing: "0.06em",
-                    cursor: "pointer", transition: "all 150ms ease",
-                    WebkitTapHighlightColor: "transparent",
-                  }}>{s}</button>
-                ))}
-              </div>
-              <SlotGrid
-                partidos={partidos}
-                movendoId={partido.id}
-                fecha={fecha}
-                sede={sede}
-                onSelect={(hora, cancha) => onMover(partido.id, hora, cancha, fecha, sede)}
-              />
-            </div>
-          ) : (
-            <div>
-              <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 12px" }}>
-                Elegí el partido — los slots se intercambian completos
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {swapCandidates.map(p => (
-                  <div key={p.id} style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, flexWrap: "wrap" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", background: SEDE_COLOR[p.sede] ?? "#0f172a", color: "#fff", padding: "1px 5px", borderRadius: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 7, fontWeight: 900, textTransform: "uppercase" }}>
-                          {SEDE_ABBR[p.sede] ?? p.sede}
-                        </span>
-                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: "#0f172a" }}>C{p.cancha} · {p.hora}</span>
-                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 600, color: "#94a3b8" }}>{fmtFechaCorta(p.fecha)}</span>
-                        {p.estado === "en_vivo" && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#bcff00", color: "#000", padding: "1px 6px", borderRadius: 100, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 7, fontWeight: 900, textTransform: "uppercase" }}>
-                            <span className="live-dot" style={{ width: 4, height: 4, borderRadius: "50%", background: "#000" }} />Vivo
-                          </span>
-                        )}
-                      </div>
-                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.categoria}</span>
-                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 600, color: "#64748b", display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 1 }}>
-                        {p.pairA.split(" / ")[0]} vs {p.pairB.split(" / ")[0]}
-                      </span>
-                    </div>
-                    <button onClick={() => onSwap(partido.id, p.id)} style={{
-                      flexShrink: 0, padding: "8px 12px", borderRadius: 8,
-                      border: "none", background: "#0f172a",
-                      display: "flex", alignItems: "center", gap: 4,
-                      fontFamily: "var(--font-space-grotesk), sans-serif",
-                      fontSize: 9, fontWeight: 900, color: "#bcff00",
-                      textTransform: "uppercase", letterSpacing: "0.06em",
-                      cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                    }}>
-                      <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1 }}>swap_horiz</span>
-                      Swap
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Grid unificado */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 20px" }}>
+          <SlotGrid
+            partidos={partidos}
+            movendoId={partido.id}
+            fecha={fecha}
+            sede={sede}
+            onMover={(hora, cancha) => onMover(partido.id, hora, cancha, fecha, sede)}
+            onSwap={(idB) => onSwap(partido.id, idB)}
+          />
         </div>
       </motion.div>
     </AnimatePresence>
@@ -489,9 +502,9 @@ function PartidoCard({
 
 // ─── Vista principal ──────────────────────────────────────────────────────────
 
-export function OrganizadorInterclubView() {
+export function OrganizadorInterclubView({ initialLiveData = [] }: { initialLiveData?: OrganizadorLiveRow[] }) {
   const router = useRouter()
-  const [partidos, setPartidos]         = useState<PartidoFlat[]>(flattenMock)
+  const [partidos, setPartidos]         = useState<PartidoFlat[]>(() => buildPartidos(initialLiveData))
   const [moviendoId, setMoviendoId]     = useState<string | null>(null)
   const [search, setSearch]             = useState("")
   const [selSede, setSelSede]           = useState<string | null>(null)
@@ -566,12 +579,17 @@ export function OrganizadorInterclubView() {
   const mover = (id: string, hora: string, cancha: number, fecha: string, sede: string) => {
     setPartidos(prev => prev.map(p => p.id === id ? { ...p, hora, cancha, fecha, sede } : p))
     setMoviendoId(null)
+    moverPartidoInterclubAction({ id, hora, cancha, fecha, sede })
   }
 
   const swap = (idA: string, idB: string) => {
     setPartidos(prev => {
       const a = prev.find(p => p.id === idA)!
       const b = prev.find(p => p.id === idB)!
+      swapPartidosInterclubAction({
+        idA, horaA: b.hora, canchaA: b.cancha, fechaA: b.fecha, sedeA: b.sede,
+        idB, horaB: a.hora, canchaB: a.cancha, fechaB: a.fecha, sedeB: a.sede,
+      })
       return prev.map(p => {
         if (p.id === idA) return { ...p, hora: b.hora, cancha: b.cancha, fecha: b.fecha, sede: b.sede }
         if (p.id === idB) return { ...p, hora: a.hora, cancha: a.cancha, fecha: a.fecha, sede: a.sede }
