@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import Image from "next/image"
 import { MOCK_CATEGORIAS } from "./interclub-mock"
-import { cerrarSesionVeedorAction } from "@/actions/partidos.actions"
+import { cerrarSesionVeedorAction, moverPartidoInterclubAction, swapPartidosInterclubAction } from "@/actions/partidos.actions"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,24 +24,41 @@ type PartidoFlat = {
   cancha: number
 }
 
-// ─── Flatten mock ─────────────────────────────────────────────────────────────
+// ─── Live row type (campos mutables de Supabase) ──────────────────────────────
 
-function flattenMock(): PartidoFlat[] {
+export type OrganizadorLiveRow = {
+  id:        string
+  resultado: string | null
+  ganador:   string | null
+  estado:    string
+  hora:      string | null
+  cancha:    number | null
+  fecha:     string | null
+  sede:      string | null
+}
+
+// ─── Build partidos mergeando mock + live data ────────────────────────────────
+
+function buildPartidos(liveRows: OrganizadorLiveRow[]): PartidoFlat[] {
+  const liveMap = new Map(liveRows.map(r => [r.id, r]))
   return MOCK_CATEGORIAS.flatMap(cat =>
-    cat.partidos.map(p => ({
-      id:        p.id,
-      categoria: cat.nombre,
-      genero:    cat.genero,
-      pairA:     p.pairA,
-      pairB:     p.pairB,
-      resultado: p.resultado,
-      ganador:   p.ganador,
-      estado:    p.estado,
-      fecha:     p.fecha      ?? "2026-04-17",
-      hora:      p.horaInicio ?? "10:00",
-      sede:      p.sede       ?? "Voleando",
-      cancha:    p.cancha     ?? 1,
-    }))
+    cat.partidos.map(p => {
+      const live = liveMap.get(p.id)
+      return {
+        id:        p.id,
+        categoria: cat.nombre,
+        genero:    cat.genero,
+        pairA:     p.pairA,
+        pairB:     p.pairB,
+        resultado: live?.resultado ?? p.resultado,
+        ganador:   (live?.ganador  ?? p.ganador) as "A" | "B" | null,
+        estado:    (live?.estado   ?? p.estado)  as PartidoFlat["estado"],
+        fecha:     live?.fecha     ?? p.fecha      ?? "2026-04-17",
+        hora:      live?.hora      ?? p.horaInicio ?? "10:00",
+        sede:      live?.sede      ?? p.sede       ?? "Voleando",
+        cancha:    live?.cancha    ?? p.cancha     ?? 1,
+      }
+    })
   )
 }
 
@@ -217,7 +234,7 @@ function MoverSheet({
   const [sede,  setSede]  = useState(partido.sede)
 
   const swapCandidates = partidos
-    .filter(p => p.id !== partido.id && p.estado !== "finalizado")
+    .filter(p => p.id !== partido.id && p.estado !== "finalizado" && p.categoria === partido.categoria)
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora))
 
   return (
@@ -325,9 +342,15 @@ function MoverSheet({
             </div>
           ) : (
             <div>
-              <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 12px" }}>
-                Elegí el partido — los slots se intercambian completos
-              </p>
+              <div style={{ marginBottom: 12 }}>
+                <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 4px" }}>
+                  Elegí el partido — los slots se intercambian completos
+                </p>
+                <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 600, color: "#bcff00", background: "#0f172a", display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 4, margin: 0 }}>
+                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1 }}>info</span>
+                  Solo partidos de {partido.categoria}
+                </p>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {swapCandidates.map(p => (
                   <div key={p.id} style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
@@ -489,9 +512,9 @@ function PartidoCard({
 
 // ─── Vista principal ──────────────────────────────────────────────────────────
 
-export function OrganizadorInterclubView() {
+export function OrganizadorInterclubView({ initialLiveData = [] }: { initialLiveData?: OrganizadorLiveRow[] }) {
   const router = useRouter()
-  const [partidos, setPartidos]         = useState<PartidoFlat[]>(flattenMock)
+  const [partidos, setPartidos]         = useState<PartidoFlat[]>(() => buildPartidos(initialLiveData))
   const [moviendoId, setMoviendoId]     = useState<string | null>(null)
   const [search, setSearch]             = useState("")
   const [selSede, setSelSede]           = useState<string | null>(null)
@@ -566,12 +589,17 @@ export function OrganizadorInterclubView() {
   const mover = (id: string, hora: string, cancha: number, fecha: string, sede: string) => {
     setPartidos(prev => prev.map(p => p.id === id ? { ...p, hora, cancha, fecha, sede } : p))
     setMoviendoId(null)
+    moverPartidoInterclubAction({ id, hora, cancha, fecha, sede })
   }
 
   const swap = (idA: string, idB: string) => {
     setPartidos(prev => {
       const a = prev.find(p => p.id === idA)!
       const b = prev.find(p => p.id === idB)!
+      swapPartidosInterclubAction({
+        idA, horaA: b.hora, canchaA: b.cancha, fechaA: b.fecha, sedeA: b.sede,
+        idB, horaB: a.hora, canchaB: a.cancha, fechaB: a.fecha, sedeB: a.sede,
+      })
       return prev.map(p => {
         if (p.id === idA) return { ...p, hora: b.hora, cancha: b.cancha, fecha: b.fecha, sede: b.sede }
         if (p.id === idB) return { ...p, hora: a.hora, cancha: a.cancha, fecha: a.fecha, sede: a.sede }

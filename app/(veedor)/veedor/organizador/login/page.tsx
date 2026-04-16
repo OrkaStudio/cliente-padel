@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { motion, AnimatePresence } from "motion/react"
 import { LiquidButton } from "@/components/ui/liquid-glass-button"
 import { verificarPinAction } from "@/actions/partidos.actions"
@@ -63,13 +62,6 @@ export default function OrganizadorLoginPage() {
       paddingBottom: "max(24px, env(safe-area-inset-bottom))",
     }}>
 
-      {/* Logos ghost — ambos clubes */}
-      <div aria-hidden style={{ position: "absolute", left: -10, bottom: 10, pointerEvents: "none", opacity: 0.07, zIndex: 0 }}>
-        <Image src="/clubes/voleando.logo.png" alt="" width={200} height={200} style={{ objectFit: "contain" }} />
-      </div>
-      <div aria-hidden style={{ position: "absolute", right: -10, bottom: 10, pointerEvents: "none", opacity: 0.07, zIndex: 0 }}>
-        <Image src="/clubes/mas-padel.logo.png" alt="" width={200} height={200} style={{ objectFit: "contain" }} />
-      </div>
 
       {/* Botón volver */}
       <button

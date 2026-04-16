@@ -74,12 +74,14 @@ export default function VeedorLoginPage() {
       paddingBottom: "max(24px, env(safe-area-inset-bottom))",
     }}>
 
-      {/* Logo ghost de fondo */}
+      {/* Logo ghost centrado — detrás de los PIN dots */}
       <div aria-hidden style={{
-        position: "absolute", right: -10, bottom: 10,
-        pointerEvents: "none", opacity: 0.07, zIndex: 0,
+        position: "absolute",
+        left: "50%", top: "50%",
+        transform: "translate(-50%, -50%)",
+        pointerEvents: "none", opacity: 0.18, zIndex: 0,
       }}>
-        <Image src={info.logo} alt="" width={260} height={260} style={{ objectFit: "contain" }} />
+        <Image src={info.logo} alt="" width={360} height={360} style={{ objectFit: "contain" }} />
       </div>
 
       {/* Botón volver — arriba izquierda */}

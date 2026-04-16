@@ -33,8 +33,11 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
     .single()
 
   if (!torneo) {
-    // Fallback interclub — mock hasta conectar Supabase
-    return <VeedorInterclubView club={club} clubNombre={info.nombre} />
+    // Interclub: traer estado live de Supabase
+    const { data: liveData } = await supabase
+      .from("interclub_partidos")
+      .select("id, resultado, ganador, estado")
+    return <VeedorInterclubView club={club} clubNombre={info.nombre} initialLiveData={liveData ?? []} />
   }
 
   // Primero buscamos la sede (necesitamos su ID para filtrar partidos en DB)
