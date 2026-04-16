@@ -226,6 +226,17 @@ function PartidoCard({ partido, onIniciar, onEditar }: {
       opacity: partido.estado === "pendiente" ? 0.75 : 1,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
+        <span style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 9, fontWeight: isFin ? 900 : 600,
+          color: isFin ? "#64748b" : "#cbd5e1",
+          textTransform: "uppercase", letterSpacing: "0.12em",
+          display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: isFin ? "#cbd5e1" : "#e2e8f0", display: "inline-block", flexShrink: 0 }} />
+          {isFin ? "Finalizado" : "Pendiente"}
+        </span>
+        <span style={{ color: "#e2e8f0", fontSize: 10, marginLeft: 2 }}>·</span>
         <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: "#64748b", flexShrink: 0 }}>location_on</span>
         <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: "#64748b" }}>C{partido.cancha}</span>
         <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>· {partido.hora}</span>
@@ -304,11 +315,12 @@ function Stepper({ value, onChange }: { value: number; onChange: (v: number) => 
 
 // ─── Sheet resultado ──────────────────────────────────────────────────────────
 
-function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar }: {
+function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar, isEditing }: {
   partido: PartidoMock
   onClose: () => void
   onGuardarParcial: (sets: SetScore[]) => void
   onGuardar: (sets: SetScore[], ganador: "A" | "B") => void
+  isEditing?: boolean
 }) {
   const parseN = (v: string) => parseInt(v, 10) || 0
   const init = partido.sets.length > 0
@@ -394,7 +406,7 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar }: {
             disabled={!ganador}
             style={{ width: "100%", padding: "16px 0", borderRadius: 14, border: "none", background: ganador ? "#0f172a" : "#f1f5f9", color: ganador ? "#bcff00" : "#94a3b8", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", cursor: ganador ? "pointer" : "default", WebkitTapHighlightColor: "transparent", transition: "background 200ms, color 200ms" }}
           >
-            {ganador ? "Confirmar resultado" : "Ingresá todos los sets"}
+            {ganador ? (isEditing ? "Actualizar resultado" : "Confirmar resultado") : "Ingresá todos los sets"}
           </button>
         </div>
       </motion.div>
@@ -596,6 +608,7 @@ export function VeedorInterclubView({
           onClose={() => setSheetPartido(null)}
           onGuardarParcial={sets => guardarParcial(sheetPartido.id, sets)}
           onGuardar={(sets, ganador) => confirmar(sheetPartido.id, sets, ganador)}
+          isEditing={sheetPartido.estado === "finalizado"}
         />
       )}
 

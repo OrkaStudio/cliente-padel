@@ -4,7 +4,7 @@ import { useState, useMemo, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import Image from "next/image"
-import { MOCK_CATEGORIAS } from "./interclub-mock"
+import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "./interclub-mock"
 import { cerrarSesionVeedorAction, moverPartidoInterclubAction, swapPartidosInterclubAction } from "@/actions/partidos.actions"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -580,6 +580,11 @@ function PartidoCard({
   const isLive  = partido.estado === "en_vivo"
   const isFin   = partido.estado === "finalizado"
   const canMove = partido.estado === "pendiente"
+  const ganadorA = partido.ganador === "A"
+  const ganadorB = partido.ganador === "B"
+  const parsed = (partido.resultado?.trim().split(/\s+/) ?? []).map(s => {
+    const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" }
+  })
 
   return (
     <div style={{
@@ -633,6 +638,17 @@ function PartidoCard({
             En Vivo
           </span>
         )}
+        {!isConflicto && !isLive && !isFin && (
+          <span style={{
+            marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4,
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 8, fontWeight: 600, color: "#cbd5e1",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+          }}>
+            <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#e2e8f0", display: "inline-block" }} />
+            Pendiente
+          </span>
+        )}
         {!isConflicto && isFin && (
           <span style={{ marginLeft: "auto", fontFamily: "'Material Symbols Outlined'", fontSize: 14, color: "#22c55e", lineHeight: 1, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
         )}
@@ -653,14 +669,33 @@ function PartidoCard({
         }}>{GENERO_LABEL[partido.genero]}</span>
       </div>
 
-      {/* Fila 3: parejas */}
+      {/* Fila 3: parejas + scores */}
       <div style={{ marginBottom: canMove ? 10 : 0 }}>
-        <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{partido.pairA}</span>
-        <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
-        <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{partido.pairB}</span>
-        {isFin && partido.resultado && (
-          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 600, color: "#94a3b8", display: "block", marginTop: 3 }}>{partido.resultado}</span>
-        )}
+        {/* Par A */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 6 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 18, padding: "0 5px", border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0, opacity: isFin && ganadorB ? 0.4 : 1 }}>
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: CLUB_A.color, textTransform: "uppercase" }}>{CLUB_A.abbr}</span>
+          </div>
+          <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: ganadorA ? 800 : 600, color: isFin && ganadorB ? "#94a3b8" : "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{partido.pairA}</span>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            {parsed.length > 0 ? parsed.map((s, i) => (
+              <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorA ? "#0f172a" : ganadorB ? "#cbd5e1" : "#64748b", minWidth: 12, textAlign: "center" }}>{s.a}</span>
+            )) : <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, color: "#e2e8f0", fontWeight: 700 }}>—</span>}
+          </div>
+        </div>
+        <div style={{ height: 1, background: "#f1f5f9", margin: "0 0 6px 36px" }} />
+        {/* Par B */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 18, padding: "0 5px", border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0, opacity: isFin && ganadorA ? 0.4 : 1 }}>
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: CLUB_B.color, textTransform: "uppercase" }}>{CLUB_B.abbr}</span>
+          </div>
+          <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: ganadorB ? 800 : 600, color: isFin && ganadorA ? "#94a3b8" : "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{partido.pairB}</span>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            {parsed.length > 0 ? parsed.map((s, i) => (
+              <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorB ? "#0f172a" : ganadorA ? "#cbd5e1" : "#64748b", minWidth: 12, textAlign: "center" }}>{s.b}</span>
+            )) : <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, color: "#e2e8f0", fontWeight: 700 }}>—</span>}
+          </div>
+        </div>
       </div>
 
       {canMove && (

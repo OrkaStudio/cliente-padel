@@ -2,6 +2,14 @@
 
 import type { CategoriaInterclub, Club } from "./CategoriasInterclub"
 
+const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
+const HOY  = new Date().toISOString().split("T")[0]
+function formatFecha(fecha?: string): string | null {
+  if (!fecha || fecha === HOY) return null
+  const d = new Date(fecha + "T12:00:00")
+  return `${DIAS[d.getDay()]} ${d.getDate()}`
+}
+
 type Props = {
   categorias: CategoriaInterclub[]
   clubA: Club
@@ -17,9 +25,11 @@ type PartidoVivo = {
   categoriaGenero: "masc" | "dam" | "mixto"
   horaInicio?: string
   sede?: string
+  cancha?: number
+  fecha?: string
 }
 
-export function PartidosEnVivoCarousel({ categorias }: Props) {
+export function PartidosEnVivoCarousel({ categorias, clubA, clubB }: Props) {
   const partidos: PartidoVivo[] = categorias.flatMap((cat) =>
     cat.partidos
       .filter((p) => p.estado === "en_vivo")
@@ -127,21 +137,24 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
                     {partido.categoriaGenero === "dam" ? "Dam" : partido.categoriaGenero === "mixto" ? "Mix" : "Masc"}
                   </span>
                 </div>
-                {(partido.sede || partido.horaInicio) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                    <span style={{
-                      fontFamily: "'Material Symbols Outlined'",
-                      fontSize: 10, lineHeight: 1, color: "#0f172a",
-                    }}>location_on</span>
-                    <span style={{
-                      fontFamily: "var(--font-space-grotesk), sans-serif",
-                      fontSize: 9, fontWeight: 700,
-                      color: "#0f172a", letterSpacing: "0.03em",
-                    }}>
-                      {[partido.sede, partido.horaInicio].filter(Boolean).join(" · ")}
-                    </span>
-                  </div>
-                )}
+                {(partido.sede || partido.horaInicio) && (() => {
+                  const sedeColor = partido.sede === clubA.nombre ? clubA.color : partido.sede ? clubB.color : "#94a3b8"
+                  return (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                      {partido.horaInicio && (
+                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 600, color: "#64748b", letterSpacing: "0.03em" }}>
+                          {partido.horaInicio}
+                        </span>
+                      )}
+                      {partido.sede && <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1, color: sedeColor }}>location_on</span>}
+                      {partido.sede && (
+                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 700, color: sedeColor, letterSpacing: "0.03em" }}>
+                          {partido.sede}{partido.cancha ? ` C${partido.cancha}` : ""}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
 
               {/* Scoreboard */}

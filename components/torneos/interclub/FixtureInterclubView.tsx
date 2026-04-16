@@ -130,17 +130,20 @@ function LiveCard({ partido: p, clubA, clubB }: { partido: Partido; clubA: Club;
           En cancha
         </div>
         {(p.sede || p.horaInicio) && (() => {
-          const sedeColor = p.sede === clubA.nombre ? clubA.color : clubB.color
-          const diaStr    = formatFecha(p.fecha)
+          const sedeColor = p.sede === clubA.nombre ? clubA.color : p.sede ? clubB.color : "#94a3b8"
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1, color: sedeColor }}>location_on</span>
-              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: sedeColor }}>
-                {p.sede}{p.cancha ? ` C${p.cancha}` : ""}
-              </span>
-              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>
-                {[diaStr, p.horaInicio].filter(Boolean).join(" · ")}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+              {p.horaInicio && (
+                <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#64748b" }}>
+                  {p.horaInicio}
+                </span>
+              )}
+              {p.sede && <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: sedeColor }}>location_on</span>}
+              {p.sede && (
+                <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: sedeColor }}>
+                  {p.sede}{p.cancha ? ` C${p.cancha}` : ""}
+                </span>
+              )}
             </div>
           )
         })()}
@@ -239,23 +242,42 @@ function PartidoCard({ partido: p, clubA, clubB, index }: {
       animationDelay: `${Math.min(index, 8) * 35}ms`,
     }}>
 
-      {/* Sede · cancha · fecha · hora */}
-      {(p.sede || p.horaInicio) && (() => {
-        const diaStr = formatFecha(p.fecha)
-        return (
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
-            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: sedeColor, flexShrink: 0 }}>location_on</span>
-            {p.sede && (
-              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: sedeColor }}>
-                {p.sede}{p.cancha ? ` C${p.cancha}` : ""}
-              </span>
-            )}
-            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>
-              {[diaStr, p.horaInicio].filter(Boolean).join(" · ")}
-            </span>
-          </div>
-        )
-      })()}
+      {/* Top row: estado ← → hora/lugar */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 5,
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 9, fontWeight: isFin ? 900 : 600,
+          color: isFin ? "#64748b" : "#cbd5e1",
+          textTransform: "uppercase", letterSpacing: "0.12em",
+        }}>
+          <span style={{
+            width: 5, height: 5, borderRadius: "50%",
+            background: isFin ? "#cbd5e1" : "#e2e8f0",
+            display: "inline-block", flexShrink: 0,
+          }} />
+          {isFin ? "Finalizado" : "Pendiente"}
+        </div>
+        {(p.sede || p.horaInicio) && (() => {
+          const diaStr = formatFecha(p.fecha)
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: "auto" }}>
+              {diaStr && <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: "#94a3b8" }}>calendar_today</span>}
+              {(diaStr || p.horaInicio) && (
+                <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#64748b" }}>
+                  {[diaStr, p.horaInicio].filter(Boolean).join(" · ")}
+                </span>
+              )}
+              {p.sede && <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: sedeColor }}>location_on</span>}
+              {p.sede && (
+                <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: sedeColor }}>
+                  {p.sede}{p.cancha ? ` C${p.cancha}` : ""}
+                </span>
+              )}
+            </div>
+          )
+        })()}
+      </div>
 
       {/* Fila A */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 8 }}>
