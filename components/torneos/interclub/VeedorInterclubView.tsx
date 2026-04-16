@@ -1,15 +1,21 @@
 "use client"
 
-import { useState, useEffect, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import Image from "next/image"
-import { CLUB_A, CLUB_B } from "./interclub-mock"
-import { cerrarSesionVeedorAction } from "@/actions/partidos.actions"
+import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "./interclub-mock"
+import { cerrarSesionVeedorAction, guardarResultadoInterclubAction } from "@/actions/partidos.actions"
 
 const CLUB_ACCENT: Record<string, string> = {
   "voleando":  "#0f172a",
   "mas-padel": "#b45309",
+}
+
+// Sede tal como aparece en interclub-mock.ts
+const CLUB_SEDE: Record<string, string> = {
+  "voleando":  "Voleando",
+  "mas-padel": "+ Pádel",
 }
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -28,50 +34,59 @@ type PartidoMock = {
   ganador: "A" | "B" | null
 }
 
-// ─── Mock ─────────────────────────────────────────────────────────────────────
-// estado controlado explícitamente — no auto por hora en mock
-
-const MOCK: Record<string, PartidoMock[]> = {
-  "voleando": [
-    // Finalizado
-    { id: "v0",  categoria: "Suma 12",  pairA: "Gómez / Ruiz",      pairB: "López / Torres",     hora: "10:00", cancha: 1, sets: [{ a: "6", b: "3" }, { a: "7", b: "5" }], estado: "finalizado", ganador: "A" },
-    // En vivo (2 canchas activas)
-    { id: "v1",  categoria: "Suma 10",  pairA: "Peralta / Luna",     pairB: "Campos / Bravo",     hora: "15:30", cancha: 1, sets: [{ a: "6", b: "3" }],                       estado: "en_vivo",   ganador: null },
-    { id: "v2",  categoria: "Quinta",   pairA: "Molina / Quiroga",   pairB: "Aguilar / Rojas",    hora: "15:30", cancha: 2, sets: [{ a: "4", b: "2" }],                       estado: "en_vivo",   ganador: null },
-    // Próximos
-    { id: "v3",  categoria: "Segunda",  pairA: "Córdoba / Mena",     pairB: "Ríos / Sandoval",    hora: "17:00", cancha: 1, sets: [], estado: "pendiente", ganador: null },
-    { id: "v4",  categoria: "Cuarta",   pairA: "Álvarez / Carrizo",  pairB: "Cabrera / Delgado",  hora: "17:00", cancha: 2, sets: [], estado: "pendiente", ganador: null },
-    { id: "v5",  categoria: "Mixtos B", pairA: "Ibarra / Leiva",     pairB: "Neira / Poblete",    hora: "18:30", cancha: 1, sets: [], estado: "pendiente", ganador: null },
-    { id: "v6",  categoria: "Tercera",  pairA: "Heredia / Ávila",    pairB: "Tapia / Contreras",  hora: "18:30", cancha: 2, sets: [], estado: "pendiente", ganador: null },
-    { id: "v7",  categoria: "Primera",  pairA: "Muñoz / Serrano",    pairB: "Jiménez / Pedraza",  hora: "20:00", cancha: 1, sets: [], estado: "pendiente", ganador: null },
-    { id: "v8",  categoria: "Séptima",  pairA: "Romero / Pinto",     pairB: "Acosta / Vera",      hora: "20:00", cancha: 2, sets: [], estado: "pendiente", ganador: null },
-  ],
-  "mas-padel": [
-    // Finalizado
-    { id: "m0",  categoria: "Mixtos A", pairA: "García / Vega",      pairB: "Martín / Paz",       hora: "13:00", cancha: 1, sets: [{ a: "3", b: "6" }, { a: "2", b: "6" }], estado: "finalizado", ganador: "B" },
-    // En vivo
-    { id: "m1",  categoria: "Mixtos A", pairA: "Castro / Medina",    pairB: "Martín / Paz",       hora: "15:30", cancha: 1, sets: [{ a: "5", b: "4" }],                       estado: "en_vivo",   ganador: null },
-    { id: "m2",  categoria: "Suma 10",  pairA: "Ferreyra / Ríos",    pairB: "Herrera / Sosa",     hora: "15:30", cancha: 2, sets: [{ a: "2", b: "3" }],                       estado: "en_vivo",   ganador: null },
-    // Próximos
-    { id: "m3",  categoria: "Primera",  pairA: "Muñoz / Serrano",    pairB: "Cáceres / Valdivia", hora: "17:00", cancha: 1, sets: [], estado: "pendiente", ganador: null },
-    { id: "m4",  categoria: "Cuarta",   pairA: "Álvarez / Carrizo",  pairB: "Fuentes / Guerrero", hora: "17:00", cancha: 2, sets: [], estado: "pendiente", ganador: null },
-    { id: "m5",  categoria: "Segunda",  pairA: "Córdoba / Mena",     pairB: "Zamora / Villareal", hora: "18:30", cancha: 1, sets: [], estado: "pendiente", ganador: null },
-    { id: "m6",  categoria: "Mixtos B", pairA: "Ibarra / Leiva",     pairB: "Quintero / Robles",  hora: "18:30", cancha: 2, sets: [], estado: "pendiente", ganador: null },
-    { id: "m7",  categoria: "Tercera",  pairA: "Heredia / Ávila",    pairB: "Paredes / Solís",    hora: "20:00", cancha: 1, sets: [], estado: "pendiente", ganador: null },
-  ],
+export type InterclubLiveRow = {
+  id: string
+  resultado: string | null
+  ganador: string | null
+  estado: string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function parseSets(sets: SetScore[]): { a: string; b: string }[] {
-  return sets
+function parseResultado(resultado: string | null): SetScore[] {
+  if (!resultado?.trim()) return []
+  return resultado.trim().split(/\s+/).map(s => {
+    const [a = "0", b = "0"] = s.split("-")
+    return { a, b }
+  })
 }
 
-// ─── LiveCard (igual que fixture) ─────────────────────────────────────────────
+function setsToResultado(sets: SetScore[]): string {
+  return sets.map(s => `${s.a}-${s.b}`).join(" ")
+}
+
+function buildPartidos(club: string, liveRows: InterclubLiveRow[]): PartidoMock[] {
+  const sede = CLUB_SEDE[club]
+  const liveMap = new Map(liveRows.map(r => [r.id, r]))
+  const result: PartidoMock[] = []
+
+  for (const cat of MOCK_CATEGORIAS) {
+    for (const p of cat.partidos) {
+      if (p.sede !== sede) continue
+      const live = liveMap.get(p.id)
+      const estado = (live?.estado ?? p.estado) as PartidoMock["estado"]
+      const resultado = live?.resultado ?? p.resultado
+      const ganador  = (live?.ganador ?? p.ganador) as "A" | "B" | null
+      result.push({
+        id:       p.id,
+        categoria: cat.nombre,
+        pairA:    p.pairA,
+        pairB:    p.pairB,
+        hora:     p.horaInicio ?? "",
+        cancha:   p.cancha ?? 1,
+        sets:     parseResultado(resultado),
+        estado,
+        ganador,
+      })
+    }
+  }
+
+  return result.sort((a, b) => a.hora.localeCompare(b.hora) || a.cancha - b.cancha)
+}
+
+// ─── LiveCard ─────────────────────────────────────────────────────────────────
 
 function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () => void }) {
-  const parsed = parseSets(partido.sets)
-
   return (
     <div style={{
       background: "#ffffff",
@@ -80,7 +95,6 @@ function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () =>
       position: "relative", overflow: "hidden",
       boxShadow: "0 2px 12px rgba(188,255,0,0.12)",
     }}>
-      {/* Ghost VIVO */}
       <span aria-hidden style={{
         position: "absolute", zIndex: 0, right: -4, bottom: -10,
         fontFamily: "var(--font-anton), Anton, sans-serif",
@@ -138,17 +152,10 @@ function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () =>
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{partido.pairA}</span>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            {parsed.map((s, i) => (
-              <span key={i} style={{
-                fontFamily: "var(--font-anton), Anton, sans-serif",
-                fontSize: 18, lineHeight: 1, color: "#0f172a",
-                minWidth: 16, textAlign: "center",
-              }}>{s.a}</span>
+            {partido.sets.map((s, i) => (
+              <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 18, lineHeight: 1, color: "#0f172a", minWidth: 16, textAlign: "center" }}>{s.a}</span>
             ))}
-            <span className="live-dot" style={{
-              width: 7, height: 7, borderRadius: "50%",
-              background: "#0f172a", flexShrink: 0, display: "inline-block",
-            }} />
+            <span className="live-dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#0f172a", flexShrink: 0, display: "inline-block" }} />
           </div>
         </div>
 
@@ -171,27 +178,16 @@ function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () =>
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{partido.pairB}</span>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            {parsed.map((s, i) => (
-              <span key={i} style={{
-                fontFamily: "var(--font-anton), Anton, sans-serif",
-                fontSize: 18, lineHeight: 1, color: "#0f172a",
-                minWidth: 16, textAlign: "center",
-              }}>{s.b}</span>
+            {partido.sets.map((s, i) => (
+              <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 18, lineHeight: 1, color: "#0f172a", minWidth: 16, textAlign: "center" }}>{s.b}</span>
             ))}
-            <span className="live-dot" style={{
-              width: 7, height: 7, borderRadius: "50%",
-              background: "#0f172a", flexShrink: 0, display: "inline-block",
-            }} />
+            <span className="live-dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#0f172a", flexShrink: 0, display: "inline-block" }} />
           </div>
         </div>
       </div>
 
       {/* Acción */}
-      <div style={{
-        position: "relative", zIndex: 2,
-        marginTop: 12, paddingTop: 12,
-        borderTop: "1px solid #f1f5f9",
-      }}>
+      <div style={{ position: "relative", zIndex: 2, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
         <button
           onClick={onCargar}
           style={{
@@ -211,7 +207,7 @@ function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () =>
   )
 }
 
-// ─── PartidoCard (igual que fixture) ─────────────────────────────────────────
+// ─── PartidoCard ──────────────────────────────────────────────────────────────
 
 function PartidoCard({ partido, onIniciar, onEditar }: {
   partido: PartidoMock
@@ -221,7 +217,6 @@ function PartidoCard({ partido, onIniciar, onEditar }: {
   const isFin    = partido.estado === "finalizado"
   const ganadorA = partido.ganador === "A"
   const ganadorB = partido.ganador === "B"
-  const parsed   = parseSets(partido.sets)
 
   return (
     <div style={{
@@ -230,46 +225,22 @@ function PartidoCard({ partido, onIniciar, onEditar }: {
       borderRadius: 12, padding: "12px 14px",
       opacity: partido.estado === "pendiente" ? 0.75 : 1,
     }}>
-
-      {/* Sede · cancha · hora */}
       <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
         <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: "#64748b", flexShrink: 0 }}>location_on</span>
-        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: "#64748b" }}>
-          C{partido.cancha}
-        </span>
-        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>
-          · {partido.hora}
-        </span>
-        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#cbd5e1",
-          textTransform: "uppercase", letterSpacing: "0.06em", marginLeft: 4 }}>
-          {partido.categoria}
-        </span>
+        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: "#64748b" }}>C{partido.cancha}</span>
+        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>· {partido.hora}</span>
+        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.06em", marginLeft: 4 }}>{partido.categoria}</span>
       </div>
 
       {/* Fila A */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 8 }}>
-        <div style={{
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-          minWidth: 28, height: 18, padding: "0 5px",
-          border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0,
-        }}>
+        <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 18, padding: "0 5px", border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0 }}>
           <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: CLUB_A.color, textTransform: "uppercase" }}>{CLUB_A.abbr}</span>
         </div>
-        <span style={{
-          flex: 1, minWidth: 0,
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 12, fontWeight: ganadorA ? 800 : 600,
-          color: isFin && ganadorB ? "#94a3b8" : "#0f172a",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>{partido.pairA}</span>
+        <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: ganadorA ? 800 : 600, color: isFin && ganadorB ? "#94a3b8" : "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{partido.pairA}</span>
         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-          {parsed.length > 0 ? parsed.map((s, i) => (
-            <span key={i} style={{
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 16, lineHeight: 1,
-              color: ganadorA ? "#0f172a" : ganadorB ? "#cbd5e1" : "#64748b",
-              minWidth: 12, textAlign: "center",
-            }}>{s.a}</span>
+          {partido.sets.length > 0 ? partido.sets.map((s, i) => (
+            <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorA ? "#0f172a" : ganadorB ? "#cbd5e1" : "#64748b", minWidth: 12, textAlign: "center" }}>{s.a}</span>
           )) : (
             <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, color: "#e2e8f0", fontWeight: 700 }}>—</span>
           )}
@@ -280,76 +251,33 @@ function PartidoCard({ partido, onIniciar, onEditar }: {
 
       {/* Fila B */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-          minWidth: 28, height: 18, padding: "0 5px",
-          border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0,
-        }}>
+        <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 18, padding: "0 5px", border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0 }}>
           <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: CLUB_B.color, textTransform: "uppercase" }}>{CLUB_B.abbr}</span>
         </div>
-        <span style={{
-          flex: 1, minWidth: 0,
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 12, fontWeight: ganadorB ? 800 : 600,
-          color: isFin && ganadorA ? "#94a3b8" : "#0f172a",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>{partido.pairB}</span>
+        <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: ganadorB ? 800 : 600, color: isFin && ganadorA ? "#94a3b8" : "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{partido.pairB}</span>
         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-          {parsed.length > 0 ? parsed.map((s, i) => (
-            <span key={i} style={{
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 16, lineHeight: 1,
-              color: ganadorB ? "#0f172a" : ganadorA ? "#cbd5e1" : "#64748b",
-              minWidth: 12, textAlign: "center",
-            }}>{s.b}</span>
+          {partido.sets.length > 0 ? partido.sets.map((s, i) => (
+            <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorB ? "#0f172a" : ganadorA ? "#cbd5e1" : "#64748b", minWidth: 12, textAlign: "center" }}>{s.b}</span>
           )) : (
             <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, color: "#e2e8f0", fontWeight: 700 }}>—</span>
           )}
         </div>
       </div>
 
-      {/* Acción: iniciar (solo pendiente, si viene callback) */}
       {onIniciar && partido.estado === "pendiente" && (
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #f1f5f9" }}>
-          <button
-            onClick={onIniciar}
-            style={{
-              width: "100%", padding: "8px 0",
-              borderRadius: 8, border: "1.5px solid #0f172a",
-              background: "transparent", color: "#0f172a",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 10, fontWeight: 900,
-              textTransform: "uppercase", letterSpacing: "0.08em",
-              cursor: "pointer", WebkitTapHighlightColor: "transparent",
-            }}
-          >
+          <button onClick={onIniciar} style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "1.5px solid #0f172a", background: "transparent", color: "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
             Iniciar partido
           </button>
         </div>
       )}
 
-      {/* Finalizado: check + editar */}
       {isFin && (
-        <div style={{
-          marginTop: 10, paddingTop: 10, borderTop: "1px solid #f1f5f9",
-          display: "flex", alignItems: "center", gap: 5,
-        }}>
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 5 }}>
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, color: "#0f172a", lineHeight: 1 }}>check_circle</span>
-          <span style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 10, fontWeight: 700, color: "#0f172a",
-            textTransform: "uppercase", letterSpacing: "0.06em",
-          }}>Resultado cargado</span>
+          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.06em" }}>Resultado cargado</span>
           {onEditar && (
-            <button onClick={onEditar} style={{
-              marginLeft: "auto",
-              display: "flex", alignItems: "center", gap: 3,
-              background: "none", border: "none", cursor: "pointer", padding: 0,
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 10, fontWeight: 700, color: "#94a3b8",
-              textTransform: "uppercase", letterSpacing: "0.06em",
-              WebkitTapHighlightColor: "transparent",
-            }}>
+            <button onClick={onEditar} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent" }}>
               <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1 }}>edit</span>
               Editar
             </button>
@@ -365,31 +293,11 @@ function PartidoCard({ partido, onIniciar, onEditar }: {
 function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
-      <button onClick={() => onChange(Math.max(0, value - 1))} style={{
-        width: 40, height: 40, borderRadius: "10px 0 0 10px",
-        border: "1.5px solid #e2e8f0", borderRight: "none",
-        background: "#f8fafc", color: "#0f172a",
-        fontFamily: "var(--font-space-grotesk), sans-serif",
-        fontSize: 20, fontWeight: 300, lineHeight: 1,
-        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-        WebkitTapHighlightColor: "transparent", flexShrink: 0,
-      }}>−</button>
-      <div style={{
-        width: 52, height: 40, border: "1.5px solid #e2e8f0",
-        background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-      }}>
+      <button onClick={() => onChange(Math.max(0, value - 1))} style={{ width: 40, height: 40, borderRadius: "10px 0 0 10px", border: "1.5px solid #e2e8f0", borderRight: "none", background: "#f8fafc", color: "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 20, fontWeight: 300, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", WebkitTapHighlightColor: "transparent", flexShrink: 0 }}>−</button>
+      <div style={{ width: 52, height: 40, border: "1.5px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 22, lineHeight: 1, color: "#0f172a" }}>{value}</span>
       </div>
-      <button onClick={() => onChange(Math.min(99, value + 1))} style={{
-        width: 40, height: 40, borderRadius: "0 10px 10px 0",
-        border: "1.5px solid #e2e8f0", borderLeft: "none",
-        background: "#f8fafc", color: "#0f172a",
-        fontFamily: "var(--font-space-grotesk), sans-serif",
-        fontSize: 20, fontWeight: 300, lineHeight: 1,
-        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-        WebkitTapHighlightColor: "transparent", flexShrink: 0,
-      }}>+</button>
+      <button onClick={() => onChange(Math.min(99, value + 1))} style={{ width: 40, height: 40, borderRadius: "0 10px 10px 0", border: "1.5px solid #e2e8f0", borderLeft: "none", background: "#f8fafc", color: "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 20, fontWeight: 300, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", WebkitTapHighlightColor: "transparent", flexShrink: 0 }}>+</button>
     </div>
   )
 }
@@ -411,47 +319,29 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar }: {
   const updateSet = (i: number, side: "a" | "b", val: number) =>
     setSets(prev => prev.map((s, idx) => idx === i ? { ...s, [side]: val } : s))
 
-  const addSet = () => { if (sets.length < 3) setSets(prev => [...prev, { a: 0, b: 0 }]) }
+  const addSet    = () => { if (sets.length < 3) setSets(prev => [...prev, { a: 0, b: 0 }]) }
   const removeSet = (i: number) => { if (sets.length > 1) setSets(prev => prev.filter((_, idx) => idx !== i)) }
 
   const setsA = sets.filter(s => s.a > s.b).length
   const setsB = sets.filter(s => s.b > s.a).length
   const ganador: "A" | "B" | null = setsA > setsB ? "A" : setsB > setsA ? "B" : null
 
-  const handleGuardar = () => {
-    if (!ganador) return
-    onGuardar(sets.map(s => ({ a: String(s.a), b: String(s.b) })), ganador)
-  }
-
   return (
     <AnimatePresence>
-      <motion.div
-        key="backdrop"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onClose}
-        style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)" }}
-      />
+      <motion.div key="backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)" }} />
       <motion.div
         key="sheet"
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 340, damping: 30 }}
         onClick={e => e.stopPropagation()}
-        style={{
-          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 301,
-          background: "#ffffff", borderRadius: "20px 20px 0 0",
-          paddingBottom: "env(safe-area-inset-bottom, 24px)",
-        }}
+        style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 301, background: "#ffffff", borderRadius: "20px 20px 0 0", paddingBottom: "env(safe-area-inset-bottom, 24px)" }}
       >
         <div style={{ display: "flex", justifyContent: "center", padding: "14px 0 8px" }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0" }} />
         </div>
 
         <div style={{ padding: "4px 20px 16px", borderBottom: "1px solid #f1f5f9" }}>
-          <p style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 9, fontWeight: 900, color: "#94a3b8",
-            textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 6px",
-          }}>{partido.categoria} · C{partido.cancha} · Resultado</p>
+          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 6px" }}>{partido.categoria} · C{partido.cancha} · Resultado</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#0f172a", textTransform: "uppercase", lineHeight: 1.2 }}>{partido.pairA}</span>
             <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.08em" }}>VS</span>
@@ -472,16 +362,12 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar }: {
                   )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>
-                    {partido.pairA.split(" / ")[0]}
-                  </span>
+                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>{partido.pairA.split(" / ")[0]}</span>
                   <Stepper value={s.a} onChange={v => updateSet(i, "a", v)} />
                 </div>
                 <div style={{ height: 1, background: "#e2e8f0", margin: "0 0 10px" }} />
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>
-                    {partido.pairB.split(" / ")[0]}
-                  </span>
+                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>{partido.pairB.split(" / ")[0]}</span>
                   <Stepper value={s.b} onChange={v => updateSet(i, "b", v)} />
                 </div>
               </div>
@@ -497,40 +383,63 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar }: {
         </div>
 
         <div style={{ padding: "12px 20px 8px", display: "flex", flexDirection: "column", gap: 8 }}>
-          {/* Guardar parcial — siempre disponible */}
           <button
             onClick={() => onGuardarParcial(sets.map(s => ({ a: String(s.a), b: String(s.b) })))}
-            style={{
-              width: "100%", padding: "12px 0", borderRadius: 12,
-              border: "1.5px solid #e2e8f0", background: "transparent",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 11, fontWeight: 800, color: "#64748b",
-              textTransform: "uppercase", letterSpacing: "0.06em",
-              cursor: "pointer", WebkitTapHighlightColor: "transparent",
-            }}
+            style={{ width: "100%", padding: "12px 0", borderRadius: 12, border: "1.5px solid #e2e8f0", background: "transparent", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}
           >
             Actualizar set
           </button>
-
-          {/* Confirmar — solo si hay ganador */}
           <button
-            onClick={handleGuardar}
+            onClick={() => ganador && onGuardar(sets.map(s => ({ a: String(s.a), b: String(s.b) })), ganador)}
             disabled={!ganador}
-            style={{
-              width: "100%", padding: "16px 0", borderRadius: 14, border: "none",
-              background: ganador ? "#0f172a" : "#f1f5f9",
-              color: ganador ? "#bcff00" : "#94a3b8",
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 13, fontWeight: 900,
-              textTransform: "uppercase", letterSpacing: "0.08em",
-              cursor: ganador ? "pointer" : "default",
-              WebkitTapHighlightColor: "transparent",
-              transition: "background 200ms, color 200ms",
-            }}
+            style={{ width: "100%", padding: "16px 0", borderRadius: 14, border: "none", background: ganador ? "#0f172a" : "#f1f5f9", color: ganador ? "#bcff00" : "#94a3b8", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", cursor: ganador ? "pointer" : "default", WebkitTapHighlightColor: "transparent", transition: "background 200ms, color 200ms" }}
           >
             {ganador ? "Confirmar resultado" : "Ingresá todos los sets"}
           </button>
         </div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+// ─── Dialog "¿Iniciás el siguiente?" ─────────────────────────────────────────
+
+function SiguienteDialog({ siguiente, onSi, onNo, onCorregir }: {
+  siguiente: PartidoMock
+  onSi: () => void
+  onNo: () => void
+  onCorregir: () => void
+}) {
+  return (
+    <AnimatePresence>
+      <motion.div key="backdrop-sig" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onNo} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.5)" }} />
+      <motion.div
+        key="dialog-sig"
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 12 }}
+        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+        style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 401, background: "#ffffff", borderRadius: "20px 20px 0 0", padding: "24px 20px", paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
+      >
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0" }} />
+        </div>
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 40, lineHeight: 1, color: "#0f172a", fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+        </div>
+        <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center", margin: "0 0 6px" }}>Resultado cargado</p>
+        <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 20, color: "#0f172a", textTransform: "uppercase", textAlign: "center", margin: "0 0 20px", lineHeight: 1.2 }}>¿Iniciás el siguiente<br />en C{siguiente.cancha}?</p>
+        <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 14px", marginBottom: 20 }}>
+          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>{siguiente.categoria} · {siguiente.hora}</p>
+          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", margin: "0 0 3px" }}>{siguiente.pairA}</p>
+          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 700, color: "#94a3b8", margin: "0 0 3px" }}>vs</p>
+          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", margin: 0 }}>{siguiente.pairB}</p>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onNo} style={{ flex: 1, padding: "14px 0", borderRadius: 12, border: "1.5px solid #e2e8f0", background: "transparent", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>Ahora no</button>
+          <button onClick={onSi} style={{ flex: 2, padding: "14px 0", borderRadius: 12, border: "none", background: "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#bcff00", textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>Iniciar partido</button>
+        </div>
+        <button onClick={onCorregir} style={{ display: "block", width: "100%", marginTop: 14, background: "none", border: "none", cursor: "pointer", padding: "6px 0", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center", WebkitTapHighlightColor: "transparent" }}>← Corregir resultado anterior</button>
       </motion.div>
     </AnimatePresence>
   )
@@ -547,175 +456,55 @@ function SectionLabel({ label, count }: { label: string; count: number }) {
   )
 }
 
-// ─── Dialog "¿Iniciás el siguiente?" ─────────────────────────────────────────
-
-function SiguienteDialog({ siguiente, onSi, onNo, onCorregir }: {
-  siguiente: PartidoMock
-  onSi: () => void
-  onNo: () => void
-  onCorregir: () => void
-}) {
-  return (
-    <AnimatePresence>
-      <motion.div
-        key="backdrop-sig"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onNo}
-        style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.5)" }}
-      />
-      <motion.div
-        key="dialog-sig"
-        initial={{ opacity: 0, scale: 0.95, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 12 }}
-        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-        style={{
-          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 401,
-          background: "#ffffff", borderRadius: "20px 20px 0 0",
-          padding: "24px 20px",
-          paddingBottom: "max(24px, env(safe-area-inset-bottom))",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0" }} />
-        </div>
-
-        {/* Ícono check */}
-        <div style={{ textAlign: "center", marginBottom: 16 }}>
-          <span style={{
-            fontFamily: "'Material Symbols Outlined'",
-            fontSize: 40, lineHeight: 1, color: "#0f172a",
-            fontVariationSettings: "'FILL' 1",
-          }}>check_circle</span>
-        </div>
-
-        <p style={{
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 12, fontWeight: 700, color: "#64748b",
-          textTransform: "uppercase", letterSpacing: "0.08em",
-          textAlign: "center", margin: "0 0 6px",
-        }}>Resultado cargado</p>
-
-        <p style={{
-          fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: 20, color: "#0f172a", textTransform: "uppercase",
-          textAlign: "center", margin: "0 0 20px", lineHeight: 1.2,
-        }}>
-          ¿Iniciás el siguiente<br />en C{siguiente.cancha}?
-        </p>
-
-        {/* Preview del siguiente */}
-        <div style={{
-          background: "#f8fafc", borderRadius: 12, padding: "10px 14px",
-          marginBottom: 20,
-        }}>
-          <p style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 9, fontWeight: 900, color: "#94a3b8",
-            textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px",
-          }}>{siguiente.categoria} · {siguiente.hora}</p>
-          <p style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, fontWeight: 800, color: "#0f172a",
-            textTransform: "uppercase", margin: "0 0 3px",
-          }}>{siguiente.pairA}</p>
-          <p style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 9, fontWeight: 700, color: "#94a3b8",
-            margin: "0 0 3px",
-          }}>vs</p>
-          <p style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, fontWeight: 800, color: "#0f172a",
-            textTransform: "uppercase", margin: 0,
-          }}>{siguiente.pairB}</p>
-        </div>
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onNo} style={{
-            flex: 1, padding: "14px 0", borderRadius: 12,
-            border: "1.5px solid #e2e8f0", background: "transparent",
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, fontWeight: 800, color: "#64748b",
-            textTransform: "uppercase", letterSpacing: "0.06em",
-            cursor: "pointer", WebkitTapHighlightColor: "transparent",
-          }}>Ahora no</button>
-          <button onClick={onSi} style={{
-            flex: 2, padding: "14px 0", borderRadius: 12,
-            border: "none", background: "#0f172a",
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, fontWeight: 800, color: "#bcff00",
-            textTransform: "uppercase", letterSpacing: "0.06em",
-            cursor: "pointer", WebkitTapHighlightColor: "transparent",
-          }}>Iniciar partido</button>
-        </div>
-
-        {/* Volver a editar el resultado anterior */}
-        <button onClick={onCorregir} style={{
-          display: "block", width: "100%", marginTop: 14,
-          background: "none", border: "none", cursor: "pointer", padding: "6px 0",
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 10, fontWeight: 700, color: "#94a3b8",
-          textTransform: "uppercase", letterSpacing: "0.06em",
-          textAlign: "center", WebkitTapHighlightColor: "transparent",
-        }}>
-          ← Corregir resultado anterior
-        </button>
-      </motion.div>
-    </AnimatePresence>
-  )
-}
-
 // ─── Vista principal ──────────────────────────────────────────────────────────
 
-export function VeedorInterclubView({ club, clubNombre }: { club: string; clubNombre: string }) {
+export function VeedorInterclubView({
+  club,
+  clubNombre,
+  initialLiveData = [],
+}: {
+  club: string
+  clubNombre: string
+  initialLiveData?: InterclubLiveRow[]
+}) {
   const router = useRouter()
-  const [partidos, setPartidos] = useState<PartidoMock[]>(MOCK[club] ?? [])
-  const [sheetPartido, setSheetPartido] = useState<PartidoMock | null>(null)
-  const [siguienteDialog, setSiguienteDialog] = useState<PartidoMock | null>(null)
+  const [partidos, setPartidos] = useState<PartidoMock[]>(() => buildPartidos(club, initialLiveData))
+  const [sheetPartido, setSheetPartido]         = useState<PartidoMock | null>(null)
+  const [siguienteDialog, setSiguienteDialog]   = useState<PartidoMock | null>(null)
   const [ultimoFinalizado, setUltimoFinalizado] = useState<PartidoMock | null>(null)
   const [, startSalir] = useTransition()
-
-  // Refresca cada 60s para detectar cambios externos cuando conectemos Supabase
-  const [tick, setTick] = useState(0)
-  useEffect(() => {
-    const t = setInterval(() => setTick(n => n + 1), 60_000)
-    return () => clearInterval(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  void tick
 
   const live       = partidos.filter(p => p.estado === "en_vivo")
   const proximos   = partidos.filter(p => p.estado === "pendiente").sort((a, b) => a.hora.localeCompare(b.hora))
   const finalizados = partidos.filter(p => p.estado === "finalizado")
 
-  // Por cada cancha: próximo pendiente (el que puede iniciarse)
-  const nextPorCancha = (cancha: number): PartidoMock | undefined =>
-    proximos.find(p => p.cancha === cancha)
-
-  const canchaLibre = (cancha: number) => !live.some(p => p.cancha === cancha)
+  const nextPorCancha = (cancha: number) => proximos.find(p => p.cancha === cancha)
+  const canchaLibre   = (cancha: number) => !live.some(p => p.cancha === cancha)
 
   const iniciar = (id: string) => {
     setPartidos(prev => prev.map(p => p.id === id ? { ...p, estado: "en_vivo" as const } : p))
+    guardarResultadoInterclubAction({ id, resultado: null, ganador: null, estado: "en_vivo" })
   }
 
-  // Guardar score parcial (sin finalizar) y cerrar sheet
   const guardarParcial = (id: string, sets: SetScore[]) => {
     setPartidos(prev => prev.map(p => p.id === id ? { ...p, sets } : p))
     setSheetPartido(null)
+    const resultado = setsToResultado(sets)
+    guardarResultadoInterclubAction({ id, resultado, ganador: null, estado: "en_vivo" })
   }
 
-  // Confirmar resultado final
   const confirmar = (id: string, sets: SetScore[], ganador: "A" | "B") => {
-    const partido = partidos.find(p => p.id === id)
+    const partido   = partidos.find(p => p.id === id)
     const eraEnVivo = partido?.estado === "en_vivo"
-    const cancha = partido?.cancha ?? 1
+    const cancha    = partido?.cancha ?? 1
     const finalizado = { ...partido!, estado: "finalizado" as const, sets, ganador }
     setPartidos(prev => prev.map(p => p.id === id ? finalizado : p))
     setUltimoFinalizado(finalizado)
     setSheetPartido(null)
 
-    // Solo preguntar por el siguiente si venía de en_vivo (no al editar un finalizado)
+    const resultado = setsToResultado(sets)
+    guardarResultadoInterclubAction({ id, resultado, ganador, estado: "finalizado" })
+
     if (eraEnVivo) {
       const siguiente = proximos.find(p => p.cancha === cancha && p.id !== id)
       if (siguiente) setSiguienteDialog(siguiente)
@@ -736,7 +525,7 @@ export function VeedorInterclubView({ club, clubNombre }: { club: string; clubNo
   return (
     <div style={{ background: "#f8fafc", minHeight: "100dvh" }}>
 
-      {/* Header — mismo estilo que la página del PIN */}
+      {/* Header */}
       <div style={{
         background: pageBg,
         padding: "16px 20px 24px",
@@ -745,86 +534,35 @@ export function VeedorInterclubView({ club, clubNombre }: { club: string; clubNo
         position: "relative", overflow: "hidden",
         display: "flex", flexDirection: "column", alignItems: "center",
       }}>
-
-        {/* Ghost logo de fondo */}
-        <div aria-hidden style={{
-          position: "absolute", right: -20, bottom: -20,
-          pointerEvents: "none", opacity: 0.07, zIndex: 0,
-        }}>
+        <div aria-hidden style={{ position: "absolute", right: -20, bottom: -20, pointerEvents: "none", opacity: 0.07, zIndex: 0 }}>
           <Image src={logoSrc} alt="" width={200} height={200} style={{ objectFit: "contain" }} />
         </div>
 
-        {/* Botón volver al torneo — arriba izquierda */}
-        <button onClick={() => router.push("/torneos/123/interclub")} style={{
-          position: "absolute", top: "max(14px, env(safe-area-inset-top))", left: 16,
-          display: "flex", alignItems: "center", gap: 4,
-          background: "none", border: "none", cursor: "pointer", padding: "4px 0",
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 10, fontWeight: 700, color: "#94a3b8",
-          textTransform: "uppercase", letterSpacing: "0.06em",
-          WebkitTapHighlightColor: "transparent", zIndex: 1,
-        }}>
+        <button onClick={() => router.push("/torneos/123/interclub")} style={{ position: "absolute", top: "max(14px, env(safe-area-inset-top))", left: 16, display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent", zIndex: 1 }}>
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, lineHeight: 1 }}>arrow_back</span>
           Torneo
         </button>
 
-        {/* Botón salir — arriba derecha */}
-        <button onClick={handleSalir} style={{
-          position: "absolute", top: "max(14px, env(safe-area-inset-top))", right: 16,
-          display: "flex", alignItems: "center", gap: 4,
-          background: "none", border: "none", cursor: "pointer", padding: "4px 0",
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 10, fontWeight: 700, color: "#94a3b8",
-          textTransform: "uppercase", letterSpacing: "0.06em",
-          WebkitTapHighlightColor: "transparent", zIndex: 1,
-        }}>
+        <button onClick={handleSalir} style={{ position: "absolute", top: "max(14px, env(safe-area-inset-top))", right: 16, display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent", zIndex: 1 }}>
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, lineHeight: 1 }}>logout</span>
           Salir
         </button>
 
-        {/* Badge Veedor */}
-        <div style={{
-          position: "relative", zIndex: 1,
-          display: "inline-flex", alignItems: "center",
-          background: accent, borderRadius: 3,
-          padding: "4px 10px", marginBottom: 8,
-        }}>
-          <span style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 900, color: "#ffffff",
-            textTransform: "uppercase", letterSpacing: "0.14em",
-          }}>Veedor</span>
+        <div style={{ position: "relative", zIndex: 1, display: "inline-flex", alignItems: "center", background: accent, borderRadius: 3, padding: "4px 10px", marginBottom: 8 }}>
+          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: "#ffffff", textTransform: "uppercase", letterSpacing: "0.14em" }}>Veedor</span>
         </div>
 
-        {/* Nombre */}
-        <h1 style={{
-          position: "relative", zIndex: 1,
-          fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: 28, fontWeight: 400, lineHeight: 1,
-          color: "#0f172a", textTransform: "uppercase", margin: "0 0 4px",
-          textAlign: "center",
-        }}>{clubNombre}</h1>
-
-        {/* Subtítulo */}
-        <p style={{
-          position: "relative", zIndex: 1,
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 10, fontWeight: 700, color: "#94a3b8",
-          textTransform: "uppercase", letterSpacing: "0.08em",
-          margin: 0,
-        }}>Torneo Interclubes · Abr 2026</p>
+        <h1 style={{ position: "relative", zIndex: 1, fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 28, fontWeight: 400, lineHeight: 1, color: "#0f172a", textTransform: "uppercase", margin: "0 0 4px", textAlign: "center" }}>{clubNombre}</h1>
+        <p style={{ position: "relative", zIndex: 1, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>Torneo Interclubes · Abr 2026</p>
       </div>
 
       {/* Partidos */}
       <div style={{ padding: "4px 14px 100px" }}>
-
         {live.length > 0 && (
           <>
             <SectionLabel label="En cancha" count={live.length} />
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {live.map(p => (
-                <LiveCard key={p.id} partido={p} onCargar={() => setSheetPartido(p)} />
-              ))}
+              {live.map(p => <LiveCard key={p.id} partido={p} onCargar={() => setSheetPartido(p)} />)}
             </div>
           </>
         )}
@@ -836,13 +574,7 @@ export function VeedorInterclubView({ club, clubNombre }: { club: string; clubNo
               {proximos.map(p => {
                 const esNext = p.id === nextPorCancha(p.cancha)?.id
                 const libre  = canchaLibre(p.cancha)
-                return (
-                  <PartidoCard
-                    key={p.id}
-                    partido={p}
-                    onIniciar={esNext && libre ? () => iniciar(p.id) : undefined}
-                  />
-                )
+                return <PartidoCard key={p.id} partido={p} onIniciar={esNext && libre ? () => iniciar(p.id) : undefined} />
               })}
             </div>
           </>
@@ -852,24 +584,17 @@ export function VeedorInterclubView({ club, clubNombre }: { club: string; clubNo
           <>
             <SectionLabel label="Finalizados" count={finalizados.length} />
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {finalizados.map(p => (
-            <PartidoCard
-              key={p.id}
-              partido={p}
-              onEditar={() => setSheetPartido(p)}
-            />
-          ))}
+              {finalizados.map(p => <PartidoCard key={p.id} partido={p} onEditar={() => setSheetPartido(p)} />)}
             </div>
           </>
         )}
-
       </div>
 
       {sheetPartido && (
         <ResultadoSheet
           partido={sheetPartido}
           onClose={() => setSheetPartido(null)}
-          onGuardarParcial={(sets) => guardarParcial(sheetPartido.id, sets)}
+          onGuardarParcial={sets => guardarParcial(sheetPartido.id, sets)}
           onGuardar={(sets, ganador) => confirmar(sheetPartido.id, sets, ganador)}
         />
       )}
@@ -877,17 +602,12 @@ export function VeedorInterclubView({ club, clubNombre }: { club: string; clubNo
       {siguienteDialog && (
         <SiguienteDialog
           siguiente={siguienteDialog}
-          onSi={() => {
-            iniciar(siguienteDialog.id)
-            setSiguienteDialog(null)
-          }}
+          onSi={() => { iniciar(siguienteDialog.id); setSiguienteDialog(null) }}
           onNo={() => setSiguienteDialog(null)}
           onCorregir={() => {
             setSiguienteDialog(null)
             if (ultimoFinalizado) {
-              setPartidos(prev => prev.map(p =>
-                p.id === ultimoFinalizado.id ? { ...p, estado: "en_vivo" as const } : p
-              ))
+              setPartidos(prev => prev.map(p => p.id === ultimoFinalizado.id ? { ...p, estado: "en_vivo" as const } : p))
               setSheetPartido({ ...ultimoFinalizado, estado: "en_vivo" as const })
             }
           }}
