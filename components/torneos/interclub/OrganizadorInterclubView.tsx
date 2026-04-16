@@ -67,7 +67,7 @@ function buildPartidos(liveRows: OrganizadorLiveRow[]): PartidoFlat[] {
 const FECHAS  = ["2026-04-17", "2026-04-18", "2026-04-19"]
 const SEDES   = ["Voleando", "+ Pádel"]
 const CANCHAS = [1, 2]
-const HORAS   = ["10:00","11:30","13:00","14:30","15:00","15:30","16:30","17:00","18:30","20:00"]
+const HORAS   = ["10:00","11:30","13:00","14:30","16:00","17:30","19:00","20:30"]
 const DIAS    = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"]
 
 const SEDE_COLOR: Record<string, string> = { "Voleando": "#0f172a", "+ Pádel": "#b45309" }
@@ -300,6 +300,52 @@ function SlotGrid({
 
 // ─── Mover Sheet ──────────────────────────────────────────────────────────────
 
+// ─── Mini card para confirmación ─────────────────────────────────────────────
+
+function ConfirmCard({ p, label }: { p: PartidoFlat; label: string }) {
+  return (
+    <div style={{
+      background: "#ffffff", borderRadius: 14,
+      border: "1px solid #e2e8f0",
+      padding: "12px 14px",
+      boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+    }}>
+      <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px" }}>{label}</p>
+
+      {/* Sede · Cancha · Hora · Fecha */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
+        <span style={{ background: SEDE_COLOR[p.sede] ?? "#0f172a", color: "#fff", padding: "2px 7px", borderRadius: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase", flexShrink: 0 }}>
+          {SEDE_ABBR[p.sede] ?? p.sede}
+        </span>
+        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+          C{p.cancha} · {p.hora}
+        </span>
+        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>
+          {fmtFechaCorta(p.fecha)}
+        </span>
+        <span style={{
+          marginLeft: "auto",
+          background: `${GENERO_COLOR[p.genero]}14`,
+          color: GENERO_COLOR[p.genero],
+          padding: "1px 6px", borderRadius: 4,
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 7, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em",
+        }}>{GENERO_LABEL[p.genero]}</span>
+      </div>
+
+      {/* Categoría */}
+      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
+        {p.categoria}
+      </span>
+
+      {/* Parejas */}
+      <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.pairA}</span>
+      <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
+      <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.pairB}</span>
+    </div>
+  )
+}
+
 type Confirmacion =
   | { tipo: "mover"; hora: string; cancha: number; fecha: string; sede: string }
   | { tipo: "swap";  idB: string; partidoB: PartidoFlat }
@@ -462,56 +508,35 @@ function MoverSheet({
               </div>
 
               {confirmacion.tipo === "mover" ? (
-                /* ── Resumen mover ── */
-                <div style={{ flex: 1 }}>
-                  {/* De */}
-                  <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 14px", marginBottom: 8 }}>
-                    <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>De</p>
+                /* ── Mover: card completa + nuevo slot ── */
+                <div style={{ flex: 1, overflowY: "auto" }}>
+                  <ConfirmCard p={partido} label="Partido a mover" />
+
+                  <div style={{ display: "flex", justifyContent: "center", margin: "10px 0" }}>
+                    <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 22, color: "#16a34a", lineHeight: 1 }}>arrow_downward</span>
+                  </div>
+
+                  {/* Nuevo slot */}
+                  <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 14, padding: "12px 14px" }}>
+                    <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px" }}>Nuevo slot</p>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ background: SEDE_COLOR[partido.sede] ?? "#0f172a", color: "#fff", padding: "2px 6px", borderRadius: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>{SEDE_ABBR[partido.sede]}</span>
-                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a" }}>C{partido.cancha} · {partido.hora}</span>
-                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>{fmtFechaCorta(partido.fecha)}</span>
+                      <span style={{ background: SEDE_COLOR[confirmacion.sede] ?? "#0f172a", color: "#fff", padding: "2px 7px", borderRadius: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>
+                        {SEDE_ABBR[confirmacion.sede] ?? confirmacion.sede}
+                      </span>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 15, fontWeight: 700, color: "#0f172a" }}>C{confirmacion.cancha} · {confirmacion.hora}</span>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>{fmtFechaCorta(confirmacion.fecha)}</span>
                     </div>
                   </div>
-                  {/* Flecha */}
-                  <div style={{ display: "flex", justifyContent: "center", margin: "4px 0" }}>
-                    <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#cbd5e1", lineHeight: 1 }}>arrow_downward</span>
-                  </div>
-                  {/* A */}
-                  <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 12, padding: "10px 14px", marginBottom: 16 }}>
-                    <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>A</p>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ background: SEDE_COLOR[confirmacion.sede] ?? "#0f172a", color: "#fff", padding: "2px 6px", borderRadius: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>{SEDE_ABBR[confirmacion.sede] ?? confirmacion.sede}</span>
-                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a" }}>C{confirmacion.cancha} · {confirmacion.hora}</span>
-                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>{fmtFechaCorta(confirmacion.fecha)}</span>
-                    </div>
-                  </div>
+                  <div style={{ height: 16 }} />
                 </div>
               ) : (
-                /* ── Resumen swap ── */
-                <div style={{ flex: 1 }}>
-                  {[
-                    { p: partido,               label: "Partido A" },
-                    { p: confirmacion.partidoB, label: "Partido B" },
-                  ].map(({ p, label }, i) => (
-                    <div key={label}>
-                      <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 14px" }}>
-                        <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 5px" }}>{label}</p>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                          <span style={{ background: SEDE_COLOR[p.sede] ?? "#0f172a", color: "#fff", padding: "2px 6px", borderRadius: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>{SEDE_ABBR[p.sede]}</span>
-                          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a" }}>C{p.cancha} · {p.hora}</span>
-                          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>{fmtFechaCorta(p.fecha)}</span>
-                        </div>
-                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase" }}>{p.categoria}</span>
-                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#64748b", display: "block", marginTop: 1 }}>{p.pairA} vs {p.pairB}</span>
-                      </div>
-                      {i === 0 && (
-                        <div style={{ display: "flex", justifyContent: "center", margin: "4px 0" }}>
-                          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#cbd5e1", lineHeight: 1 }}>swap_vert</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                /* ── Swap: dos cards completas ── */
+                <div style={{ flex: 1, overflowY: "auto" }}>
+                  <ConfirmCard p={partido}               label="Partido A — pierde este slot" />
+                  <div style={{ display: "flex", justifyContent: "center", margin: "10px 0" }}>
+                    <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 22, color: "#cbd5e1", lineHeight: 1 }}>swap_vert</span>
+                  </div>
+                  <ConfirmCard p={confirmacion.partidoB} label="Partido B — pierde su slot" />
                   <div style={{ height: 16 }} />
                 </div>
               )}
@@ -554,7 +579,7 @@ function PartidoCard({
 }) {
   const isLive  = partido.estado === "en_vivo"
   const isFin   = partido.estado === "finalizado"
-  const canMove = !isFin
+  const canMove = partido.estado === "pendiente"
 
   return (
     <div style={{

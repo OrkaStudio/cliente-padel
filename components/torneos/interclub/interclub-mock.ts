@@ -29,8 +29,8 @@ export const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     partidos: [
       { id: "p5", pairA: "Ferreyra / Ríos", pairB: "Campos / Bravo", resultado: "6-3 6-4", ganador: "A", estado: "finalizado", fecha: "2026-04-17", horaInicio: "13:00", sede: "Voleando",  cancha: 1 },
       { id: "p6", pairA: "Ferreyra / Ríos", pairB: "Herrera / Sosa", resultado: "3-6 4-6", ganador: "B", estado: "finalizado", fecha: "2026-04-17", horaInicio: "13:00", sede: "+ Pádel", cancha: 1 },
-      { id: "p7", pairA: "Peralta / Luna",  pairB: "Campos / Bravo", resultado: "6-4",     ganador: null, estado: "en_vivo",   fecha: "2026-04-17", horaInicio: "15:30", sede: "Voleando",  cancha: 1 },
-      { id: "p8", pairA: "Peralta / Luna",  pairB: "Herrera / Sosa", resultado: null,       ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "16:30", sede: "+ Pádel", cancha: 1 },
+      { id: "p7", pairA: "Peralta / Luna",  pairB: "Campos / Bravo", resultado: "6-4",     ganador: null, estado: "en_vivo",   fecha: "2026-04-17", horaInicio: "16:00", sede: "Voleando",  cancha: 1 },
+      { id: "p8", pairA: "Peralta / Luna",  pairB: "Herrera / Sosa", resultado: null,       ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "17:30", sede: "+ Pádel", cancha: 1 },
     ],
   },
   {
@@ -38,8 +38,8 @@ export const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     partidos: [
       { id: "p9",  pairA: "García / Vega",   pairB: "Martín / Paz",  resultado: "3-6 2-6", ganador: "B", estado: "finalizado", fecha: "2026-04-17", horaInicio: "13:00", sede: "+ Pádel", cancha: 2 },
       { id: "p10", pairA: "García / Vega",   pairB: "Núñez / Reyes", resultado: "1-6 2-6", ganador: "B", estado: "finalizado", fecha: "2026-04-17", horaInicio: "13:00", sede: "Voleando",  cancha: 2 },
-      { id: "p11", pairA: "Castro / Medina", pairB: "Martín / Paz",  resultado: null,       ganador: null, estado: "en_vivo",   fecha: "2026-04-17", horaInicio: "15:30", sede: "+ Pádel", cancha: 2 },
-      { id: "p12", pairA: "Castro / Medina", pairB: "Núñez / Reyes", resultado: null,       ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "16:30", sede: "Voleando",  cancha: 2 },
+      { id: "p11", pairA: "Castro / Medina", pairB: "Martín / Paz",  resultado: null,       ganador: null, estado: "en_vivo",   fecha: "2026-04-17", horaInicio: "16:00", sede: "+ Pádel", cancha: 2 },
+      { id: "p12", pairA: "Castro / Medina", pairB: "Núñez / Reyes", resultado: null,       ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "17:30", sede: "Voleando",  cancha: 2 },
     ],
   },
   {
@@ -64,16 +64,16 @@ export const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     id: "6", nombre: "Quinta", genero: "masc", estado: "en_vivo", ptsA: 1, ptsB: 0,
     partidos: [
       { id: "p21", pairA: "Molina / Quiroga",  pairB: "Espinoza / Vidal", resultado: "6-2 6-3", ganador: "A", estado: "finalizado", fecha: "2026-04-17", horaInicio: "14:30", sede: "Voleando",  cancha: 1 },
-      { id: "p22", pairA: "Molina / Quiroga",  pairB: "Aguilar / Rojas",  resultado: "6-2",     ganador: null, estado: "en_vivo",   fecha: "2026-04-17", horaInicio: "15:30", sede: "Voleando",  cancha: 2 },
-      { id: "p23", pairA: "Navarro / Palacios", pairB: "Espinoza / Vidal", resultado: null,      ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "15:30", sede: "+ Pádel", cancha: 1 },
+      { id: "p22", pairA: "Molina / Quiroga",  pairB: "Aguilar / Rojas",  resultado: "6-2",     ganador: null, estado: "en_vivo",   fecha: "2026-04-17", horaInicio: "16:00", sede: "Voleando",  cancha: 2 },
+      { id: "p23", pairA: "Navarro / Palacios", pairB: "Espinoza / Vidal", resultado: null,      ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "16:00", sede: "+ Pádel", cancha: 1 },
       { id: "p24", pairA: "Navarro / Palacios", pairB: "Aguilar / Rojas",  resultado: null,      ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "10:00", sede: "Voleando",  cancha: 1 },
     ],
   },
   {
     id: "7", nombre: "Cuarta", genero: "masc", estado: "pendiente", ptsA: 0, ptsB: 0,
     partidos: [
-      { id: "p25", pairA: "Álvarez / Carrizo", pairB: "Cabrera / Delgado",  resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "15:00", sede: "Voleando",  cancha: 1 },
-      { id: "p26", pairA: "Álvarez / Carrizo", pairB: "Fuentes / Guerrero", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "15:00", sede: "+ Pádel", cancha: 2 },
+      { id: "p25", pairA: "Álvarez / Carrizo", pairB: "Cabrera / Delgado",  resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "16:00", sede: "Voleando",  cancha: 1 },
+      { id: "p26", pairA: "Álvarez / Carrizo", pairB: "Fuentes / Guerrero", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "16:00", sede: "+ Pádel", cancha: 2 },
       { id: "p27", pairA: "Méndez / Peña",     pairB: "Cabrera / Delgado",  resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "10:00", sede: "+ Pádel", cancha: 1 },
       { id: "p28", pairA: "Méndez / Peña",     pairB: "Fuentes / Guerrero", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "10:00", sede: "Voleando",  cancha: 2 },
     ],
@@ -81,8 +81,8 @@ export const MOCK_CATEGORIAS: CategoriaInterclub[] = [
   {
     id: "8", nombre: "Tercera", genero: "masc", estado: "pendiente", ptsA: 0, ptsB: 0,
     partidos: [
-      { id: "p29", pairA: "Heredia / Ávila",  pairB: "Paredes / Solís",   resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "15:00", sede: "+ Pádel", cancha: 1 },
-      { id: "p30", pairA: "Heredia / Ávila",  pairB: "Tapia / Contreras", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "15:00", sede: "Voleando",  cancha: 2 },
+      { id: "p29", pairA: "Heredia / Ávila",  pairB: "Paredes / Solís",   resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "16:00", sede: "+ Pádel", cancha: 1 },
+      { id: "p30", pairA: "Heredia / Ávila",  pairB: "Tapia / Contreras", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-17", horaInicio: "16:00", sede: "Voleando",  cancha: 2 },
       { id: "p31", pairA: "Salas / Figueroa", pairB: "Paredes / Solís",   resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "11:30", sede: "Voleando",  cancha: 1 },
       { id: "p32", pairA: "Salas / Figueroa", pairB: "Tapia / Contreras", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "11:30", sede: "+ Pádel", cancha: 2 },
     ],
@@ -99,8 +99,8 @@ export const MOCK_CATEGORIAS: CategoriaInterclub[] = [
   {
     id: "10", nombre: "Primera", genero: "masc", estado: "pendiente", ptsA: 0, ptsB: 0,
     partidos: [
-      { id: "p37", pairA: "Muñoz / Serrano", pairB: "Cáceres / Valdivia", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "15:30", sede: "+ Pádel", cancha: 2 },
-      { id: "p38", pairA: "Muñoz / Serrano", pairB: "Jiménez / Pedraza",  resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "15:30", sede: "Voleando",  cancha: 1 },
+      { id: "p37", pairA: "Muñoz / Serrano", pairB: "Cáceres / Valdivia", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "16:00", sede: "+ Pádel", cancha: 2 },
+      { id: "p38", pairA: "Muñoz / Serrano", pairB: "Jiménez / Pedraza",  resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "16:00", sede: "Voleando",  cancha: 1 },
       { id: "p39", pairA: "Arce / Escobar",  pairB: "Cáceres / Valdivia", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-19", horaInicio: "10:00", sede: "Voleando",  cancha: 2 },
       { id: "p40", pairA: "Arce / Escobar",  pairB: "Jiménez / Pedraza",  resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-19", horaInicio: "10:00", sede: "+ Pádel", cancha: 1 },
     ],
@@ -128,7 +128,7 @@ export const MOCK_CATEGORIAS: CategoriaInterclub[] = [
     id: "13", nombre: "Quinta", genero: "dam", estado: "en_vivo", ptsA: 1, ptsB: 0,
     partidos: [
       { id: "d5", pairA: "Álvarez / Soria",    pairB: "Vera / Reina",      resultado: "6-4 6-3", ganador: "A", estado: "finalizado", fecha: "2026-04-17", horaInicio: "13:00", sede: "Voleando",  cancha: 2 },
-      { id: "d6", pairA: "Álvarez / Soria",    pairB: "Ledesma / Ponce",   resultado: "5-3",     ganador: null, estado: "en_vivo",  fecha: "2026-04-17", horaInicio: "15:30", sede: "+ Pádel", cancha: 2 },
+      { id: "d6", pairA: "Álvarez / Soria",    pairB: "Ledesma / Ponce",   resultado: "5-3",     ganador: null, estado: "en_vivo",  fecha: "2026-04-17", horaInicio: "16:00", sede: "+ Pádel", cancha: 2 },
       { id: "d7", pairA: "Campos / Suárez",    pairB: "Vera / Reina",      resultado: null,      ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "10:00", sede: "+ Pádel", cancha: 1 },
       { id: "d8", pairA: "Campos / Suárez",    pairB: "Ledesma / Ponce",   resultado: null,      ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "10:00", sede: "Voleando",  cancha: 1 },
     ],
@@ -136,7 +136,7 @@ export const MOCK_CATEGORIAS: CategoriaInterclub[] = [
   {
     id: "14", nombre: "Primera", genero: "dam", estado: "pendiente", ptsA: 0, ptsB: 0,
     partidos: [
-      { id: "d9",  pairA: "Benítez / Chávez",  pairB: "Romero / Aguirre",  resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "15:30", sede: "Voleando",  cancha: 2 },
+      { id: "d9",  pairA: "Benítez / Chávez",  pairB: "Romero / Aguirre",  resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-18", horaInicio: "16:00", sede: "Voleando",  cancha: 2 },
       { id: "d10", pairA: "Benítez / Chávez",  pairB: "Salazar / Herrero", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-19", horaInicio: "10:00", sede: "+ Pádel", cancha: 2 },
       { id: "d11", pairA: "Vidal / Carrasco",  pairB: "Romero / Aguirre",  resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-19", horaInicio: "10:00", sede: "Voleando",  cancha: 1 },
       { id: "d12", pairA: "Vidal / Carrasco",  pairB: "Salazar / Herrero", resultado: null, ganador: null, estado: "pendiente", fecha: "2026-04-19", horaInicio: "11:30", sede: "+ Pádel", cancha: 1 },
