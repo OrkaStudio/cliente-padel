@@ -5,6 +5,7 @@ import { z } from "zod"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { MOCK_CATEGORIAS } from "@/components/torneos/interclub/interclub-mock"
 
 // ─── Marcar en vivo ───────────────────────────────────────────────────────────
 
@@ -269,6 +270,8 @@ export const guardarResultadoInterclubAction = createServerAction()
       }, { onConflict: "id" })
     if (error) throw error
     revalidatePath("/torneos/123/interclub")
+    const cat = MOCK_CATEGORIAS.find(c => c.partidos.some(p => p.id === input.id))
+    if (cat) revalidatePath(`/torneos/123/interclub/${cat.id}`)
     return { ok: true }
   })
 

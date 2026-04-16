@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useMemo, useTransition } from "react"
+import { useState, useMemo, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import Image from "next/image"
 import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "./interclub-mock"
 import { cerrarSesionVeedorAction, moverPartidoInterclubAction, swapPartidosInterclubAction } from "@/actions/partidos.actions"
+import { InterclubAutoRefresh } from "./InterclubAutoRefresh"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -149,10 +150,12 @@ function SlotGrid({
     moviendo.fecha === fecha && moviendo.sede === sede &&
     moviendo.hora === hora   && moviendo.cancha === cancha
 
-  // Filtrar horas pasadas — siempre mostrar la hora actual del partido
+  // Filtrar horas pasadas — solo para el día de hoy; días futuros muestran todos los slots
+  const hoy = new Date().toISOString().split("T")[0]
   const ahora = new Date()
   const horasFiltradas = HORAS.filter(hora => {
     if (CANCHAS.some(c => isActual(hora, c))) return true   // siempre mostrar slot actual
+    if (fecha !== hoy) return true                          // días futuros: mostrar todo
     const slotTime = new Date(`${fecha}T${hora}:00`)
     return slotTime > ahora
   })
@@ -707,6 +710,22 @@ export function OrganizadorInterclubView({ initialLiveData = [] }: { initialLive
   const router = useRouter()
   const [partidos, setPartidos]         = useState<PartidoFlat[]>(() => buildPartidos(initialLiveData))
   const [moviendoId, setMoviendoId]     = useState<string | null>(null)
+
+  // Merge resultados de veedores sin pisar los movimientos locales de slots
+  useEffect(() => {
+    if (!initialLiveData.length) return
+    const liveMap = new Map(initialLiveData.map(r => [r.id, r]))
+    setPartidos(prev => prev.map(p => {
+      const live = liveMap.get(p.id)
+      if (!live) return p
+      return {
+        ...p,
+        resultado: live.resultado ?? p.resultado,
+        ganador:   (live.ganador  ?? p.ganador) as "A" | "B" | null,
+        estado:    (live.estado   ?? p.estado)  as PartidoFlat["estado"],
+      }
+    }))
+  }, [initialLiveData])
   const [search, setSearch]             = useState("")
   const [selSede, setSelSede]           = useState<string | null>(null)
   const [selGenero, setSelGenero]       = useState<string | null>(null)
@@ -811,6 +830,7 @@ export function OrganizadorInterclubView({ initialLiveData = [] }: { initialLive
 
   return (
     <div style={{ background: "#f8fafc", minHeight: "100dvh" }}>
+      <InterclubAutoRefresh />
 
       {/* ── Header ── */}
       <div style={{

@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import Image from "next/image"
 import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "./interclub-mock"
 import { cerrarSesionVeedorAction, guardarResultadoInterclubAction } from "@/actions/partidos.actions"
+import { InterclubAutoRefresh } from "./InterclubAutoRefresh"
 
 const CLUB_ACCENT: Record<string, string> = {
   "voleando":  "#0f172a",
@@ -28,6 +29,7 @@ type PartidoMock = {
   pairA: string
   pairB: string
   hora: string
+  fecha: string
   cancha: number
   sede: string
   sets: SetScore[]
@@ -69,21 +71,24 @@ function buildPartidos(club: string, liveRows: InterclubLiveRow[]): PartidoMock[
       const resultado = live?.resultado ?? p.resultado
       const ganador  = (live?.ganador ?? p.ganador) as "A" | "B" | null
       result.push({
-        id:       p.id,
+        id:        p.id,
         categoria: cat.nombre,
-        pairA:    p.pairA,
-        pairB:    p.pairB,
-        hora:     p.horaInicio ?? "",
-        cancha:   p.cancha ?? 1,
-        sede:     p.sede ?? sede,
-        sets:     parseResultado(resultado),
+        pairA:     p.pairA,
+        pairB:     p.pairB,
+        hora:      p.horaInicio ?? "",
+        fecha:     p.fecha      ?? "",
+        cancha:    p.cancha     ?? 1,
+        sede:      p.sede       ?? sede,
+        sets:      parseResultado(resultado),
         estado,
         ganador,
       })
     }
   }
 
-  return result.sort((a, b) => a.hora.localeCompare(b.hora) || a.cancha - b.cancha)
+  return result.sort((a, b) =>
+    a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora) || a.cancha - b.cancha
+  )
 }
 
 // ─── LiveCard ─────────────────────────────────────────────────────────────────
@@ -456,7 +461,14 @@ function SiguienteDialog({ siguiente, onSi, onNo, onCorregir }: {
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 40, lineHeight: 1, color: "#0f172a", fontVariationSettings: "'FILL' 1" }}>check_circle</span>
         </div>
         <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center", margin: "0 0 6px" }}>Resultado cargado</p>
-        <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 20, color: "#0f172a", textTransform: "uppercase", textAlign: "center", margin: "0 0 20px", lineHeight: 1.2 }}>¿Iniciás el siguiente<br />en C{siguiente.cancha}?</p>
+        <p style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 20, color: "#0f172a", textTransform: "uppercase", textAlign: "center", margin: "0 0 20px", lineHeight: 1.2 }}>
+          ¿Iniciás el siguiente<br />en C{siguiente.cancha}?
+          {siguiente.fecha && siguiente.fecha !== HOY && (
+            <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: "#f97316", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>
+              ⚠ {`${DIAS[new Date(siguiente.fecha + "T12:00:00").getDay()]} ${new Date(siguiente.fecha + "T12:00:00").getDate()}`}
+            </span>
+          )}
+        </p>
         <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 14px", marginBottom: 20 }}>
           <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>{siguiente.categoria} · {siguiente.hora}</p>
           <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", margin: "0 0 3px" }}>{siguiente.pairA}</p>
@@ -500,38 +512,73 @@ export function VeedorInterclubView({
   const [sheetPartido, setSheetPartido]         = useState<PartidoMock | null>(null)
   const [siguienteDialog, setSiguienteDialog]   = useState<PartidoMock | null>(null)
   const [ultimoFinalizado, setUltimoFinalizado] = useState<PartidoMock | null>(null)
+  const [saveError, setSaveError]               = useState<string | null>(null)
   const [, startSalir] = useTransition()
 
+  // Merge server data on refresh — mantiene optimistic state para en_vivo/finalizado
+  useEffect(() => {
+    if (!initialLiveData.length) return
+    const fresh    = buildPartidos(club, initialLiveData)
+    const freshMap = new Map(fresh.map(p => [p.id, p]))
+    setPartidos(prev => {
+      const merged  = prev
+        .filter(p => freshMap.has(p.id))
+        .map(p => p.estado === "pendiente" ? freshMap.get(p.id)! : p)
+      const nuevos  = fresh.filter(p => !prev.some(ep => ep.id === p.id))
+      return [...merged, ...nuevos].sort((a, b) =>
+        a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora) || a.cancha - b.cancha
+      )
+    })
+  }, [initialLiveData, club])
+
   const live       = partidos.filter(p => p.estado === "en_vivo")
-  const proximos   = partidos.filter(p => p.estado === "pendiente").sort((a, b) => a.hora.localeCompare(b.hora))
+  const proximos   = partidos
+    .filter(p => p.estado === "pendiente")
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora))
   const finalizados = partidos.filter(p => p.estado === "finalizado")
 
   const nextPorCancha = (cancha: number) => proximos.find(p => p.cancha === cancha)
   const canchaLibre   = (cancha: number) => !live.some(p => p.cancha === cancha)
 
-  const iniciar = (id: string) => {
-    setPartidos(prev => prev.map(p => p.id === id ? { ...p, estado: "en_vivo" as const } : p))
-    guardarResultadoInterclubAction({ id, resultado: null, ganador: null, estado: "en_vivo" })
+  const showError = (msg: string) => {
+    setSaveError(msg)
+    setTimeout(() => setSaveError(null), 4000)
   }
 
-  const guardarParcial = (id: string, sets: SetScore[]) => {
+  const iniciar = async (id: string) => {
+    setPartidos(prev => prev.map(p => p.id === id ? { ...p, estado: "en_vivo" as const } : p))
+    const [, err] = await guardarResultadoInterclubAction({ id, resultado: null, ganador: null, estado: "en_vivo" })
+    if (err) {
+      setPartidos(prev => prev.map(p => p.id === id ? { ...p, estado: "pendiente" as const } : p))
+      showError("Error al iniciar el partido. Intentá de nuevo.")
+    }
+  }
+
+  const guardarParcial = async (id: string, sets: SetScore[]) => {
     setPartidos(prev => prev.map(p => p.id === id ? { ...p, sets } : p))
     setSheetPartido(null)
     const resultado = setsToResultado(sets)
-    guardarResultadoInterclubAction({ id, resultado, ganador: null, estado: "en_vivo" })
+    const [, err] = await guardarResultadoInterclubAction({ id, resultado, ganador: null, estado: "en_vivo" })
+    if (err) showError("Error al guardar el set. Intentá de nuevo.")
   }
 
-  const confirmar = (id: string, sets: SetScore[], ganador: "A" | "B") => {
-    const partido   = partidos.find(p => p.id === id)
-    const eraEnVivo = partido?.estado === "en_vivo"
-    const cancha    = partido?.cancha ?? 1
+  const confirmar = async (id: string, sets: SetScore[], ganador: "A" | "B") => {
+    const partido    = partidos.find(p => p.id === id)
+    const eraEnVivo  = partido?.estado === "en_vivo"
+    const cancha     = partido?.cancha ?? 1
     const finalizado = { ...partido!, estado: "finalizado" as const, sets, ganador }
     setPartidos(prev => prev.map(p => p.id === id ? finalizado : p))
     setUltimoFinalizado(finalizado)
     setSheetPartido(null)
 
     const resultado = setsToResultado(sets)
-    guardarResultadoInterclubAction({ id, resultado, ganador, estado: "finalizado" })
+    const [, err] = await guardarResultadoInterclubAction({ id, resultado, ganador, estado: "finalizado" })
+    if (err) {
+      setPartidos(prev => prev.map(p => p.id === id ? { ...partido!, estado: "en_vivo" as const } : p))
+      setSheetPartido({ ...partido!, estado: "en_vivo" as const })
+      showError("Error al guardar el resultado. Intentá de nuevo.")
+      return
+    }
 
     if (eraEnVivo) {
       const siguiente = proximos.find(p => p.cancha === cancha && p.id !== id)
@@ -552,6 +599,29 @@ export function VeedorInterclubView({
 
   return (
     <div style={{ background: "#f8fafc", minHeight: "100dvh" }}>
+      <InterclubAutoRefresh />
+
+      {/* Error banner */}
+      <AnimatePresence>
+        {saveError && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            style={{
+              position: "fixed", top: "max(16px, env(safe-area-inset-top))",
+              left: "50%", transform: "translateX(-50%)", zIndex: 600,
+              background: "#ef4444", color: "#fff",
+              padding: "10px 18px", borderRadius: 10,
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 12, fontWeight: 700,
+              boxShadow: "0 4px 16px rgba(239,68,68,0.35)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {saveError}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <div style={{

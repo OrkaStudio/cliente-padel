@@ -1,8 +1,12 @@
+export const dynamic = "force-dynamic"
+
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { HeroMarcador } from "@/components/torneos/interclub/HeroMarcador"
-import type { Club } from "@/components/torneos/interclub/CategoriasInterclub"
+import type { Club, CategoriaInterclub } from "@/components/torneos/interclub/CategoriasInterclub"
 import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "@/components/torneos/interclub/interclub-mock"
+import { createClient } from "@/lib/supabase/server"
+import { InterclubAutoRefresh } from "@/components/torneos/interclub/InterclubAutoRefresh"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyHref = any
@@ -16,13 +20,50 @@ function formatFecha(fecha?: string): string | null {
   return `${DIAS[d.getDay()]} ${d.getDate()}`
 }
 
+async function getCat(catId: string): Promise<CategoriaInterclub | null> {
+  const mockCat = MOCK_CATEGORIAS.find((c) => c.id === catId)
+  if (!mockCat) return null
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from("interclub_partidos")
+      .select("id, resultado, ganador, estado, hora, cancha, fecha, sede")
+      .in("id", mockCat.partidos.map(p => p.id))
+    if (!data || data.length === 0) return mockCat
+    const liveMap = new Map(data.map(r => [r.id, r]))
+    const partidos = mockCat.partidos.map(p => {
+      const live = liveMap.get(p.id)
+      if (!live) return p
+      return {
+        ...p,
+        resultado:  live.resultado  ?? p.resultado,
+        ganador:    (live.ganador   ?? p.ganador)   as "A" | "B" | null,
+        estado:     (live.estado    ?? p.estado)    as "pendiente" | "en_vivo" | "finalizado",
+        horaInicio: live.hora       ?? p.horaInicio,
+        cancha:     live.cancha     ?? p.cancha,
+        fecha:      live.fecha      ?? p.fecha,
+        sede:       live.sede       ?? p.sede,
+      }
+    })
+    const fin   = partidos.filter(p => p.estado === "finalizado")
+    const ptsA  = fin.filter(p => p.ganador === "A").length
+    const ptsB  = fin.filter(p => p.ganador === "B").length
+    const hayVivo  = partidos.some(p => p.estado === "en_vivo")
+    const todosFin = partidos.every(p => p.estado === "finalizado")
+    const estado   = todosFin ? "finalizado" : hayVivo ? "en_vivo" : "pendiente"
+    return { ...mockCat, partidos, ptsA, ptsB, estado }
+  } catch {
+    return mockCat
+  }
+}
+
 export default async function CategoriaInterclubPage({
   params,
 }: {
   params: Promise<{ id: string; catId: string }>
 }) {
   const { id, catId } = await params
-  const cat = MOCK_CATEGORIAS.find((c) => c.id === catId)
+  const cat = await getCat(catId)
   if (!cat) notFound()
 
   const isLive = cat.estado === "en_vivo"
@@ -34,6 +75,7 @@ export default async function CategoriaInterclubPage({
 
   return (
     <div style={{ background: "#f8fafc", minHeight: "100vh", paddingBottom: 60 }}>
+      <InterclubAutoRefresh />
 
       {/* ── Sticky header ── */}
       <div style={{
