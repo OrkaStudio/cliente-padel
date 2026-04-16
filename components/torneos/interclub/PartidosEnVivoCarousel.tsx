@@ -14,6 +14,7 @@ type PartidoVivo = {
   pairB: string
   resultado: string | null
   categoriaNombre: string
+  categoriaGenero: "masc" | "dam" | "mixto"
   horaInicio?: string
   sede?: string
 }
@@ -22,7 +23,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
   const partidos: PartidoVivo[] = categorias.flatMap((cat) =>
     cat.partidos
       .filter((p) => p.estado === "en_vivo")
-      .map((p) => ({ ...p, categoriaNombre: cat.nombre }))
+      .map((p) => ({ ...p, categoriaNombre: cat.nombre, categoriaGenero: cat.genero }))
   )
 
   if (partidos.length === 0) return null
@@ -54,7 +55,7 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
         scrollPaddingLeft: 18,
         msOverflowStyle: "none", scrollbarWidth: "none",
       }}>
-        {partidos.map((partido, i) => {
+        {partidos.map((partido) => {
           const sets = partido.resultado?.trim().split(/\s+/) ?? []
           const parsed = sets.map(s => { const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" } })
           return (
@@ -99,17 +100,32 @@ export function PartidosEnVivoCarousel({ categorias }: Props) {
                 marginBottom: 12,
               }}>
                 <div style={{
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 9, fontWeight: 900,
-                  color: "#0f172a",
-                  textTransform: "uppercase", letterSpacing: "0.12em",
                   display: "flex", alignItems: "center", gap: 5,
                 }}>
                   <span style={{
                     width: 5, height: 5, borderRadius: "50%",
                     background: "#0f172a", display: "inline-block", flexShrink: 0,
                   }} />
-                  {partido.categoriaNombre}
+                  <span style={{
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 9, fontWeight: 900,
+                    color: "#0f172a",
+                    textTransform: "uppercase", letterSpacing: "0.12em",
+                  }}>{partido.categoriaNombre}</span>
+                  <span style={{
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 8, fontWeight: 900,
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    padding: "2px 5px", borderRadius: 3,
+                    background: partido.categoriaGenero === "dam"
+                      ? "rgba(244,63,94,0.1)" : partido.categoriaGenero === "mixto"
+                      ? "rgba(99,102,241,0.1)" : "rgba(15,23,42,0.06)",
+                    color: partido.categoriaGenero === "dam"
+                      ? "#be185d" : partido.categoriaGenero === "mixto"
+                      ? "#4338ca" : "#64748b",
+                  }}>
+                    {partido.categoriaGenero === "dam" ? "Dam" : partido.categoriaGenero === "mixto" ? "Mix" : "Masc"}
+                  </span>
                 </div>
                 {(partido.sede || partido.horaInicio) && (
                   <div style={{ display: "flex", alignItems: "center", gap: 3 }}>

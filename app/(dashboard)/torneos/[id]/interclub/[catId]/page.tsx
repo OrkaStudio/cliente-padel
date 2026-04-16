@@ -1,116 +1,20 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { HeroMarcador } from "@/components/torneos/interclub/HeroMarcador"
-import type { CategoriaInterclub, Club } from "@/components/torneos/interclub/CategoriasInterclub"
+import type { Club } from "@/components/torneos/interclub/CategoriasInterclub"
+import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "@/components/torneos/interclub/interclub-mock"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyHref = any
 
-const CLUB_A: Club = { nombre: "Voleando", color: "#0f172a", abbr: "VOL", logoUrl: "/clubes/voleando.logo.png" }
-const CLUB_B: Club = { nombre: "Más Pádel", color: "#b45309", abbr: "+P", logoUrl: "/clubes/mas-padel.logo.png" }
+const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
+const HOY  = new Date().toISOString().split("T")[0]
 
-// Mismo mock que la página padre — en producción vendrá de Supabase
-const MOCK_CATEGORIAS: CategoriaInterclub[] = [
-  {
-    id: "1", nombre: "Suma 12", estado: "finalizado", ptsA: 3, ptsB: 1,
-    partidos: [
-      { id: "p1", pairA: "Gómez / Ruiz", pairB: "López / Torres", resultado: "6-3 7-5", ganador: "A", estado: "finalizado" },
-      { id: "p2", pairA: "Gómez / Ruiz", pairB: "Díaz / Funes", resultado: "6-1 6-3", ganador: "A", estado: "finalizado" },
-      { id: "p3", pairA: "Silva / Mora", pairB: "López / Torres", resultado: "6-4 6-2", ganador: "A", estado: "finalizado" },
-      { id: "p4", pairA: "Silva / Mora", pairB: "Díaz / Funes", resultado: "4-6 3-6", ganador: "B", estado: "finalizado" },
-    ],
-  },
-  {
-    id: "2", nombre: "Suma 10", estado: "en_vivo", ptsA: 1, ptsB: 1,
-    partidos: [
-      { id: "p5", pairA: "Ferreyra / Ríos", pairB: "Campos / Bravo", resultado: "6-3 6-4", ganador: "A", estado: "finalizado" },
-      { id: "p6", pairA: "Ferreyra / Ríos", pairB: "Herrera / Sosa", resultado: "3-6 4-6", ganador: "B", estado: "finalizado" },
-      { id: "p7", pairA: "Peralta / Luna", pairB: "Campos / Bravo", resultado: "6-3 4-3", ganador: null, estado: "en_vivo", horaInicio: "14:30", sede: "Voleando" },
-      { id: "p8", pairA: "Peralta / Luna", pairB: "Herrera / Sosa", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:30", sede: "+Pádel" },
-    ],
-  },
-  {
-    id: "3", nombre: "Mixtos A", estado: "en_vivo", ptsA: 0, ptsB: 2,
-    partidos: [
-      { id: "p9", pairA: "García / Vega", pairB: "Martín / Paz", resultado: "3-6 2-6", ganador: "B", estado: "finalizado" },
-      { id: "p10", pairA: "García / Vega", pairB: "Núñez / Reyes", resultado: "1-6 2-6", ganador: "B", estado: "finalizado" },
-      { id: "p11", pairA: "Castro / Medina", pairB: "Martín / Paz", resultado: "5-4", ganador: null, estado: "en_vivo", horaInicio: "14:30", sede: "+Pádel" },
-      { id: "p12", pairA: "Castro / Medina", pairB: "Núñez / Reyes", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:30", sede: "Voleando" },
-    ],
-  },
-  {
-    id: "4", nombre: "Séptima", estado: "finalizado", ptsA: 4, ptsB: 0,
-    partidos: [
-      { id: "p13", pairA: "Romero / Pinto", pairB: "Acosta / Vera", resultado: "6-0 6-1", ganador: "A", estado: "finalizado" },
-      { id: "p14", pairA: "Romero / Pinto", pairB: "Blanco / Ibáñez", resultado: "6-2 6-3", ganador: "A", estado: "finalizado" },
-      { id: "p15", pairA: "Vargas / Cruz", pairB: "Acosta / Vera", resultado: "6-4 7-5", ganador: "A", estado: "finalizado" },
-      { id: "p16", pairA: "Vargas / Cruz", pairB: "Blanco / Ibáñez", resultado: "7-6 6-3", ganador: "A", estado: "finalizado" },
-    ],
-  },
-  {
-    id: "5", nombre: "Sexta", estado: "finalizado", ptsA: 2, ptsB: 2,
-    partidos: [
-      { id: "p17", pairA: "Domínguez / Soto", pairB: "Flores / Gil", resultado: "6-3 6-4", ganador: "A", estado: "finalizado" },
-      { id: "p18", pairA: "Domínguez / Soto", pairB: "Ortega / Ramos", resultado: "4-6 3-6", ganador: "B", estado: "finalizado" },
-      { id: "p19", pairA: "Benítez / Ojeda", pairB: "Flores / Gil", resultado: "7-5 4-6 1-6", ganador: "B", estado: "finalizado" },
-      { id: "p20", pairA: "Benítez / Ojeda", pairB: "Ortega / Ramos", resultado: "6-4 6-3", ganador: "A", estado: "finalizado" },
-    ],
-  },
-  {
-    id: "6", nombre: "Quinta", estado: "en_vivo", ptsA: 1, ptsB: 0,
-    partidos: [
-      { id: "p21", pairA: "Molina / Quiroga", pairB: "Espinoza / Vidal", resultado: "6-2 6-3", ganador: "A", estado: "finalizado" },
-      { id: "p22", pairA: "Molina / Quiroga", pairB: "Aguilar / Rojas", resultado: "4-2", ganador: null, estado: "en_vivo", horaInicio: "15:00", sede: "Voleando" },
-      { id: "p23", pairA: "Navarro / Palacios", pairB: "Espinoza / Vidal", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:00", sede: "+Pádel" },
-      { id: "p24", pairA: "Navarro / Palacios", pairB: "Aguilar / Rojas", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:30", sede: "Voleando" },
-    ],
-  },
-  {
-    id: "7", nombre: "Cuarta", estado: "pendiente", ptsA: 0, ptsB: 0,
-    partidos: [
-      { id: "p25", pairA: "Álvarez / Carrizo", pairB: "Cabrera / Delgado", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:00", sede: "Voleando" },
-      { id: "p26", pairA: "Álvarez / Carrizo", pairB: "Fuentes / Guerrero", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:30", sede: "+Pádel" },
-      { id: "p27", pairA: "Méndez / Peña", pairB: "Cabrera / Delgado", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:00", sede: "+Pádel" },
-      { id: "p28", pairA: "Méndez / Peña", pairB: "Fuentes / Guerrero", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:30", sede: "Voleando" },
-    ],
-  },
-  {
-    id: "8", nombre: "Tercera", estado: "pendiente", ptsA: 0, ptsB: 0,
-    partidos: [
-      { id: "p29", pairA: "Heredia / Ávila", pairB: "Paredes / Solís", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:00", sede: "+Pádel" },
-      { id: "p30", pairA: "Heredia / Ávila", pairB: "Tapia / Contreras", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:30", sede: "Voleando" },
-      { id: "p31", pairA: "Salas / Figueroa", pairB: "Paredes / Solís", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:00", sede: "Voleando" },
-      { id: "p32", pairA: "Salas / Figueroa", pairB: "Tapia / Contreras", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:30", sede: "+Pádel" },
-    ],
-  },
-  {
-    id: "9", nombre: "Segunda", estado: "pendiente", ptsA: 0, ptsB: 0,
-    partidos: [
-      { id: "p33", pairA: "Córdoba / Mena", pairB: "Ríos / Sandoval", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:00", sede: "Voleando" },
-      { id: "p34", pairA: "Córdoba / Mena", pairB: "Zamora / Villareal", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:30", sede: "+Pádel" },
-      { id: "p35", pairA: "Lagos / Bustos", pairB: "Ríos / Sandoval", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:00", sede: "+Pádel" },
-      { id: "p36", pairA: "Lagos / Bustos", pairB: "Zamora / Villareal", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:30", sede: "Voleando" },
-    ],
-  },
-  {
-    id: "10", nombre: "Primera", estado: "pendiente", ptsA: 0, ptsB: 0,
-    partidos: [
-      { id: "p37", pairA: "Muñoz / Serrano", pairB: "Cáceres / Valdivia", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:00", sede: "+Pádel" },
-      { id: "p38", pairA: "Muñoz / Serrano", pairB: "Jiménez / Pedraza", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:30", sede: "Voleando" },
-      { id: "p39", pairA: "Arce / Escobar", pairB: "Cáceres / Valdivia", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:00", sede: "Voleando" },
-      { id: "p40", pairA: "Arce / Escobar", pairB: "Jiménez / Pedraza", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:30", sede: "+Pádel" },
-    ],
-  },
-  {
-    id: "11", nombre: "Mixtos B", estado: "pendiente", ptsA: 0, ptsB: 0,
-    partidos: [
-      { id: "p41", pairA: "Ibarra / Leiva", pairB: "Neira / Poblete", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:00", sede: "Voleando" },
-      { id: "p42", pairA: "Ibarra / Leiva", pairB: "Quintero / Robles", resultado: null, ganador: null, estado: "pendiente", horaInicio: "15:30", sede: "+Pádel" },
-      { id: "p43", pairA: "Trujillo / Uribe", pairB: "Neira / Poblete", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:00", sede: "+Pádel" },
-      { id: "p44", pairA: "Trujillo / Uribe", pairB: "Quintero / Robles", resultado: null, ganador: null, estado: "pendiente", horaInicio: "16:30", sede: "Voleando" },
-    ],
-  },
-]
+function formatFecha(fecha?: string): string | null {
+  if (!fecha || fecha === HOY) return null
+  const d = new Date(fecha + "T12:00:00")
+  return `${DIAS[d.getDay()]} ${d.getDate()}`
+}
 
 export default async function CategoriaInterclubPage({
   params,
@@ -159,13 +63,30 @@ export default async function CategoriaInterclubPage({
 
         {/* Categoría + score */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", minWidth: 0 }}>
-          <span style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 16, fontWeight: 400, lineHeight: 1,
-            color: "#0f172a", textTransform: "uppercase",
-            letterSpacing: "0.02em",
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>{cat.nombre}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+            <span style={{
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontSize: 16, fontWeight: 400, lineHeight: 1,
+              color: "#0f172a", textTransform: "uppercase",
+              letterSpacing: "0.02em",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>{cat.nombre}</span>
+            <span style={{
+              flexShrink: 0,
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 8, fontWeight: 900,
+              textTransform: "uppercase", letterSpacing: "0.08em",
+              padding: "2px 6px", borderRadius: 3,
+              background: cat.genero === "dam"
+                ? "rgba(244,63,94,0.08)" : cat.genero === "mixto"
+                ? "rgba(99,102,241,0.08)" : "rgba(15,23,42,0.06)",
+              color: cat.genero === "dam"
+                ? "#be185d" : cat.genero === "mixto"
+                ? "#4338ca" : "#64748b",
+            }}>
+              {cat.genero === "dam" ? "Dam" : cat.genero === "mixto" ? "Mix" : "Masc"}
+            </span>
+          </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginLeft: 10 }}>
             <span style={{
@@ -242,7 +163,7 @@ export default async function CategoriaInterclubPage({
                     key={p.id} index={i}
                     pairA={p.pairA} pairB={p.pairB}
                     resultado={null} ganador={null}
-                    horaInicio={p.horaInicio} sede={p.sede}
+                    horaInicio={p.horaInicio} sede={p.sede} cancha={p.cancha} fecha={p.fecha}
                     clubA={CLUB_A} clubB={CLUB_B}
                   />
                 ))}
@@ -269,7 +190,7 @@ export default async function CategoriaInterclubPage({
                       key={p.id} index={i}
                       pairA={p.pairA} pairB={p.pairB}
                       resultado={p.resultado} ganador={p.ganador}
-                      horaInicio={p.horaInicio} sede={p.sede}
+                      horaInicio={p.horaInicio} sede={p.sede} cancha={p.cancha} fecha={p.fecha}
                       clubA={CLUB_A} clubB={CLUB_B}
                     />
                   ))}
@@ -316,7 +237,7 @@ function SectionLabel({ label }: { label: string }) {
 // ─── LiveCard — idéntica al carousel ─────────────────────────────────────────
 
 function LiveCard({ partido: p }: {
-  partido: { id: string; pairA: string; pairB: string; resultado: string | null; horaInicio?: string; sede?: string }
+  partido: { id: string; pairA: string; pairB: string; resultado: string | null; horaInicio?: string; sede?: string; cancha?: number; fecha?: string }
 }) {
   const sets = p.resultado?.trim().split(/\s+/) ?? []
   const parsed = sets.map(s => { const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" } })
@@ -365,19 +286,22 @@ function LiveCard({ partido: p }: {
             }} />
             En cancha
           </div>
-          {(p.sede || p.horaInicio) && (
-            <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1, color: "#0f172a" }}>
-                location_on
-              </span>
-              <span style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 9, fontWeight: 700, color: "#0f172a", letterSpacing: "0.03em",
-              }}>
-                {[p.sede, p.horaInicio].filter(Boolean).join(" · ")}
-              </span>
-            </div>
-          )}
+          {(p.sede || p.horaInicio) && (() => {
+            const diaStr = formatFecha(p.fecha)
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1, color: "#0f172a" }}>location_on</span>
+                <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#0f172a" }}>
+                  {p.sede}{p.cancha ? ` C${p.cancha}` : ""}
+                </span>
+                {(diaStr || p.horaInicio) && (
+                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#64748b" }}>
+                    {[diaStr, p.horaInicio].filter(Boolean).join(" · ")}
+                  </span>
+                )}
+              </div>
+            )
+          })()}
         </div>
 
         {/* Scoreboard */}
@@ -440,7 +364,7 @@ function LiveCard({ partido: p }: {
 // ─── PartidoCard ──────────────────────────────────────────────────────────────
 
 function PartidoCard({
-  pairA, pairB, resultado, ganador, horaInicio, sede, clubA, clubB, index,
+  pairA, pairB, resultado, ganador, horaInicio, sede, cancha, fecha, clubA, clubB, index,
 }: {
   pairA: string
   pairB: string
@@ -448,6 +372,8 @@ function PartidoCard({
   ganador: "A" | "B" | null
   horaInicio?: string
   sede?: string
+  cancha?: number
+  fecha?: string
   clubA: Club
   clubB: Club
   index: number
@@ -457,7 +383,9 @@ function PartidoCard({
   const sets = resultado?.trim().split(/\s+/) ?? []
   const parsed = sets.map(s => { const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" } })
   const hasScore = parsed.length > 0
-  const sedeColor = sede === "Voleando" ? clubA.color : sede ? clubB.color : "#e2e8f0"
+  const sedeColor = sede === "Voleando" ? clubA.color : sede ? clubB.color : "#64748b"
+  const diaStr = formatFecha(fecha)
+  const hasMeta = !!(horaInicio || sede)
 
   return (
     <div style={{
@@ -469,26 +397,42 @@ function PartidoCard({
       animationDelay: `${Math.min(index, 8) * 40}ms`,
     }}>
 
-      {/* Hora · sede */}
-      {(horaInicio || sede) && (
+      {/* Top row: estado izq — sede/hora der */}
+      {hasMeta && (
         <div style={{
-          display: "flex", alignItems: "center", gap: 4, marginBottom: 10,
+          display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+          marginBottom: 10,
         }}>
-          <span style={{
-            fontFamily: "'Material Symbols Outlined'",
-            fontSize: 11, lineHeight: 1, color: sedeColor, flexShrink: 0,
-          }}>location_on</span>
-          <span style={{
+          {/* Estado izquierda */}
+          <div style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 9, fontWeight: 700, letterSpacing: "0.04em",
-            color: sedeColor,
-          }}>{sede}</span>
-          {horaInicio && (
+            fontSize: 9, fontWeight: 900,
+            color: ganador ? "#64748b" : "#0f172a",
+            textTransform: "uppercase", letterSpacing: "0.12em",
+            display: "flex", alignItems: "center", gap: 5,
+          }}>
             <span style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 9, fontWeight: 600, color: "#94a3b8",
-            }}>· {horaInicio}</span>
-          )}
+              width: 5, height: 5, borderRadius: "50%",
+              background: ganador ? "#cbd5e1" : "#0f172a",
+              display: "inline-block", flexShrink: 0,
+            }} />
+            {ganador ? "Finalizado" : "Pendiente"}
+          </div>
+
+          {/* Sede + hora derecha */}
+          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1, color: sedeColor }}>location_on</span>
+            {sede && (
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: sedeColor }}>
+                {sede}{cancha ? ` C${cancha}` : ""}
+              </span>
+            )}
+            {(diaStr || horaInicio) && (
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>
+                {[diaStr, horaInicio].filter(Boolean).join(" · ")}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -499,7 +443,7 @@ function PartidoCard({
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 7, fontWeight: 900,
             textTransform: "uppercase", letterSpacing: "0.08em",
-            color: "#94a3b8", border: "1px solid #e2e8f0",
+            color: clubA.color, border: "1px solid #e2e8f0",
             borderRadius: 3, padding: "1px 4px", flexShrink: 0,
           }}>{clubA.abbr}</span>
           <span style={{
@@ -534,7 +478,7 @@ function PartidoCard({
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 7, fontWeight: 900,
             textTransform: "uppercase", letterSpacing: "0.08em",
-            color: "#94a3b8", border: "1px solid #e2e8f0",
+            color: clubB.color, border: "1px solid #e2e8f0",
             borderRadius: 3, padding: "1px 4px", flexShrink: 0,
           }}>{clubB.abbr}</span>
           <span style={{

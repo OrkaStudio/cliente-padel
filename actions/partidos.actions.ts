@@ -163,13 +163,15 @@ export const cambiarEstadoTorneoAction = createServerAction()
 
 export const verificarPinAction = createServerAction()
   .input(z.object({
-    club: z.enum(["voleando", "mas-padel"]),
+    club: z.enum(["voleando", "mas-padel", "organizador"]),
     pin:  z.string().length(4),
   }))
   .handler(async ({ input }) => {
     const envKey = input.club === "voleando"
       ? process.env.VEEDOR_PIN_VOLEANDO
-      : process.env.VEEDOR_PIN_MASPADEL
+      : input.club === "mas-padel"
+      ? process.env.VEEDOR_PIN_MASPADEL
+      : process.env.ORGANIZADOR_PIN
 
     if (!envKey || input.pin !== envKey) {
       throw new Error("PIN incorrecto")
@@ -208,7 +210,7 @@ export const verificarPinAdminAction = createServerAction()
 // ─── Cerrar sesión veedor ─────────────────────────────────────────────────────
 
 export const cerrarSesionVeedorAction = createServerAction()
-  .input(z.object({ club: z.enum(["voleando", "mas-padel"]) }))
+  .input(z.object({ club: z.enum(["voleando", "mas-padel", "organizador"]) }))
   .handler(async ({ input }) => {
     const cookieStore = await cookies()
     cookieStore.delete(`veedor_pin_${input.club}`)

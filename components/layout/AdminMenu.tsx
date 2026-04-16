@@ -11,12 +11,21 @@ const CLUBES = [
     nombre: "Voleando",
     logo: "/clubes/voleando.logo.png",
     href: "/veedor/voleando",
+    sub: "Acceso veedor",
   },
   {
     slug: "mas-padel",
     nombre: "Más Pádel",
     logo: "/clubes/mas-padel.logo.png",
     href: "/veedor/mas-padel",
+    sub: "Acceso veedor",
+  },
+  {
+    slug: "organizador",
+    nombre: "Cristian",
+    logo: null,
+    href: "/veedor/organizador",
+    sub: "Organizador",
   },
 ]
 
@@ -113,66 +122,78 @@ export function AdminMenu() {
                 Veedores de sede
               </p>
 
-              {/* Clubes */}
-              {CLUBES.map((club, i) => (
-                <motion.button
-                  key={club.slug}
-                  onClick={() => { setOpen(false); router.push(club.href) }}
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (i + 1) * 0.05, type: "spring", stiffness: 300, damping: 22 }}
-                  whileTap={{ scale: 0.97 }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    width: "100%", padding: "8px 12px",
-                    borderRadius: 8, border: "none",
-                    background: "transparent",
-                    cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                    textAlign: "left",
-                    marginBottom: i < CLUBES.length - 1 ? 2 : 0,
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                >
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 8,
-                    background: "#f8fafc",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    overflow: "hidden", flexShrink: 0,
-                    border: "1px solid #e2e8f0",
-                  }}>
-                    <Image
-                      src={club.logo}
-                      alt={club.nombre}
-                      width={32}
-                      height={32}
-                      style={{ objectFit: "contain" }}
-                    />
-                  </div>
-                  <div>
-                    <p style={{
-                      fontFamily: "var(--font-space-grotesk), sans-serif",
-                      fontSize: 12, fontWeight: 700, color: "#0f172a",
-                      margin: 0,
-                    }}>
-                      {club.nombre}
-                    </p>
-                    <p style={{
-                      fontFamily: "var(--font-space-grotesk), sans-serif",
-                      fontSize: 10, color: "#94a3b8", margin: 0,
-                    }}>
-                      Acceso veedor
-                    </p>
-                  </div>
-                  <span style={{
-                    fontFamily: "'Material Symbols Outlined'",
-                    fontSize: 14, color: "#cbd5e1",
-                    marginLeft: "auto", lineHeight: 1,
-                  }}>
-                    chevron_right
-                  </span>
-                </motion.button>
-              ))}
+              {/* Veedores + Organizador */}
+              {CLUBES.map((club, i) => {
+                const isOrg = club.slug === "organizador"
+                const isLastVeedor = i === 1
+                return (
+                  <>
+                    {/* Separador antes del organizador */}
+                    {isOrg && (
+                      <div key="sep" style={{ height: 1, background: "#f1f5f9", margin: "6px 0" }} />
+                    )}
+                    <motion.button
+                      key={club.slug}
+                      onClick={() => { setOpen(false); router.push(club.href) }}
+                      initial={{ opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: (i + 1) * 0.05, type: "spring", stiffness: 300, damping: 22 }}
+                      whileTap={{ scale: 0.97 }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10,
+                        width: "100%", padding: "8px 12px",
+                        borderRadius: 8, border: "none",
+                        background: "transparent",
+                        cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                        textAlign: "left",
+                        marginBottom: i < CLUBES.length - 1 && !isLastVeedor ? 2 : 0,
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 8,
+                        background: isOrg ? "#0f172a" : "#f8fafc",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        overflow: "hidden", flexShrink: 0,
+                        border: isOrg ? "none" : "1px solid #e2e8f0",
+                      }}>
+                        {club.logo ? (
+                          <Image src={club.logo} alt={club.nombre} width={32} height={32} style={{ objectFit: "contain" }} />
+                        ) : (
+                          <span style={{
+                            fontFamily: "var(--font-space-grotesk), sans-serif",
+                            fontSize: 10, fontWeight: 900, color: "#bcff00",
+                            textTransform: "uppercase", letterSpacing: "0.06em",
+                          }}>ORG</span>
+                        )}
+                      </div>
+                      <div>
+                        <p style={{
+                          fontFamily: "var(--font-space-grotesk), sans-serif",
+                          fontSize: 12, fontWeight: 700, color: "#0f172a",
+                          margin: 0,
+                        }}>
+                          {club.nombre}
+                        </p>
+                        <p style={{
+                          fontFamily: "var(--font-space-grotesk), sans-serif",
+                          fontSize: 10, color: "#94a3b8", margin: 0,
+                        }}>
+                          {club.sub}
+                        </p>
+                      </div>
+                      <span style={{
+                        fontFamily: "'Material Symbols Outlined'",
+                        fontSize: 14, color: "#cbd5e1",
+                        marginLeft: "auto", lineHeight: 1,
+                      }}>
+                        chevron_right
+                      </span>
+                    </motion.button>
+                  </>
+                )
+              })}
             </motion.div>
           </>
         )}

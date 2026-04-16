@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
+import Image from "next/image"
 
 export default async function TorneosPage() {
   const supabase = await createClient()
@@ -40,19 +41,6 @@ export default async function TorneosPage() {
 
       {live.length > 0 && (
         <section style={{ marginBottom: 32 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#bcff00" }} />
-            <h2 style={{
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 18,
-              textTransform: "uppercase",
-              color: "#0f172a",
-              fontWeight: 400,
-              margin: 0,
-            }}>
-              En Vivo Ahora
-            </h2>
-          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {live.map(t => <TorneoCard key={t.id} torneo={t} />)}
           </div>
@@ -79,21 +67,65 @@ export default async function TorneosPage() {
       )}
 
       {(!torneos || torneos.length === 0) && (
-        <div style={{ textAlign: "center", padding: "60px 0" }}>
-          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 48, color: "#cbd5e1", display: "block" }}>
-            sports_tennis
-          </span>
-          <p style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 18,
-            color: "#94a3b8",
-            textTransform: "uppercase",
-            marginTop: 12,
-            fontWeight: 400,
-          }}>
-            Sin torneos todavía
-          </p>
-        </div>
+        <section>
+          <Link href="/torneos/123/interclub" style={{ textDecoration: "none" }}>
+            <div style={{
+              background: "#ffffff", borderRadius: 20, overflow: "hidden",
+              border: "1px solid #e2e8f0", cursor: "pointer",
+            }}>
+              {/* Hero — fondo interclub con logos */}
+              <div style={{
+                height: 106, position: "relative", overflow: "hidden",
+                background: "radial-gradient(ellipse at 0% 100%, rgba(188,255,0,0.18) 0%, transparent 60%), radial-gradient(ellipse at 100% 0%, rgba(180,83,9,0.13) 0%, transparent 55%), #f8fafc",
+                borderBottom: "1px solid #e2e8f0",
+              }}>
+                {/* Logo Voleando ghost */}
+                <div style={{ position: "absolute", left: "12%", top: 0, bottom: 0, width: 110, opacity: 0.11 }}>
+                  <Image src="/clubes/voleando.logo.png" alt="" fill style={{ objectFit: "contain", objectPosition: "center" }} />
+                </div>
+                {/* Logo Más Pádel ghost */}
+                <div style={{ position: "absolute", right: "12%", top: 0, bottom: 0, width: 110, opacity: 0.11 }}>
+                  <Image src="/clubes/mas-padel.logo.png" alt="" fill style={{ objectFit: "contain", objectPosition: "center" }} />
+                </div>
+
+                {/* Texto abajo-izquierda */}
+                <div style={{ position: "absolute", bottom: 12, left: 16, right: 16 }}>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 5 }}>
+                    <span style={{
+                      background: "#bcff00", color: "#0f172a",
+                      padding: "2px 8px", borderRadius: 4,
+                      fontSize: 9, fontWeight: 900,
+                      fontFamily: "var(--font-space-grotesk), sans-serif",
+                      textTransform: "uppercase",
+                    }}>En Vivo</span>
+                  </div>
+                  <h3 style={{
+                    fontFamily: "var(--font-anton), Anton, sans-serif",
+                    fontSize: 20, color: "#0f172a", textTransform: "uppercase",
+                    lineHeight: 1, fontWeight: 400, margin: 0,
+                  }}>Torneo Interclubes Abril</h3>
+                </div>
+              </div>
+              <div style={{ padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, color: "#64748b", lineHeight: 1 }}>calendar_today</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "var(--font-space-grotesk), sans-serif", color: "#64748b" }}>
+                      17 Abr → 19 Abr 2026
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                    <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, color: "#64748b", lineHeight: 1 }}>location_on</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "var(--font-space-grotesk), sans-serif", color: "#64748b" }}>
+                      Voleando · Más Pádel
+                    </span>
+                  </div>
+                </div>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#cbd5e1", lineHeight: 1 }}>chevron_right</span>
+              </div>
+            </div>
+          </Link>
+        </section>
       )}
     </div>
   )
@@ -107,7 +139,7 @@ function TorneoCard({ torneo }: {
 
   return (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <Link href={`/torneos/${torneo.id}` as any} style={{ textDecoration: "none" }}>
+    <Link href={isLive ? `/torneos/${torneo.id}/interclub` : `/torneos/${torneo.id}` as any} style={{ textDecoration: "none" }}>
       <div style={{
         width: "100%",
         background: "#ffffff",

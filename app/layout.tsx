@@ -31,6 +31,14 @@ const lexend = Lexend({
 export const metadata: Metadata = {
   title: siteConfig.name,
   description: siteConfig.description,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: siteConfig.name,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
