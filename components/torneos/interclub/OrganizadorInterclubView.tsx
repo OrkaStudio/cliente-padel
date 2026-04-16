@@ -70,8 +70,9 @@ const CANCHAS = [1, 2]
 const HORAS   = ["10:00","11:30","13:00","14:30","16:00","17:30","19:00","20:30"]
 const DIAS    = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"]
 
-const SEDE_COLOR: Record<string, string> = { "Voleando": "#0f172a", "+ Pádel": "#b45309" }
-const SEDE_ABBR:  Record<string, string> = { "Voleando": "VOL",     "+ Pádel": "+P"      }
+const SEDE_COLOR: Record<string, string> = { "Voleando": CLUB_A.color, "+ Pádel": CLUB_B.color }
+const SEDE_ABBR:  Record<string, string> = { "Voleando": "VOL",        "+ Pádel": "+P"         }
+const HOY = new Date().toISOString().split("T")[0]
 
 const GENERO_COLOR: Record<string, string> = { masc: "#64748b", dam: "#be185d", mixto: "#4338ca" }
 const GENERO_LABEL: Record<string, string> = { masc: "Masc",    dam: "Dam",     mixto: "Mix"     }
@@ -594,64 +595,46 @@ function PartidoCard({
         : isLive ? "1.5px solid #bcff00" : "1px solid #f1f5f9",
       borderRadius: 12,
       padding: "11px 14px",
-      opacity: isFin ? 0.55 : 1,
       transition: "opacity 200ms",
     }}>
 
-      {/* Fila 1: sede + cancha + hora + fecha + estado/conflicto */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
-        <span style={{
-          display: "inline-flex", alignItems: "center",
-          background: SEDE_COLOR[partido.sede] ?? "#0f172a", color: "#fff",
-          padding: "2px 6px", borderRadius: 3,
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 8, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", flexShrink: 0,
-        }}>{SEDE_ABBR[partido.sede] ?? partido.sede}</span>
-        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: "#0f172a" }}>
-          C{partido.cancha} · {partido.hora}
-        </span>
-        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 600, color: "#94a3b8" }}>
-          {fmtFechaCorta(partido.fecha)}
-        </span>
-
-        {isConflicto && (
-          <span style={{
-            marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 3,
-            background: "#f97316", color: "#fff",
-            padding: "2px 8px", borderRadius: 100,
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 900, textTransform: "uppercase",
-          }}>
+      {/* Top row: estado ← → hora/lugar */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        {/* Estado izquierda */}
+        {isConflicto ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#f97316", color: "#fff", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>
             <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1 }}>warning</span>
             Conflicto
           </span>
-        )}
-        {!isConflicto && isLive && (
-          <span style={{
-            marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4,
-            background: "#bcff00", color: "#000",
-            padding: "2px 8px", borderRadius: 100,
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 900, textTransform: "uppercase",
-          }}>
+        ) : isLive ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#bcff00", color: "#000", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>
             <span className="live-dot" style={{ width: 4, height: 4, borderRadius: "50%", background: "#000", flexShrink: 0 }} />
             En Vivo
           </span>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: isFin ? 900 : 600, color: isFin ? "#64748b" : "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: isFin ? "#cbd5e1" : "#e2e8f0", display: "inline-block", flexShrink: 0 }} />
+            {isFin ? "Finalizado" : "Pendiente"}
+          </div>
         )}
-        {!isConflicto && !isLive && !isFin && (
-          <span style={{
-            marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4,
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 600, color: "#cbd5e1",
-            textTransform: "uppercase", letterSpacing: "0.08em",
-          }}>
-            <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#e2e8f0", display: "inline-block" }} />
-            Pendiente
-          </span>
-        )}
-        {!isConflicto && isFin && (
-          <span style={{ marginLeft: "auto", fontFamily: "'Material Symbols Outlined'", fontSize: 14, color: "#22c55e", lineHeight: 1, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-        )}
+
+        {/* Hora + sede derecha */}
+        {(() => {
+          const diaStr    = partido.fecha && partido.fecha !== HOY ? fmtFechaCorta(partido.fecha) : null
+          const sedeColor = SEDE_COLOR[partido.sede] ?? "#64748b"
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+              {diaStr && <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: "#94a3b8" }}>calendar_today</span>}
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#64748b" }}>
+                {[diaStr, partido.hora].filter(Boolean).join(" · ")}
+              </span>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: sedeColor }}>location_on</span>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: sedeColor }}>
+                {partido.sede} C{partido.cancha}
+              </span>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Fila 2: categoría + género */}

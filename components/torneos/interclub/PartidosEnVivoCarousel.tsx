@@ -162,11 +162,15 @@ export function PartidosEnVivoCarousel({ categorias, clubA, clubB }: Props) {
 
                 {/* Fila A */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 8 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 18, padding: "0 5px", border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0 }}>
+                    <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: clubA.color, textTransform: "uppercase" }}>{clubA.abbr}</span>
+                  </div>
                   <span style={{
                     fontFamily: "var(--font-space-grotesk), sans-serif",
                     fontSize: 13, fontWeight: 900, color: "#0f172a",
                     lineHeight: 1.2, textTransform: "uppercase",
                     flex: 1, minWidth: 0,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
                     {partido.pairA}
                   </span>
@@ -186,15 +190,19 @@ export function PartidosEnVivoCarousel({ categorias, clubA, clubB }: Props) {
                 </div>
 
                 {/* Separador */}
-                <div style={{ height: 1, background: "#f1f5f9", marginBottom: 8 }} />
+                <div style={{ height: 1, background: "#f1f5f9", margin: "0 0 8px 38px" }} />
 
                 {/* Fila B */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 18, padding: "0 5px", border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0 }}>
+                    <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: clubB.color, textTransform: "uppercase" }}>{clubB.abbr}</span>
+                  </div>
                   <span style={{
                     fontFamily: "var(--font-space-grotesk), sans-serif",
                     fontSize: 13, fontWeight: 900, color: "#0f172a",
                     lineHeight: 1.2, textTransform: "uppercase",
                     flex: 1, minWidth: 0,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
                     {partido.pairB}
                   </span>

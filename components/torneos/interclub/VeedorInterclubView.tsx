@@ -29,6 +29,7 @@ type PartidoMock = {
   pairB: string
   hora: string
   cancha: number
+  sede: string
   sets: SetScore[]
   estado: "pendiente" | "en_vivo" | "finalizado"
   ganador: "A" | "B" | null
@@ -74,6 +75,7 @@ function buildPartidos(club: string, liveRows: InterclubLiveRow[]): PartidoMock[
         pairB:    p.pairB,
         hora:     p.horaInicio ?? "",
         cancha:   p.cancha ?? 1,
+        sede:     p.sede ?? sede,
         sets:     parseResultado(resultado),
         estado,
         ganador,
@@ -123,14 +125,18 @@ function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () =>
             width: 5, height: 5, borderRadius: "50%",
             background: "#22c55e", display: "inline-block", flexShrink: 0,
           }} />
-          {partido.categoria}
+          En cancha
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1, color: "#0f172a" }}>location_on</span>
-          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#0f172a" }}>
-            C{partido.cancha} · {partido.hora}
-          </span>
-        </div>
+        {(() => {
+          const sedeColor = partido.sede === CLUB_A.nombre ? CLUB_A.color : CLUB_B.color
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#64748b" }}>{partido.hora}</span>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: sedeColor }}>location_on</span>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: sedeColor }}>{partido.sede} C{partido.cancha}</span>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Scoreboard */}
@@ -225,22 +231,32 @@ function PartidoCard({ partido, onIniciar, onEditar }: {
       borderRadius: 12, padding: "12px 14px",
       opacity: partido.estado === "pendiente" ? 0.75 : 1,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
-        <span style={{
+      {/* Top row: estado ← → hora/lugar */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 5,
           fontFamily: "var(--font-space-grotesk), sans-serif",
           fontSize: 9, fontWeight: isFin ? 900 : 600,
           color: isFin ? "#64748b" : "#cbd5e1",
           textTransform: "uppercase", letterSpacing: "0.12em",
-          display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
         }}>
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: isFin ? "#cbd5e1" : "#e2e8f0", display: "inline-block", flexShrink: 0 }} />
           {isFin ? "Finalizado" : "Pendiente"}
-        </span>
-        <span style={{ color: "#e2e8f0", fontSize: 10, marginLeft: 2 }}>·</span>
-        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: "#64748b", flexShrink: 0 }}>location_on</span>
-        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: "#64748b" }}>C{partido.cancha}</span>
-        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>· {partido.hora}</span>
-        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.06em", marginLeft: 4 }}>{partido.categoria}</span>
+        </div>
+        {(() => {
+          const sedeColor = partido.sede === CLUB_A.nombre ? CLUB_A.color : CLUB_B.color
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#64748b" }}>{partido.hora}</span>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: sedeColor }}>location_on</span>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: sedeColor }}>{partido.sede} C{partido.cancha}</span>
+            </div>
+          )
+        })()}
+      </div>
+      {/* Categoría */}
+      <div style={{ marginBottom: 8 }}>
+        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>{partido.categoria}</span>
       </div>
 
       {/* Fila A */}
