@@ -148,8 +148,25 @@ function SlotGrid({
     moviendo.fecha === fecha && moviendo.sede === sede &&
     moviendo.hora === hora   && moviendo.cancha === cancha
 
+  // Filtrar horas pasadas — siempre mostrar la hora actual del partido
+  const ahora = new Date()
+  const horasFiltradas = HORAS.filter(hora => {
+    if (CANCHAS.some(c => isActual(hora, c))) return true   // siempre mostrar slot actual
+    const slotTime = new Date(`${fecha}T${hora}:00`)
+    return slotTime > ahora
+  })
+
   // First name of each player in a pair: "Gómez / Ruiz" → ["Gómez", "Ruiz"]
   const pairNames = (pair: string) => pair.split(" / ").map(s => s.trim())
+
+  if (horasFiltradas.length === 0) return (
+    <div style={{ textAlign: "center", padding: "32px 0" }}>
+      <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 32, color: "#cbd5e1", display: "block" }}>schedule</span>
+      <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, color: "#94a3b8", marginTop: 8 }}>
+        Todos los horarios de este día ya pasaron
+      </p>
+    </div>
+  )
 
   return (
     <div>
@@ -181,7 +198,7 @@ function SlotGrid({
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {HORAS.map(hora => (
+        {horasFiltradas.map(hora => (
           <div key={hora} style={{ display: "flex", alignItems: "stretch", gap: 6 }}>
             <div style={{
               width: 44, flexShrink: 0, display: "flex", alignItems: "center",
@@ -283,6 +300,10 @@ function SlotGrid({
 
 // ─── Mover Sheet ──────────────────────────────────────────────────────────────
 
+type Confirmacion =
+  | { tipo: "mover"; hora: string; cancha: number; fecha: string; sede: string }
+  | { tipo: "swap";  idB: string; partidoB: PartidoFlat }
+
 function MoverSheet({
   partido, partidos, onClose, onMover, onSwap,
 }: {
@@ -292,8 +313,27 @@ function MoverSheet({
   onMover:  (id: string, hora: string, cancha: number, fecha: string, sede: string) => void
   onSwap:   (idA: string, idB: string) => void
 }) {
-  const [fecha, setFecha] = useState(partido.fecha)
-  const [sede,  setSede]  = useState(partido.sede)
+  const [fecha,        setFecha]       = useState(partido.fecha)
+  const [sede,         setSede]        = useState(partido.sede)
+  const [confirmacion, setConfirmacion] = useState<Confirmacion | null>(null)
+
+  const handleMover = (hora: string, cancha: number) =>
+    setConfirmacion({ tipo: "mover", hora, cancha, fecha, sede })
+
+  const handleSwap = (idB: string) => {
+    const partidoB = partidos.find(p => p.id === idB)!
+    setConfirmacion({ tipo: "swap", idB, partidoB })
+  }
+
+  const confirmar = () => {
+    if (!confirmacion) return
+    if (confirmacion.tipo === "mover") {
+      onMover(partido.id, confirmacion.hora, confirmacion.cancha, confirmacion.fecha, confirmacion.sede)
+    } else {
+      onSwap(partido.id, confirmacion.idB)
+    }
+    setConfirmacion(null)
+  }
 
   return (
     <AnimatePresence>
@@ -376,10 +416,128 @@ function MoverSheet({
             movendoId={partido.id}
             fecha={fecha}
             sede={sede}
-            onMover={(hora, cancha) => onMover(partido.id, hora, cancha, fecha, sede)}
-            onSwap={(idB) => onSwap(partido.id, idB)}
+            onMover={handleMover}
+            onSwap={handleSwap}
           />
         </div>
+
+        {/* ── Overlay de confirmación ── */}
+        <AnimatePresence>
+          {confirmacion && (
+            <motion.div
+              key="confirm"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 400, damping: 28 }}
+              style={{
+                position: "absolute", inset: 0, zIndex: 10,
+                background: "rgba(255,255,255,0.97)",
+                backdropFilter: "blur(4px)",
+                borderRadius: "20px 20px 0 0",
+                display: "flex", flexDirection: "column",
+                padding: "24px 24px 32px",
+                paddingBottom: "max(32px, env(safe-area-inset-bottom, 32px))",
+              }}
+            >
+              {/* Tipo de acción */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: confirmacion.tipo === "mover" ? "#f0fdf4" : "#f1f5f9",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, color: confirmacion.tipo === "mover" ? "#16a34a" : "#0f172a", lineHeight: 1 }}>
+                    {confirmacion.tipo === "mover" ? "schedule" : "swap_horiz"}
+                  </span>
+                </div>
+                <div>
+                  <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 800, color: "#0f172a", margin: 0 }}>
+                    {confirmacion.tipo === "mover" ? "Mover partido" : "Intercambiar slots"}
+                  </p>
+                  <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8", margin: 0 }}>
+                    Confirmá antes de aplicar
+                  </p>
+                </div>
+              </div>
+
+              {confirmacion.tipo === "mover" ? (
+                /* ── Resumen mover ── */
+                <div style={{ flex: 1 }}>
+                  {/* De */}
+                  <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 14px", marginBottom: 8 }}>
+                    <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>De</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ background: SEDE_COLOR[partido.sede] ?? "#0f172a", color: "#fff", padding: "2px 6px", borderRadius: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>{SEDE_ABBR[partido.sede]}</span>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a" }}>C{partido.cancha} · {partido.hora}</span>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>{fmtFechaCorta(partido.fecha)}</span>
+                    </div>
+                  </div>
+                  {/* Flecha */}
+                  <div style={{ display: "flex", justifyContent: "center", margin: "4px 0" }}>
+                    <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#cbd5e1", lineHeight: 1 }}>arrow_downward</span>
+                  </div>
+                  {/* A */}
+                  <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 12, padding: "10px 14px", marginBottom: 16 }}>
+                    <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>A</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ background: SEDE_COLOR[confirmacion.sede] ?? "#0f172a", color: "#fff", padding: "2px 6px", borderRadius: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>{SEDE_ABBR[confirmacion.sede] ?? confirmacion.sede}</span>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a" }}>C{confirmacion.cancha} · {confirmacion.hora}</span>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>{fmtFechaCorta(confirmacion.fecha)}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* ── Resumen swap ── */
+                <div style={{ flex: 1 }}>
+                  {[
+                    { p: partido,               label: "Partido A" },
+                    { p: confirmacion.partidoB, label: "Partido B" },
+                  ].map(({ p, label }, i) => (
+                    <div key={label}>
+                      <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 14px" }}>
+                        <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 5px" }}>{label}</p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <span style={{ background: SEDE_COLOR[p.sede] ?? "#0f172a", color: "#fff", padding: "2px 6px", borderRadius: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, textTransform: "uppercase" }}>{SEDE_ABBR[p.sede]}</span>
+                          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a" }}>C{p.cancha} · {p.hora}</span>
+                          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>{fmtFechaCorta(p.fecha)}</span>
+                        </div>
+                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase" }}>{p.categoria}</span>
+                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#64748b", display: "block", marginTop: 1 }}>{p.pairA} vs {p.pairB}</span>
+                      </div>
+                      {i === 0 && (
+                        <div style={{ display: "flex", justifyContent: "center", margin: "4px 0" }}>
+                          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#cbd5e1", lineHeight: 1 }}>swap_vert</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div style={{ height: 16 }} />
+                </div>
+              )}
+
+              {/* Botones */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setConfirmacion(null)} style={{
+                  flex: 1, padding: "13px 0", borderRadius: 12,
+                  border: "1.5px solid #e2e8f0", background: "transparent",
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 12, fontWeight: 800, color: "#64748b",
+                  textTransform: "uppercase", letterSpacing: "0.06em",
+                  cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                }}>Cancelar</button>
+                <motion.button whileTap={{ scale: 0.97 }} onClick={confirmar} style={{
+                  flex: 2, padding: "13px 0", borderRadius: 12,
+                  border: "none", background: "#0f172a",
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 12, fontWeight: 800, color: "#bcff00",
+                  textTransform: "uppercase", letterSpacing: "0.06em",
+                  cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                }}>Confirmar</motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </AnimatePresence>
   )
