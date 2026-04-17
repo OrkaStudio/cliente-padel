@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Anton, Space_Grotesk, Inter, Lexend } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { siteConfig } from "@/config/site"
 
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ fontFamily: "var(--font-inter), sans-serif", background: "#f0f4f8", margin: 0 }}>
         {children}
+        <Analytics />
       </body>
     </html>
   )
