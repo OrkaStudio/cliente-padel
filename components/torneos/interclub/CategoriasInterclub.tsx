@@ -211,11 +211,48 @@ export function CategoriasInterclub({ categorias, clubA, clubB, torneoId }: Prop
                         </span>
                       </div>
 
+                      {/* Mini score */}
+                      <div style={{
+                        position: "relative", zIndex: 1,
+                        display: "flex", alignItems: "center", gap: 8,
+                        margin: "12px 0 0",
+                      }}>
+                        <span style={{
+                          fontFamily: "var(--font-space-grotesk), sans-serif",
+                          fontSize: 8, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em",
+                          color: clubA.color,
+                          border: `1px solid ${dark ? "rgba(255,255,255,0.15)" : "#e2e8f0"}`,
+                          borderRadius: 3, padding: "1px 5px", flexShrink: 0,
+                        }}>{clubA.abbr}</span>
+                        <span style={{
+                          fontFamily: "var(--font-anton), Anton, sans-serif",
+                          fontSize: dark ? 20 : 16, fontWeight: 400, lineHeight: 1,
+                          color: dark ? "#ffffff" : "#0f172a",
+                        }}>{cat.ptsA}</span>
+                        <span style={{
+                          fontFamily: "var(--font-space-grotesk), sans-serif",
+                          fontSize: 11, fontWeight: 700,
+                          color: dark ? "rgba(255,255,255,0.25)" : "#cbd5e1",
+                        }}>–</span>
+                        <span style={{
+                          fontFamily: "var(--font-anton), Anton, sans-serif",
+                          fontSize: dark ? 20 : 16, fontWeight: 400, lineHeight: 1,
+                          color: dark ? "#ffffff" : "#0f172a",
+                        }}>{cat.ptsB}</span>
+                        <span style={{
+                          fontFamily: "var(--font-space-grotesk), sans-serif",
+                          fontSize: 8, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em",
+                          color: clubB.color,
+                          border: `1px solid ${dark ? "rgba(255,255,255,0.15)" : "#e2e8f0"}`,
+                          borderRadius: 3, padding: "1px 5px", flexShrink: 0,
+                        }}>{clubB.abbr}</span>
+                      </div>
+
                       {/* Footer */}
                       <div style={{
                         display: "flex", alignItems: "center",
                         justifyContent: "space-between",
-                        marginTop: 14, position: "relative", zIndex: 1,
+                        marginTop: 10, position: "relative", zIndex: 1,
                       }}>
                         {chipText ? (
                           <span style={{

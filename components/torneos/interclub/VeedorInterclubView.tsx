@@ -239,10 +239,11 @@ function LiveCard({ partido, onCargar, onRevertir }: { partido: PartidoMock; onC
 
 // ─── PartidoCard ──────────────────────────────────────────────────────────────
 
-function PartidoCard({ partido, onIniciar, onEditar }: {
+function PartidoCard({ partido, onIniciar, onEditar, onEliminar }: {
   partido: PartidoMock
   onIniciar?: () => void
   onEditar?: () => void
+  onEliminar?: () => void
 }) {
   const isFin    = partido.estado === "finalizado"
   const ganadorA = partido.ganador === "A"
@@ -327,12 +328,20 @@ function PartidoCard({ partido, onIniciar, onEditar }: {
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 5 }}>
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, color: "#0f172a", lineHeight: 1 }}>check_circle</span>
           <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.06em" }}>Resultado cargado</span>
-          {onEditar && (
-            <button onClick={onEditar} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent" }}>
-              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1 }}>edit</span>
-              Editar
-            </button>
-          )}
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+            {onEditar && (
+              <button onClick={onEditar} style={{ display: "flex", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent" }}>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1 }}>edit</span>
+                Editar
+              </button>
+            )}
+            {onEliminar && (
+              <button onClick={onEliminar} style={{ display: "flex", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent" }}>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1 }}>delete</span>
+                Anular
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -783,7 +792,7 @@ export function VeedorInterclubView({
           <>
             <SectionLabel label="Finalizados" count={finalizados.length} />
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {finalizados.map(p => <PartidoCard key={p.id} partido={p} onEditar={() => setSheetPartido(p)} />)}
+              {finalizados.map(p => <PartidoCard key={p.id} partido={p} onEditar={() => setSheetPartido(p)} onEliminar={() => revertir(p.id)} />)}
             </div>
           </>
         )}
