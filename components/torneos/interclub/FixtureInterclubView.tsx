@@ -565,73 +565,54 @@ export function FixtureInterclubView({
         </div>
       )}
 
-      {/* ── Lista ── */}
+      {/* ── Lista cronológica flat ── */}
       <div style={{ padding: "12px 16px 0" }}>
-        {filteredCats.map(cat => {
-          const sorted  = sortPartidos(cat.partidos)
-          const matched = sorted.filter(p => matchSearch(p, search) && (!selDia || p.fecha === selDia))
-          const visible = matched.filter(p => isSearching || showFinalizados || p.estado !== "finalizado")
-          if (visible.length === 0) return null
+        {(() => {
+          // Aplanar todos los partidos con el nombre de categoría
+          const catMap = new Map(filteredCats.map(c => [c.id, c.nombre]))
+          const flat = filteredCats
+            .flatMap(cat => cat.partidos.map(p => ({ ...p, _catNombre: cat.nombre })))
+            .filter(p => matchSearch(p, search) && (!selDia || p.fecha === selDia))
+            .filter(p => isSearching || showFinalizados || p.estado !== "finalizado")
+            .sort((a, b) => {
+              const fa = (a.fecha ?? "") + " " + (a.horaInicio ?? "")
+              const fb = (b.fecha ?? "") + " " + (b.horaInicio ?? "")
+              return fa.localeCompare(fb)
+            })
+
+          if (flat.length === 0) {
+            return (
+              <div style={{ textAlign: "center", padding: "48px 0 32px" }}>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 32, color: "#e2e8f0", display: "block", marginBottom: 10 }}>person_search</span>
+                <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, color: "#94a3b8", fontWeight: 600, margin: 0 }}>
+                  {isSearching ? `No se encontró "${search}"` : "Sin partidos"}
+                </p>
+              </div>
+            )
+          }
 
           return (
-            <div key={cat.id} style={{ marginBottom: 24 }}>
-
-              {/* Header de categoría */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                {cat.estado === "en_vivo" && (
-                  <div style={{
-                    width: 5, height: 5, borderRadius: "50%",
-                    background: "#bcff00", flexShrink: 0,
-                    boxShadow: "0 0 6px rgba(188,255,0,0.6)",
-                  }} />
-                )}
-                <span style={{
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 10, fontWeight: 900,
-                  textTransform: "uppercase", letterSpacing: "0.08em",
-                  color: "#0f172a",
-                }}>{cat.nombre}</span>
-                <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
-                <span style={{
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 9, fontWeight: 900, color: "#94a3b8",
-                  textTransform: "uppercase", letterSpacing: "0.04em",
-                }}>
-                  {clubA.abbr}{" "}
-                  <span style={{ color: "#0f172a" }}>{cat.ptsA}–{cat.ptsB}</span>
-                  {" "}{clubB.abbr}
-                </span>
-              </div>
-
-              {/* Cards */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {visible.map((p, i) =>
-                  p.estado === "en_vivo" ? (
-                    <LiveCard key={p.id} partido={p} clubA={clubA} clubB={clubB} />
-                  ) : (
-                    <PartidoCard key={p.id} index={i} partido={p} clubA={clubA} clubB={clubB} />
-                  )
-                )}
-              </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {flat.map((p, i) =>
+                p.estado === "en_vivo" ? (
+                  <div key={p.id}>
+                    <div style={{ marginBottom: 4, paddingLeft: 2 }}>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>{p._catNombre}</span>
+                    </div>
+                    <LiveCard partido={p} clubA={clubA} clubB={clubB} />
+                  </div>
+                ) : (
+                  <div key={p.id}>
+                    <div style={{ marginBottom: 4, paddingLeft: 2 }}>
+                      <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>{p._catNombre}</span>
+                    </div>
+                    <PartidoCard index={i} partido={p} clubA={clubA} clubB={clubB} />
+                  </div>
+                )
+              )}
             </div>
           )
-        })}
-
-        {/* Sin resultados de búsqueda */}
-        {isSearching && filteredCats.every(cat =>
-          sortPartidos(cat.partidos).filter(p => matchSearch(p, search)).length === 0
-        ) && (
-          <div style={{ textAlign: "center", padding: "48px 0 32px" }}>
-            <span style={{
-              fontFamily: "'Material Symbols Outlined'", fontSize: 32,
-              color: "#e2e8f0", display: "block", marginBottom: 10,
-            }}>person_search</span>
-            <p style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 13, color: "#94a3b8", fontWeight: 600, margin: 0,
-            }}>No se encontró &ldquo;{search}&rdquo;</p>
-          </div>
-        )}
+        })()}
       </div>
 
       <style>{`
