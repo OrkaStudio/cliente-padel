@@ -2,11 +2,12 @@ export const dynamic = "force-dynamic"
 
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { HeroMarcador } from "@/components/torneos/interclub/HeroMarcador"
-import type { Club, CategoriaInterclub } from "@/components/torneos/interclub/CategoriasInterclub"
-import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "@/components/torneos/interclub/interclub-mock"
 import { createClient } from "@/lib/supabase/server"
+import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "@/components/torneos/interclub/interclub-mock"
+import type { Club, CategoriaInterclub } from "@/components/torneos/interclub/CategoriasInterclub"
 import { InterclubAutoRefresh } from "@/components/torneos/interclub/InterclubAutoRefresh"
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyHref = any
@@ -20,42 +21,191 @@ function formatFecha(fecha?: string): string | null {
   return `${DIAS[d.getDay()]} ${d.getDate()}`
 }
 
-async function getCat(catId: string): Promise<CategoriaInterclub | null> {
+function arHour(iso: string): string {
+  const d = new Date(iso)
+  const h = ((d.getUTCHours() - 3) + 24) % 24
+  const m = d.getUTCMinutes()
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+}
+
+function arDate(iso: string): string {
+  return new Date(new Date(iso).getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10)
+}
+
+function formatJug(nombre: string, apellido: string): string {
+  if (!apellido) return nombre
+  return `${nombre[0]}.${apellido}`
+}
+
+function formatPair(j1n: string, j1a: string, j2n?: string | null, j2a?: string | null): string {
+  const p1 = formatJug(j1n, j1a)
+  if (!j2n) return p1
+  return `${p1} / ${formatJug(j2n, j2a ?? "")}`
+}
+
+const SHORT_NAME: Record<string, string> = {
+  "2da Caballeros": "Segunda", "3ra Caballeros": "Tercera",
+  "4ta Caballeros": "Cuarta",  "5ta Caballeros": "Quinta",
+  "6ta Caballeros": "Sexta",   "7ma Caballeros": "Séptima",
+  "4ta Damas": "Cuarta",       "5ta Damas": "Quinta",
+  "6ta Damas": "Sexta",
+}
+
+// ─── Fetch real ───────────────────────────────────────────────────────────────
+
+async function getCat(torneoId: string, catId: string): Promise<CategoriaInterclub | null> {
+  // Primero intentar mock (IDs fijos en dev)
   const mockCat = MOCK_CATEGORIAS.find((c) => c.id === catId)
-  if (!mockCat) return null
+  if (mockCat) {
+    try {
+      const supabase = await createClient()
+      const { data } = await supabase
+        .from("interclub_partidos")
+        .select("id, resultado, ganador, estado, hora, cancha, fecha, sede")
+        .in("id", mockCat.partidos.map(p => p.id))
+      if (!data || data.length === 0) return mockCat
+      const liveMap = new Map(data.map(r => [r.id, r]))
+      const partidos = mockCat.partidos.map(p => {
+        const live = liveMap.get(p.id)
+        if (!live) return p
+        return {
+          ...p,
+          resultado:  live.resultado  ?? p.resultado,
+          ganador:    (live.ganador   ?? p.ganador)   as "A" | "B" | null,
+          estado:     (live.estado    ?? p.estado)    as "pendiente" | "en_vivo" | "finalizado",
+          horaInicio: live.hora       ?? p.horaInicio,
+          cancha:     live.cancha     ?? p.cancha,
+          fecha:      live.fecha      ?? p.fecha,
+          sede:       live.sede       ?? p.sede,
+        }
+      })
+      const fin    = partidos.filter(p => p.estado === "finalizado")
+      const ptsA   = fin.filter(p => p.ganador === "A").length
+      const ptsB   = fin.filter(p => p.ganador === "B").length
+      const estado = partidos.every(p => p.estado === "finalizado") && partidos.length > 0
+        ? "finalizado"
+        : partidos.some(p => p.estado === "en_vivo")
+        ? "en_vivo"
+        : "pendiente"
+      return { ...mockCat, partidos, ptsA, ptsB, estado }
+    } catch {
+      return mockCat
+    }
+  }
+
+  // Fetch real desde Supabase
   try {
     const supabase = await createClient()
-    const { data } = await supabase
-      .from("interclub_partidos")
-      .select("id, resultado, ganador, estado, hora, cancha, fecha, sede")
-      .in("id", mockCat.partidos.map(p => p.id))
-    if (!data || data.length === 0) return mockCat
-    const liveMap = new Map(data.map(r => [r.id, r]))
-    const partidos = mockCat.partidos.map(p => {
-      const live = liveMap.get(p.id)
-      if (!live) return p
+
+    // Resolver slug → UUID si hace falta
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(torneoId)
+    let realTorneoId = torneoId
+    if (!isUuid) {
+      const { data: t } = await supabase
+        .from("torneos").select("id").ilike("nombre", "%interclub%").limit(1).single()
+      if (!t) return null
+      realTorneoId = t.id
+    }
+
+    const [
+      { data: cat },
+      { data: partidos, error: errPart },
+    ] = await Promise.all([
+      supabase.from("categorias").select("id, nombre, tipo").eq("id", catId).single(),
+      supabase.from("partidos")
+        .select("id, horario, cancha, estado, sede_id, pareja1_id, pareja2_id")
+        .eq("torneo_id", realTorneoId)
+        .eq("categoria_id", catId)
+        .order("horario"),
+    ])
+
+    if (!cat || errPart || !partidos?.length) return null
+
+    const parejaIds  = [...new Set([...partidos.map(p => p.pareja1_id), ...partidos.map(p => p.pareja2_id)])]
+    const sedeIds    = [...new Set(partidos.map(p => p.sede_id))]
+    const partidoIds = partidos.map(p => p.id)
+
+    const [
+      { data: parejas },
+      { data: sedes },
+      { data: liveData },
+    ] = await Promise.all([
+      supabase.from("parejas").select("id, club_id, jugador1_id, jugador2_id").in("id", parejaIds),
+      supabase.from("sedes").select("id, nombre").in("id", sedeIds),
+      supabase.from("interclub_partidos")
+        .select("id, resultado, ganador, estado, hora, cancha, fecha, sede")
+        .in("id", partidoIds),
+    ])
+
+    const jugadorIds = [...new Set(
+      (parejas ?? []).flatMap(p => [p.jugador1_id, p.jugador2_id].filter(Boolean))
+    )]
+    const clubIds = [...new Set((parejas ?? []).map(p => p.club_id).filter(Boolean))]
+
+    const [{ data: jugadores }, { data: clubes }] = await Promise.all([
+      supabase.from("jugadores").select("id, nombre, apellido").in("id", jugadorIds),
+      supabase.from("clubes").select("id, nombre").in("id", clubIds),
+    ])
+
+    const parejaMap  = new Map((parejas   ?? []).map(p => [p.id, p]))
+    const jugadorMap = new Map((jugadores ?? []).map(j => [j.id, j]))
+    const clubMap    = new Map((clubes    ?? []).map(c => [c.id, c]))
+    const sedeMap    = new Map((sedes     ?? []).map(s => [s.id, s]))
+    const liveMap    = new Map((liveData  ?? []).map(r => [r.id, r]))
+
+    const tipo   = cat.tipo as string
+    const genero = tipo === "caballeros" ? "masc" : tipo === "damas" ? "dam" : "mixto"
+    const nombre = SHORT_NAME[cat.nombre] ?? cat.nombre
+
+    const parts = partidos.map(row => {
+      const sede = sedeMap.get(row.sede_id)
+      const par1 = parejaMap.get(row.pareja1_id)
+      const par2 = parejaMap.get(row.pareja2_id)
+      if (!par1 || !par2) return null
+
+      const club1   = clubMap.get(par1.club_id)
+      const p1IsVol = club1?.nombre === "Voleando"
+      const pVol    = p1IsVol ? par1 : par2
+      const pMP     = p1IsVol ? par2 : par1
+
+      const jV1 = jugadorMap.get(pVol.jugador1_id)
+      const jV2 = jugadorMap.get(pVol.jugador2_id)
+      const jM1 = jugadorMap.get(pMP.jugador1_id)
+      const jM2 = jugadorMap.get(pMP.jugador2_id)
+
+      const live = liveMap.get(row.id)
+
       return {
-        ...p,
-        resultado:  live.resultado  ?? p.resultado,
-        ganador:    (live.ganador   ?? p.ganador)   as "A" | "B" | null,
-        estado:     (live.estado    ?? p.estado)    as "pendiente" | "en_vivo" | "finalizado",
-        horaInicio: live.hora       ?? p.horaInicio,
-        cancha:     live.cancha     ?? p.cancha,
-        fecha:      live.fecha      ?? p.fecha,
-        sede:       live.sede       ?? p.sede,
+        id:         row.id,
+        pairA:      formatPair(jV1?.nombre ?? "?", jV1?.apellido ?? "", jV2?.nombre, jV2?.apellido),
+        pairB:      formatPair(jM1?.nombre ?? "?", jM1?.apellido ?? "", jM2?.nombre, jM2?.apellido),
+        resultado:  live?.resultado  ?? null,
+        ganador:    (live?.ganador   ?? null) as "A" | "B" | null,
+        estado:     (live?.estado    ?? row.estado) as "pendiente" | "en_vivo" | "finalizado",
+        horaInicio: live?.hora       ?? arHour(row.horario),
+        cancha:     live?.cancha     ?? (row.cancha > 0 ? row.cancha : undefined),
+        fecha:      live?.fecha      ?? arDate(row.horario),
+        sede:       live?.sede       ?? sede?.nombre,
       }
-    })
-    const fin   = partidos.filter(p => p.estado === "finalizado")
+    }).filter(Boolean) as CategoriaInterclub["partidos"]
+
+    const fin   = parts.filter(p => p.estado === "finalizado")
     const ptsA  = fin.filter(p => p.ganador === "A").length
     const ptsB  = fin.filter(p => p.ganador === "B").length
-    const hayVivo  = partidos.some(p => p.estado === "en_vivo")
-    const todosFin = partidos.every(p => p.estado === "finalizado")
-    const estado   = todosFin ? "finalizado" : hayVivo ? "en_vivo" : "pendiente"
-    return { ...mockCat, partidos, ptsA, ptsB, estado }
-  } catch {
-    return mockCat
+    const estado = parts.every(p => p.estado === "finalizado") && parts.length > 0
+      ? "finalizado"
+      : parts.some(p => p.estado === "en_vivo")
+      ? "en_vivo"
+      : "pendiente"
+
+    return { id: cat.id, nombre, genero, estado, ptsA, ptsB, partidos: parts }
+  } catch (e) {
+    console.error("getCat error:", e)
+    return null
   }
 }
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function CategoriaInterclubPage({
   params,
@@ -63,15 +213,13 @@ export default async function CategoriaInterclubPage({
   params: Promise<{ id: string; catId: string }>
 }) {
   const { id, catId } = await params
-  const cat = await getCat(catId)
+  const cat = await getCat(id, catId)
   if (!cat) notFound()
-
-  const isLive = cat.estado === "en_vivo"
-  const isFin  = cat.estado === "finalizado"
 
   const enVivo      = cat.partidos.filter((p) => p.estado === "en_vivo")
   const finalizados = cat.partidos.filter((p) => p.estado === "finalizado")
   const pendientes  = cat.partidos.filter((p) => p.estado === "pendiente")
+  const isLive      = cat.estado === "en_vivo"
 
   return (
     <div style={{ background: "#f8fafc", minHeight: "100vh", paddingBottom: 60 }}>
@@ -86,7 +234,6 @@ export default async function CategoriaInterclubPage({
         padding: "0 18px", height: 52,
         gap: 12,
       }}>
-        {/* Back */}
         <Link
           href={`/torneos/${id}/interclub` as AnyHref}
           style={{
@@ -100,10 +247,8 @@ export default async function CategoriaInterclubPage({
           </span>
         </Link>
 
-        {/* Separador */}
         <div style={{ width: 1, height: 20, background: "#e2e8f0", flexShrink: 0 }} />
 
-        {/* Categoría + score */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
             <span style={{
@@ -143,7 +288,6 @@ export default async function CategoriaInterclubPage({
               fontFamily: "var(--font-anton), Anton, sans-serif",
               fontSize: 18, lineHeight: 1, color: "#0f172a",
             }}>{cat.ptsB}</span>
-
             {isLive && (
               <span className="live-dot" style={{
                 width: 6, height: 6, borderRadius: "50%",
@@ -154,15 +298,6 @@ export default async function CategoriaInterclubPage({
           </div>
         </div>
       </div>
-
-      {/* ── Marcador ── */}
-      <HeroMarcador
-        compact
-        clubA={CLUB_A}
-        clubB={CLUB_B}
-        ptsA={cat.ptsA}
-        ptsB={cat.ptsB}
-      />
 
       {/* Progress bar */}
       <div style={{
@@ -187,17 +322,14 @@ export default async function CategoriaInterclubPage({
       {/* ── Contenido ── */}
       <div style={{ padding: "0 14px 8px" }}>
 
-        {/* 1. EN VIVO */}
         {enVivo.map((p) => (
           <LiveCard key={p.id} partido={p} />
         ))}
 
-        {/* 2. FIXTURE */}
         {(pendientes.length > 0 || finalizados.length > 0) && (
           <section style={{ paddingTop: 20 }}>
             <SectionLabel label="Fixture" />
 
-            {/* Próximos */}
             {pendientes.length > 0 && (
               <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
                 {pendientes.map((p, i) => (
@@ -212,7 +344,6 @@ export default async function CategoriaInterclubPage({
               </div>
             )}
 
-            {/* Resultados — colapsados */}
             {finalizados.length > 0 && (
               <details style={{ marginTop: pendientes.length > 0 ? 0 : 8 }}>
                 <summary style={{
@@ -255,15 +386,12 @@ export default async function CategoriaInterclubPage({
           100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 2px rgba(188,255,0,0.3); }
         }
         details summary::-webkit-details-marker { display: none; }
-        details[open] summary span[style*="expand_more"] {
-          transform: rotate(180deg);
-        }
       `}</style>
     </div>
   )
 }
 
-// ─── Sub-componentes ────────────────────────────────────────────────────────
+// ─── Sub-componentes ──────────────────────────────────────────────────────────
 
 function SectionLabel({ label }: { label: string }) {
   return (
@@ -276,13 +404,13 @@ function SectionLabel({ label }: { label: string }) {
   )
 }
 
-// ─── LiveCard — idéntica al carousel ─────────────────────────────────────────
-
 function LiveCard({ partido: p }: {
-  partido: { id: string; pairA: string; pairB: string; resultado: string | null; horaInicio?: string; sede?: string; cancha?: number; fecha?: string }
+  partido: { id: string; pairA: string; pairB: string; resultado: string | null; horaInicio?: string; sede?: string; cancha?: number }
 }) {
-  const sets = p.resultado?.trim().split(/\s+/) ?? []
-  const parsed = sets.map(s => { const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" } })
+  const parsed = (p.resultado?.trim().split(/\s+/) ?? []).map(s => {
+    const [a, b] = s.split("-")
+    return { a: a ?? "–", b: b ?? "–" }
+  })
 
   return (
     <div style={{ paddingTop: 16 }}>
@@ -293,7 +421,6 @@ function LiveCard({ partido: p }: {
         position: "relative", overflow: "hidden",
         boxShadow: "0 2px 12px rgba(188,255,0,0.12)",
       }}>
-        {/* Ghost VIVO */}
         <span aria-hidden style={{
           position: "absolute", zIndex: 0,
           right: -4, bottom: -10,
@@ -302,15 +429,11 @@ function LiveCard({ partido: p }: {
           color: "rgba(188,255,0,0.32)", letterSpacing: "-0.02em",
           pointerEvents: "none", userSelect: "none", textTransform: "uppercase",
         }}>VIVO</span>
-
-        {/* Degradado sobre VIVO */}
         <div aria-hidden style={{
-          position: "absolute", zIndex: 1,
-          inset: 0, pointerEvents: "none",
+          position: "absolute", zIndex: 1, inset: 0, pointerEvents: "none",
           background: "linear-gradient(to bottom right, transparent 40%, rgba(255,255,255,0.6) 100%)",
         }} />
 
-        {/* Top row: label ← → sede/hora */}
         <div style={{
           position: "relative", zIndex: 2,
           display: "flex", justifyContent: "space-between", alignItems: "flex-start",
@@ -348,54 +471,30 @@ function LiveCard({ partido: p }: {
           })()}
         </div>
 
-        {/* Scoreboard */}
-        <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
-          {/* Fila A */}
+        <div style={{ position: "relative", zIndex: 2 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 8 }}>
             <span style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: 13, fontWeight: 900, color: "#0f172a",
-              lineHeight: 1.2, textTransform: "uppercase",
-              flex: 1, minWidth: 0,
+              lineHeight: 1.2, textTransform: "uppercase", flex: 1, minWidth: 0,
             }}>{p.pairA}</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              {parsed.map((s, idx) => (
-                <span key={idx} style={{
-                  fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 18, fontWeight: 400, lineHeight: 1,
-                  color: "#0f172a", minWidth: 16, textAlign: "center",
-                }}>{s.a}</span>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              {parsed.map((s, i) => (
+                <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 18, lineHeight: 1, color: "#0f172a", minWidth: 16, textAlign: "center" }}>{s.a}</span>
               ))}
-              <span className="live-dot" style={{
-                width: 7, height: 7, borderRadius: "50%",
-                background: "#0f172a", flexShrink: 0,
-              }} />
             </div>
           </div>
-
-          {/* Separador */}
           <div style={{ height: 1, background: "#f1f5f9", marginBottom: 8 }} />
-
-          {/* Fila B */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: 13, fontWeight: 900, color: "#0f172a",
-              lineHeight: 1.2, textTransform: "uppercase",
-              flex: 1, minWidth: 0,
+              lineHeight: 1.2, textTransform: "uppercase", flex: 1, minWidth: 0,
             }}>{p.pairB}</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              {parsed.map((s, idx) => (
-                <span key={idx} style={{
-                  fontFamily: "var(--font-anton), Anton, sans-serif",
-                  fontSize: 18, fontWeight: 400, lineHeight: 1,
-                  color: "#0f172a", minWidth: 16, textAlign: "center",
-                }}>{s.b}</span>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              {parsed.map((s, i) => (
+                <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 18, lineHeight: 1, color: "#0f172a", minWidth: 16, textAlign: "center" }}>{s.b}</span>
               ))}
-              <span className="live-dot" style={{
-                width: 7, height: 7, borderRadius: "50%",
-                background: "#0f172a", flexShrink: 0,
-              }} />
             </div>
           </div>
         </div>
@@ -404,50 +503,30 @@ function LiveCard({ partido: p }: {
   )
 }
 
-
-// ─── PartidoCard ──────────────────────────────────────────────────────────────
-
 function PartidoCard({
   pairA, pairB, resultado, ganador, horaInicio, sede, cancha, fecha, clubA, clubB, index,
 }: {
-  pairA: string
-  pairB: string
-  resultado: string | null
-  ganador: "A" | "B" | null
-  horaInicio?: string
-  sede?: string
-  cancha?: number
-  fecha?: string
-  clubA: Club
-  clubB: Club
-  index: number
+  pairA: string; pairB: string
+  resultado: string | null; ganador: "A" | "B" | null
+  horaInicio?: string; sede?: string; cancha?: number; fecha?: string
+  clubA: Club; clubB: Club; index: number
 }) {
-  const ganadorA = ganador === "A"
-  const ganadorB = ganador === "B"
-  const sets = resultado?.trim().split(/\s+/) ?? []
-  const parsed = sets.map(s => { const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" } })
-  const hasScore = parsed.length > 0
+  const ganadorA  = ganador === "A"
+  const ganadorB  = ganador === "B"
+  const parsed    = (resultado?.trim().split(/\s+/) ?? []).map(s => { const [a, b] = s.split("-"); return { a: a ?? "–", b: b ?? "–" } })
+  const hasScore  = parsed.length > 0
   const sedeColor = sede === "Voleando" ? clubA.color : sede ? clubB.color : "#64748b"
-  const diaStr = formatFecha(fecha)
-  const hasMeta = !!(horaInicio || sede)
+  const diaStr    = formatFecha(fecha)
+  const hasMeta   = !!(horaInicio || sede)
 
   return (
     <div style={{
-      background: "#ffffff",
-      border: "1px solid #f1f5f9",
-      borderRadius: 12,
-      padding: "12px 14px",
+      background: "#ffffff", border: "1px solid #f1f5f9", borderRadius: 12, padding: "12px 14px",
       animation: "fadeUp 250ms cubic-bezier(0.23,1,0.32,1) both",
       animationDelay: `${Math.min(index, 8) * 40}ms`,
     }}>
-
-      {/* Top row: estado izq — sede/hora der */}
       {hasMeta && (
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-          marginBottom: 10,
-        }}>
-          {/* Estado izquierda */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
           <div style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 9, fontWeight: ganador ? 900 : 600,
@@ -455,15 +534,9 @@ function PartidoCard({
             textTransform: "uppercase", letterSpacing: "0.12em",
             display: "flex", alignItems: "center", gap: 5,
           }}>
-            <span style={{
-              width: 5, height: 5, borderRadius: "50%",
-              background: ganador ? "#cbd5e1" : "#e2e8f0",
-              display: "inline-block", flexShrink: 0,
-            }} />
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: ganador ? "#cbd5e1" : "#e2e8f0", display: "inline-block", flexShrink: 0 }} />
             {ganador ? "Finalizado" : "Pendiente"}
           </div>
-
-          {/* Fecha · hora · sede */}
           <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
             {diaStr && <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: "#94a3b8" }}>calendar_today</span>}
             {(diaStr || horaInicio) && (
@@ -481,73 +554,51 @@ function PartidoCard({
         </div>
       )}
 
-      {/* Fila A */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 8 }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
           <span style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 7, fontWeight: 900,
+            fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 7, fontWeight: 900,
             textTransform: "uppercase", letterSpacing: "0.08em",
-            color: clubA.color, border: "1px solid #e2e8f0",
-            borderRadius: 3, padding: "1px 4px", flexShrink: 0,
+            color: clubA.color, border: "1px solid #e2e8f0", borderRadius: 3, padding: "1px 4px", flexShrink: 0,
           }}>{clubA.abbr}</span>
           <span style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, lineHeight: 1.3,
-            fontWeight: ganadorA ? 900 : 600,
-            color: ganadorB ? "#94a3b8" : "#0f172a",
+            fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, lineHeight: 1.3,
+            fontWeight: ganadorA ? 900 : 600, color: ganadorB ? "#94a3b8" : "#0f172a",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{pairA}</span>
         </div>
         {hasScore && (
           <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-            {parsed.map((s, idx) => (
-              <span key={idx} style={{
-                fontFamily: "var(--font-anton), Anton, sans-serif",
-                fontSize: 16, fontWeight: 400, lineHeight: 1,
-                color: ganadorA ? "#0f172a" : "#94a3b8",
-                minWidth: 14, textAlign: "center",
-              }}>{s.a}</span>
+            {parsed.map((s, i) => (
+              <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorA ? "#0f172a" : "#94a3b8", minWidth: 14, textAlign: "center" }}>{s.a}</span>
             ))}
           </div>
         )}
       </div>
 
-      {/* Separador */}
       <div style={{ height: 1, background: "#f8fafc", marginBottom: 8 }} />
 
-      {/* Fila B */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
           <span style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 7, fontWeight: 900,
+            fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 7, fontWeight: 900,
             textTransform: "uppercase", letterSpacing: "0.08em",
-            color: clubB.color, border: "1px solid #e2e8f0",
-            borderRadius: 3, padding: "1px 4px", flexShrink: 0,
+            color: clubB.color, border: "1px solid #e2e8f0", borderRadius: 3, padding: "1px 4px", flexShrink: 0,
           }}>{clubB.abbr}</span>
           <span style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 12, lineHeight: 1.3,
-            fontWeight: ganadorB ? 900 : 600,
-            color: ganadorA ? "#94a3b8" : "#0f172a",
+            fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, lineHeight: 1.3,
+            fontWeight: ganadorB ? 900 : 600, color: ganadorA ? "#94a3b8" : "#0f172a",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{pairB}</span>
         </div>
         {hasScore && (
           <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-            {parsed.map((s, idx) => (
-              <span key={idx} style={{
-                fontFamily: "var(--font-anton), Anton, sans-serif",
-                fontSize: 16, fontWeight: 400, lineHeight: 1,
-                color: ganadorB ? "#0f172a" : "#94a3b8",
-                minWidth: 14, textAlign: "center",
-              }}>{s.b}</span>
+            {parsed.map((s, i) => (
+              <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorB ? "#0f172a" : "#94a3b8", minWidth: 14, textAlign: "center" }}>{s.b}</span>
             ))}
           </div>
         )}
       </div>
-
     </div>
   )
 }
