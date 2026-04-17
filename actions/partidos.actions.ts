@@ -5,7 +5,6 @@ import { z } from "zod"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { MOCK_CATEGORIAS } from "@/components/torneos/interclub/interclub-mock"
 
 // ─── Marcar en vivo ───────────────────────────────────────────────────────────
 
@@ -259,34 +258,46 @@ export const guardarResultadoInterclubAction = createServerAction()
   }))
   .handler(async ({ input }) => {
     const supabase = createAdminClient()
-    const cat         = MOCK_CATEGORIAS.find(c => c.partidos.some(p => p.id === input.id))
-    const mockPartido = cat?.partidos.find(p => p.id === input.id)
-    const now         = new Date().toISOString()
+    const now = new Date().toISOString()
 
-    // Leer slots existentes (movimientos del organizador) o usar defaults del mock
-    const { data: existing } = await supabase
-      .from("interclub_partidos")
-      .select("hora, cancha, fecha, sede")
-      .eq("id", input.id)
-      .maybeSingle()
+    // Leer slot existente (movimientos del organizador) y datos base del partido
+    const [{ data: existing }, { data: base }] = await Promise.all([
+      supabase.from("interclub_partidos").select("hora, cancha, fecha, sede").eq("id", input.id).maybeSingle(),
+      supabase.from("partidos").select("horario, cancha, sede:sede_id(nombre)").eq("id", input.id).maybeSingle(),
+    ])
+
+    const arHour = (iso: string) => {
+      const d = new Date(iso)
+      const h = ((d.getUTCHours() - 3) + 24) % 24
+      const m = d.getUTCMinutes()
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+    }
+    const arDate = (iso: string) =>
+      new Date(new Date(iso).getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+    const hora   = existing?.hora   ?? (base?.horario ? arHour(base.horario) : null)
+    const cancha = existing?.cancha ?? (base?.cancha  > 0 ? base.cancha : null)
+    const fecha  = existing?.fecha  ?? (base?.horario ? arDate(base.horario) : null)
+    const sede   = existing?.sede   ?? (base?.sede as any)?.nombre ?? null
 
     const { error } = await supabase
       .from("interclub_partidos")
       .upsert({
-        id:         input.id,
-        resultado:  input.resultado,
-        ganador:    input.ganador,
-        estado:     input.estado,
-        hora:       existing?.hora   ?? mockPartido?.horaInicio ?? null,
-        cancha:     existing?.cancha ?? mockPartido?.cancha     ?? null,
-        fecha:      existing?.fecha  ?? mockPartido?.fecha      ?? null,
-        sede:       existing?.sede   ?? mockPartido?.sede       ?? null,
-        updated_at: now,
+        id: input.id, resultado: input.resultado, ganador: input.ganador,
+        estado: input.estado, hora, cancha, fecha, sede, updated_at: now,
       }, { onConflict: "id" })
     if (error) throw error
 
-    revalidatePath("/torneos/interclubes-abril-2026/interclub")
-    if (cat) revalidatePath(`/torneos/interclubes-abril-2026/interclub/${cat.id}`)
+    // Revalidar path dinámico según el torneo del partido
+    const { data: partido } = await supabase
+      .from("partidos")
+      .select("torneo_id, categoria_id")
+      .eq("id", input.id)
+      .maybeSingle()
+    if (partido?.torneo_id) {
+      revalidatePath(`/torneos/${partido.torneo_id}/interclub`)
+      revalidatePath(`/torneos/${partido.torneo_id}/interclub/${partido.categoria_id}`)
+    }
     return { ok: true }
   })
 
