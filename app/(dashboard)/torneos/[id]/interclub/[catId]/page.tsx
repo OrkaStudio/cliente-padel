@@ -486,7 +486,7 @@ function LiveCard({ partido: p }: {
             <span style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: 13, fontWeight: 900, color: "#0f172a",
-              lineHeight: 1.2, textTransform: "uppercase", flex: 1, minWidth: 0,
+              lineHeight: 1.2, flex: 1, minWidth: 0,
             }}>{p.pairA}</span>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
               {parsed.map((s, i) => (
@@ -499,7 +499,7 @@ function LiveCard({ partido: p }: {
             <span style={{
               fontFamily: "var(--font-space-grotesk), sans-serif",
               fontSize: 13, fontWeight: 900, color: "#0f172a",
-              lineHeight: 1.2, textTransform: "uppercase", flex: 1, minWidth: 0,
+              lineHeight: 1.2, flex: 1, minWidth: 0,
             }}>{p.pairB}</span>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
               {parsed.map((s, i) => (
