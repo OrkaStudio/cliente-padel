@@ -7,7 +7,7 @@ import { VeedorInterclubView } from "@/components/torneos/interclub/VeedorInterc
 import { getCategorias } from "@/lib/interclub-data"
 
 const CLUB_INFO: Record<string, { nombre: string; maxEnVivo: number }> = {
-  "voleando":  { nombre: "Voleando",  maxEnVivo: 1 },
+  "voleando":  { nombre: "Voleando",  maxEnVivo: 2 },
   "mas-padel": { nombre: "Más Pádel", maxEnVivo: 2 },
 }
 
