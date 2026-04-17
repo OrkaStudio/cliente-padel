@@ -7,69 +7,38 @@ const RUSSO_IDS = [
   "025059e3-c6ab-46b9-886c-745dd4e3e671",
 ]
 
-// GET: muestra los jugadores de cada partido de Russo
+// El que era 15:00 original es Russo vs Crucce/Arballo → KEEP
+// El otro (Brahin/Sachetti) → REVERT
 export async function GET() {
   const supabase = createAdminClient()
 
   const { data: partidos } = await supabase
     .from("partidos")
-    .select("id, pareja1_id, pareja2_id")
+    .select("id, horario")
     .in("id", RUSSO_IDS)
 
   if (!partidos?.length) return NextResponse.json({ error: "No encontrados" })
 
-  const parejaIds = [...new Set(partidos.flatMap(p => [p.pareja1_id, p.pareja2_id]))]
-  const { data: parejas } = await supabase
-    .from("parejas").select("id, jugador1_id, jugador2_id").in("id", parejaIds)
+  function toAR(iso: string) {
+    const d = new Date(iso)
+    const h = ((d.getUTCHours() - 3) + 24) % 24
+    const m = d.getUTCMinutes()
+    const fecha = new Date(d.getTime() - 3 * 3600000).toISOString().slice(0, 10)
+    return `${fecha} ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`
+  }
 
-  const jugIds = [...new Set((parejas ?? []).flatMap(p => [p.jugador1_id, p.jugador2_id]))]
-  const { data: jugs } = await supabase
-    .from("jugadores").select("id, apellido").in("id", jugIds)
+  // El que originalmente era 15:00 lo queremos mantener en 22:00
+  // El otro lo revertimos (borramos de interclub_partidos)
+  const conHorario = partidos.map(p => ({ id: p.id, original: toAR(p.horario) }))
 
-  const jugMap = new Map((jugs ?? []).map(j => [j.id, j.apellido]))
-  const parMap = new Map((parejas ?? []).map(p => [
-    p.id,
-    `${jugMap.get(p.jugador1_id) ?? "?"} / ${jugMap.get(p.jugador2_id) ?? "?"}`
-  ]))
+  const toRevert = conHorario.find(p => !p.original.includes("15:00"))
+  const toKeep   = conHorario.find(p =>  p.original.includes("15:00"))
 
-  return NextResponse.json(partidos.map(p => ({
-    id: p.id,
-    pareja1: parMap.get(p.pareja1_id),
-    pareja2: parMap.get(p.pareja2_id),
-  })))
-}
-
-// POST: revierte el partido de Russo que NO es vs Crucce/Arballo
-export async function POST() {
-  const supabase = createAdminClient()
-  const { data: partidos } = await supabase
-    .from("partidos").select("id, pareja1_id, pareja2_id").in("id", RUSSO_IDS)
-
-  const parejaIds = [...new Set((partidos ?? []).flatMap(p => [p.pareja1_id, p.pareja2_id]))]
-  const { data: parejas } = await supabase
-    .from("parejas").select("id, jugador1_id, jugador2_id").in("id", parejaIds)
-
-  const jugIds = [...new Set((parejas ?? []).flatMap(p => [p.jugador1_id, p.jugador2_id]))]
-  const { data: jugs } = await supabase
-    .from("jugadores").select("id, apellido").in("id", jugIds)
-
-  const jugMap = new Map((jugs ?? []).map(j => [j.id, j.apellido?.toLowerCase() ?? ""]))
-  const parMap = new Map((parejas ?? []).map(p => [
-    p.id,
-    `${jugMap.get(p.jugador1_id) ?? ""} ${jugMap.get(p.jugador2_id) ?? ""}`
-  ]))
-
-  // El que NO tiene "crucce" ni "arballo" es el que hay que revertir
-  const toRevert = (partidos ?? []).find(p => {
-    const names = `${parMap.get(p.pareja1_id) ?? ""} ${parMap.get(p.pareja2_id) ?? ""}`
-    return !names.includes("crucce") && !names.includes("arballo")
-  })
-
-  if (!toRevert) return NextResponse.json({ error: "No se identificó el partido a revertir", parMap: Object.fromEntries(parMap) })
+  if (!toRevert) return NextResponse.json({ info: conHorario, msg: "Ninguno era 15:00 — revisar manualmente" })
 
   const { error } = await supabase.from("interclub_partidos").delete().eq("id", toRevert.id)
   if (error) return NextResponse.json({ error: error.message })
 
   revalidatePath("/torneos/interclubes-abril-2026/interclub")
-  return NextResponse.json({ ok: true, revertido: toRevert.id })
+  return NextResponse.json({ ok: true, revertido: toRevert, mantenido: toKeep })
 }
