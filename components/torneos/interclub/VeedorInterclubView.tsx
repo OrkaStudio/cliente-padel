@@ -8,6 +8,9 @@ import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "./interclub-mock"
 import { cerrarSesionVeedorAction, guardarResultadoInterclubAction } from "@/actions/partidos.actions"
 import { InterclubAutoRefresh } from "./InterclubAutoRefresh"
 
+const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
+const HOY  = new Date().toISOString().split("T")[0]
+
 const CLUB_ACCENT: Record<string, string> = {
   "voleando":  "#0f172a",
   "mas-padel": "#b45309",
