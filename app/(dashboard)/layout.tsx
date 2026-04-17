@@ -22,16 +22,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontVariationSettings: "'FILL' 1, 'wght' 400", fontSize: 20, color: "#bcff00", lineHeight: 1 }}>
             sports_tennis
           </span>
-          <span style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontWeight: 400,
-            fontSize: 16,
-            color: "#0f172a",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}>
-            {siteConfig.name}
-          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <span style={{
+              fontFamily: "var(--font-anton), Anton, sans-serif",
+              fontWeight: 400,
+              fontSize: 16,
+              color: "#0f172a",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              lineHeight: 1,
+            }}>
+              {siteConfig.name}
+            </span>
+            <span style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 8,
+              fontWeight: 700,
+              color: "#94a3b8",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              lineHeight: 1,
+            }}>
+              Orka Studio
+            </span>
+          </div>
         </div>
         <AdminMenu />
       </header>

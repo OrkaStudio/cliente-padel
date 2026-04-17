@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: "TorneyPro", // placeholder — actualizar con nombre real del cliente
+  name: "Playon",
   description: "Gestión de torneos de pádel",
   url: "",
   logo: "",
