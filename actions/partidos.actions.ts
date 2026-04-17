@@ -205,7 +205,7 @@ export const moverPartidoInterclubAction = createServerAction()
       .from("interclub_partidos")
       .upsert({ id: input.id, hora: input.hora, cancha: input.cancha, fecha: input.fecha, sede: input.sede, updated_at: new Date().toISOString() }, { onConflict: "id" })
     if (error) throw error
-    revalidatePath("/torneos/123/interclub")
+    revalidatePath("/torneos/interclubes-abril-2026/interclub")
     return { ok: true }
   })
 
@@ -225,7 +225,7 @@ export const swapPartidosInterclubAction = createServerAction()
         { id: input.idB, hora: input.horaB, cancha: input.canchaB, fecha: input.fechaB, sede: input.sedeB, updated_at: new Date().toISOString() },
       ], { onConflict: "id" })
     if (error) throw error
-    revalidatePath("/torneos/123/interclub")
+    revalidatePath("/torneos/interclubes-abril-2026/interclub")
     return { ok: true }
   })
 
@@ -285,8 +285,8 @@ export const guardarResultadoInterclubAction = createServerAction()
       }, { onConflict: "id" })
     if (error) throw error
 
-    revalidatePath("/torneos/123/interclub")
-    if (cat) revalidatePath(`/torneos/123/interclub/${cat.id}`)
+    revalidatePath("/torneos/interclubes-abril-2026/interclub")
+    if (cat) revalidatePath(`/torneos/interclubes-abril-2026/interclub/${cat.id}`)
     return { ok: true }
   })
 

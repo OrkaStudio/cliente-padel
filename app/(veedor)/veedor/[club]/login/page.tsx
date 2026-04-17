@@ -86,7 +86,7 @@ export default function VeedorLoginPage() {
 
       {/* Botón volver — arriba izquierda */}
       <button
-        onClick={() => router.push("/torneos/123/interclub")}
+        onClick={() => router.push("/torneos/interclubes-abril-2026/interclub")}
         style={{
           position: "absolute",
           top: "max(20px, env(safe-area-inset-top))", left: 20,

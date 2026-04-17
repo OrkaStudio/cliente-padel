@@ -715,7 +715,7 @@ export function VeedorInterclubView({
           <Image src={logoSrc} alt="" width={200} height={200} style={{ objectFit: "contain" }} />
         </div>
 
-        <button onClick={() => router.push("/torneos/123/interclub")} style={{ position: "absolute", top: "max(14px, env(safe-area-inset-top))", left: 16, display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent", zIndex: 1 }}>
+        <button onClick={() => router.push("/torneos/interclubes-abril-2026/interclub")} style={{ position: "absolute", top: "max(14px, env(safe-area-inset-top))", left: 16, display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent", zIndex: 1 }}>
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, lineHeight: 1 }}>arrow_back</span>
           Torneo
         </button>

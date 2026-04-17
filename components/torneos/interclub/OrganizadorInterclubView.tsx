@@ -848,7 +848,7 @@ export function OrganizadorInterclubView({ initialLiveData = [] }: { initialLive
         </div>
 
         <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <button onClick={() => router.push("/torneos/123/interclub")} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent" }}>
+          <button onClick={() => router.push("/torneos/interclubes-abril-2026/interclub")} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent" }}>
             <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, lineHeight: 1 }}>arrow_back</span>
             Torneo
           </button>
