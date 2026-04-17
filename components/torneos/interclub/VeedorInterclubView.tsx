@@ -42,6 +42,10 @@ export type InterclubLiveRow = {
   resultado: string | null
   ganador: string | null
   estado: string
+  hora: string | null
+  cancha: number | null
+  fecha: string | null
+  sede: string | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -65,8 +69,9 @@ function buildPartidos(club: string, liveRows: InterclubLiveRow[]): PartidoMock[
 
   for (const cat of MOCK_CATEGORIAS) {
     for (const p of cat.partidos) {
-      if (p.sede !== sede) continue
       const live = liveMap.get(p.id)
+      const sedeActual = live?.sede ?? p.sede ?? sede
+      if (sedeActual !== sede) continue
       const estado = (live?.estado ?? p.estado) as PartidoMock["estado"]
       const resultado = live?.resultado ?? p.resultado
       const ganador  = (live?.ganador ?? p.ganador) as "A" | "B" | null
@@ -75,10 +80,10 @@ function buildPartidos(club: string, liveRows: InterclubLiveRow[]): PartidoMock[
         categoria: cat.nombre,
         pairA:     p.pairA,
         pairB:     p.pairB,
-        hora:      p.horaInicio ?? "",
-        fecha:     p.fecha      ?? "",
-        cancha:    p.cancha     ?? 1,
-        sede:      p.sede       ?? sede,
+        hora:      live?.hora   ?? p.horaInicio ?? "",
+        fecha:     live?.fecha  ?? p.fecha      ?? "",
+        cancha:    live?.cancha ?? p.cancha     ?? 1,
+        sede:      sedeActual,
         sets:      parseResultado(resultado),
         estado,
         ganador,
@@ -158,7 +163,7 @@ function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () =>
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 13, fontWeight: 900, color: "#0f172a",
-            lineHeight: 1.2, textTransform: "uppercase",
+            lineHeight: 1.2,
             flex: 1, minWidth: 0,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{partido.pairA}</span>
@@ -184,7 +189,7 @@ function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () =>
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 13, fontWeight: 900, color: "#0f172a",
-            lineHeight: 1.2, textTransform: "uppercase",
+            lineHeight: 1.2,
             flex: 1, minWidth: 0,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{partido.pairB}</span>
@@ -376,9 +381,9 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar, isEditi
         <div style={{ padding: "4px 20px 16px", borderBottom: "1px solid #f1f5f9" }}>
           <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 6px" }}>{partido.categoria} · C{partido.cancha} · Resultado</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#0f172a", textTransform: "uppercase", lineHeight: 1.2 }}>{partido.pairA}</span>
+            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#0f172a", lineHeight: 1.2 }}>{partido.pairA}</span>
             <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.08em" }}>VS</span>
-            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#0f172a", textTransform: "uppercase", lineHeight: 1.2 }}>{partido.pairB}</span>
+            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#0f172a", lineHeight: 1.2 }}>{partido.pairB}</span>
           </div>
         </div>
 
@@ -395,12 +400,12 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar, isEditi
                   )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>{partido.pairA.split(" / ")[0]}</span>
+                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>{partido.pairA.split(" / ")[0]}</span>
                   <Stepper value={s.a} onChange={v => updateSet(i, "a", v)} />
                 </div>
                 <div style={{ height: 1, background: "#e2e8f0", margin: "0 0 10px" }} />
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>{partido.pairB.split(" / ")[0]}</span>
+                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>{partido.pairB.split(" / ")[0]}</span>
                   <Stepper value={s.b} onChange={v => updateSet(i, "b", v)} />
                 </div>
               </div>
@@ -416,12 +421,14 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar, isEditi
         </div>
 
         <div style={{ padding: "12px 20px 8px", display: "flex", flexDirection: "column", gap: 8 }}>
-          <button
-            onClick={() => onGuardarParcial(sets.map(s => ({ a: String(s.a), b: String(s.b) })))}
-            style={{ width: "100%", padding: "12px 0", borderRadius: 12, border: "1.5px solid #e2e8f0", background: "transparent", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}
-          >
-            Actualizar set
-          </button>
+          {!isEditing && (
+            <button
+              onClick={() => onGuardarParcial(sets.map(s => ({ a: String(s.a), b: String(s.b) })))}
+              style={{ width: "100%", padding: "12px 0", borderRadius: 12, border: "1.5px solid #e2e8f0", background: "transparent", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}
+            >
+              Actualizar set
+            </button>
+          )}
           <button
             onClick={() => ganador && onGuardar(sets.map(s => ({ a: String(s.a), b: String(s.b) })), ganador)}
             disabled={!ganador}
@@ -471,9 +478,9 @@ function SiguienteDialog({ siguiente, onSi, onNo, onCorregir }: {
         </p>
         <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 14px", marginBottom: 20 }}>
           <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>{siguiente.categoria} · {siguiente.hora}</p>
-          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", margin: "0 0 3px" }}>{siguiente.pairA}</p>
+          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", margin: "0 0 3px" }}>{siguiente.pairA}</p>
           <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 700, color: "#94a3b8", margin: "0 0 3px" }}>vs</p>
-          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", margin: 0 }}>{siguiente.pairB}</p>
+          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", margin: 0 }}>{siguiente.pairB}</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onNo} style={{ flex: 1, padding: "14px 0", borderRadius: 12, border: "1.5px solid #e2e8f0", background: "transparent", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>Ahora no</button>
@@ -559,7 +566,7 @@ export function VeedorInterclubView({
     setSheetPartido(null)
     const resultado = setsToResultado(sets)
     const [, err] = await guardarResultadoInterclubAction({ id, resultado, ganador: null, estado: "en_vivo" })
-    if (err) showError("Error al guardar el set. Intentá de nuevo.")
+    if (err) showError((err as { message?: string })?.message ?? JSON.stringify(err))
   }
 
   const confirmar = async (id: string, sets: SetScore[], ganador: "A" | "B") => {
@@ -574,9 +581,12 @@ export function VeedorInterclubView({
     const resultado = setsToResultado(sets)
     const [, err] = await guardarResultadoInterclubAction({ id, resultado, ganador, estado: "finalizado" })
     if (err) {
+      console.error("[confirmar] error:", err)
       setPartidos(prev => prev.map(p => p.id === id ? { ...partido!, estado: "en_vivo" as const } : p))
-      setSheetPartido({ ...partido!, estado: "en_vivo" as const })
-      showError("Error al guardar el resultado. Intentá de nuevo.")
+      const msg = (err as { message?: string; data?: { message?: string } })?.message
+        ?? (err as { data?: { message?: string } })?.data?.message
+        ?? JSON.stringify(err)
+      showError(msg)
       return
     }
 

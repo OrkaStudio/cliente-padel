@@ -259,6 +259,17 @@ export const guardarResultadoInterclubAction = createServerAction()
   }))
   .handler(async ({ input }) => {
     const supabase = createAdminClient()
+    const cat         = MOCK_CATEGORIAS.find(c => c.partidos.some(p => p.id === input.id))
+    const mockPartido = cat?.partidos.find(p => p.id === input.id)
+    const now         = new Date().toISOString()
+
+    // Leer slots existentes (movimientos del organizador) o usar defaults del mock
+    const { data: existing } = await supabase
+      .from("interclub_partidos")
+      .select("hora, cancha, fecha, sede")
+      .eq("id", input.id)
+      .maybeSingle()
+
     const { error } = await supabase
       .from("interclub_partidos")
       .upsert({
@@ -266,11 +277,15 @@ export const guardarResultadoInterclubAction = createServerAction()
         resultado:  input.resultado,
         ganador:    input.ganador,
         estado:     input.estado,
-        updated_at: new Date().toISOString(),
+        hora:       existing?.hora   ?? mockPartido?.horaInicio ?? null,
+        cancha:     existing?.cancha ?? mockPartido?.cancha     ?? null,
+        fecha:      existing?.fecha  ?? mockPartido?.fecha      ?? null,
+        sede:       existing?.sede   ?? mockPartido?.sede       ?? null,
+        updated_at: now,
       }, { onConflict: "id" })
     if (error) throw error
+
     revalidatePath("/torneos/123/interclub")
-    const cat = MOCK_CATEGORIAS.find(c => c.partidos.some(p => p.id === input.id))
     if (cat) revalidatePath(`/torneos/123/interclub/${cat.id}`)
     return { ok: true }
   })

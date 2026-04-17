@@ -22,7 +22,7 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
   const supabase = await createClient()
   const { data: liveData } = await supabase
     .from("interclub_partidos")
-    .select("id, resultado, ganador, estado")
+    .select("id, resultado, ganador, estado, hora, cancha, fecha, sede")
 
   return <VeedorInterclubView club={club} clubNombre={info.nombre} initialLiveData={liveData ?? []} />
 }

@@ -343,9 +343,9 @@ function ConfirmCard({ p, label }: { p: PartidoFlat; label: string }) {
       </span>
 
       {/* Parejas */}
-      <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.pairA}</span>
+      <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.pairA}</span>
       <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
-      <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.pairB}</span>
+      <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.pairB}</span>
     </div>
   )
 }
@@ -420,9 +420,9 @@ function MoverSheet({
             </span>
           </div>
           <div>
-            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 15, color: "#0f172a", textTransform: "uppercase", lineHeight: 1.2 }}>{partido.pairA}</span>
+            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 15, color: "#0f172a", lineHeight: 1.2 }}>{partido.pairA}</span>
             <span style={{ display: "block", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.1em", margin: "2px 0" }}>vs</span>
-            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 15, color: "#0f172a", textTransform: "uppercase", lineHeight: 1.2 }}>{partido.pairB}</span>
+            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 15, color: "#0f172a", lineHeight: 1.2 }}>{partido.pairB}</span>
           </div>
         </div>
 
@@ -662,7 +662,7 @@ function PartidoCard({
           <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 18, padding: "0 5px", border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0, opacity: isFin && ganadorB ? 0.4 : 1 }}>
             <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: CLUB_A.color, textTransform: "uppercase" }}>{CLUB_A.abbr}</span>
           </div>
-          <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: ganadorA ? 800 : 600, color: isFin && ganadorB ? "#94a3b8" : "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{partido.pairA}</span>
+          <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: ganadorA ? 800 : 600, color: isFin && ganadorB ? "#94a3b8" : "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{partido.pairA}</span>
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
             {parsed.length > 0 ? parsed.map((s, i) => (
               <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorA ? "#0f172a" : ganadorB ? "#cbd5e1" : "#64748b", minWidth: 12, textAlign: "center" }}>{s.a}</span>
@@ -675,7 +675,7 @@ function PartidoCard({
           <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 18, padding: "0 5px", border: "1px solid #e2e8f0", borderRadius: 4, flexShrink: 0, opacity: isFin && ganadorA ? 0.4 : 1 }}>
             <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: CLUB_B.color, textTransform: "uppercase" }}>{CLUB_B.abbr}</span>
           </div>
-          <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: ganadorB ? 800 : 600, color: isFin && ganadorA ? "#94a3b8" : "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{partido.pairB}</span>
+          <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: ganadorB ? 800 : 600, color: isFin && ganadorA ? "#94a3b8" : "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{partido.pairB}</span>
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
             {parsed.length > 0 ? parsed.map((s, i) => (
               <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorB ? "#0f172a" : ganadorA ? "#cbd5e1" : "#64748b", minWidth: 12, textAlign: "center" }}>{s.b}</span>

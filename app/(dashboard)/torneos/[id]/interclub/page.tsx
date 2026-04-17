@@ -90,6 +90,7 @@ export default async function InterclubPage({ params }: { params: Promise<{ id: 
         clubB={CLUB_B}
         torneoId={id}
       />
+
     </div>
   )
 }
