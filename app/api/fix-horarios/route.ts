@@ -2,90 +2,46 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 
-// Endpoint temporal para mover 3 partidos — borrar después de usar
+// Endpoint temporal — borrar después de usar
 export async function GET() {
   const supabase = createAdminClient()
 
-  // Buscar todos los jugadores involucrados
-  const apellidos = ["Barisoni", "Correa", "Russo"]
-  const { data: jugadores } = await supabase
-    .from("jugadores")
-    .select("id, nombre, apellido")
-    .in("apellido", apellidos)
+  const ids = [
+    "f9c64d07-02dd-4781-ae62-5de23d105352",
+    "1c7d8cd2-4bf3-4199-9788-27a5ab97662b",
+    "1f6e1963-e149-494f-9669-e6e0937d8046",
+    "025059e3-c6ab-46b9-886c-745dd4e3e671",
+    "19a1766b-0c9a-499c-899ea3b59e71",
+    "2ec9d04c-5e08-4ca0-b575-f3f145c058f5",
+  ]
 
-  if (!jugadores?.length) {
-    return NextResponse.json({ error: "Jugadores no encontrados", jugadores })
-  }
-
-  const jugMap = new Map(jugadores.map(j => [j.apellido.toLowerCase(), j.id]))
-
-  // Buscar parejas de cada jugador
-  const jugIds = jugadores.map(j => j.id)
-  const { data: parejas } = await supabase
-    .from("parejas")
-    .select("id, jugador1_id, jugador2_id")
-    .or(jugIds.map(id => `jugador1_id.eq.${id},jugador2_id.eq.${id}`).join(","))
-
-  if (!parejas?.length) {
-    return NextResponse.json({ error: "Parejas no encontradas" })
-  }
-
-  function findParejaId(apellido: string) {
-    const jid = jugMap.get(apellido.toLowerCase())
-    if (!jid) return null
-    return parejas!.find(p => p.jugador1_id === jid || p.jugador2_id === jid)?.id ?? null
-  }
-
-  const pBarisonId = findParejaId("Barisoni")
-  const pCorreaId  = findParejaId("Correa")
-  const pRussoId   = findParejaId("Russo")
-
-  // Buscar los partidos
-  const parejaIds = [pBarisonId, pCorreaId, pRussoId].filter(Boolean) as string[]
   const { data: partidos } = await supabase
     .from("partidos")
     .select("id, horario, pareja1_id, pareja2_id")
-    .or(parejaIds.map(id => `pareja1_id.eq.${id},pareja2_id.eq.${id}`).join(","))
+    .in("id", ids)
 
-  if (!partidos?.length) {
-    return NextResponse.json({ error: "Partidos no encontrados", pBarisonId, pCorreaId, pRussoId })
-  }
-
-  // Mapear cada partido al cambio que corresponde
-  const cambios: { id: string; hora: string; fecha: string; label: string }[] = []
-
-  for (const p of partidos) {
-    const ids = [p.pareja1_id, p.pareja2_id]
-    if (pBarisonId && ids.includes(pBarisonId)) {
-      cambios.push({ id: p.id, hora: "14:00", fecha: "2026-04-19", label: "Barisoni → Dom 14:00" })
-    } else if (pCorreaId && ids.includes(pCorreaId)) {
-      cambios.push({ id: p.id, hora: "19:00", fecha: "2026-04-19", label: "Correa → Dom 19:00" })
-    } else if (pRussoId && ids.includes(pRussoId)) {
-      cambios.push({ id: p.id, hora: "22:00", fecha: "2026-04-18", label: "Russo → Sáb 22:00" })
+  // Mostrar horario original de cada uno en AR timezone
+  const result = (partidos ?? []).map(p => {
+    const d = new Date(p.horario)
+    const h = ((d.getUTCHours() - 3) + 24) % 24
+    const min = d.getUTCMinutes()
+    const fecha = new Date(d.getTime() - 3 * 3600000).toISOString().slice(0, 10)
+    return {
+      id: p.id,
+      hora_original: `${String(h).padStart(2,"0")}:${String(min).padStart(2,"0")}`,
+      fecha_original: fecha,
     }
-  }
+  })
 
-  if (!cambios.length) {
-    return NextResponse.json({ error: "No se mapearon cambios", partidos, parejaIds })
-  }
+  return NextResponse.json(result)
+}
 
-  // Aplicar en interclub_partidos (overlay)
-  const now = new Date().toISOString()
-  const { error } = await supabase
-    .from("interclub_partidos")
-    .upsert(
-      cambios.map(c => ({
-        id: c.id,
-        hora: c.hora,
-        fecha: c.fecha,
-        updated_at: now,
-      })),
-      { onConflict: "id" }
-    )
-
+export async function POST(req: Request) {
+  // Revertir IDs específicos borrándolos de interclub_partidos
+  const supabase = createAdminClient()
+  const { ids } = await req.json()
+  const { error } = await supabase.from("interclub_partidos").delete().in("id", ids)
   if (error) return NextResponse.json({ error: error.message })
-
   revalidatePath("/torneos/interclubes-abril-2026/interclub")
-
-  return NextResponse.json({ ok: true, cambios })
+  return NextResponse.json({ ok: true, revertidos: ids })
 }
