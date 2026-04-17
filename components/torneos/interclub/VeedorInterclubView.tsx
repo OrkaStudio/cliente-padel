@@ -328,17 +328,35 @@ function PartidoCard({ partido, onIniciar, onEditar }: {
   )
 }
 
-// ─── Stepper ──────────────────────────────────────────────────────────────────
+// ─── Score Cell ───────────────────────────────────────────────────────────────
 
-function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function ScoreCell({ value, isActive, dimmed, onClick }: {
+  value: number
+  isActive: boolean
+  dimmed: boolean
+  onClick: () => void
+}) {
   return (
-    <div style={{ display: "flex", alignItems: "center" }}>
-      <button onClick={() => onChange(Math.max(0, value - 1))} style={{ width: 40, height: 40, borderRadius: "10px 0 0 10px", border: "1.5px solid #e2e8f0", borderRight: "none", background: "#f8fafc", color: "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 20, fontWeight: 300, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", WebkitTapHighlightColor: "transparent", flexShrink: 0 }}>−</button>
-      <div style={{ width: 52, height: 40, border: "1.5px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 22, lineHeight: 1, color: "#0f172a" }}>{value}</span>
-      </div>
-      <button onClick={() => onChange(Math.min(99, value + 1))} style={{ width: 40, height: 40, borderRadius: "0 10px 10px 0", border: "1.5px solid #e2e8f0", borderLeft: "none", background: "#f8fafc", color: "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 20, fontWeight: 300, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", WebkitTapHighlightColor: "transparent", flexShrink: 0 }}>+</button>
-    </div>
+    <button
+      onClick={onClick}
+      style={{
+        width: 52, height: 52, borderRadius: 12, flexShrink: 0,
+        border: isActive ? "2px solid #0f172a" : "1.5px solid #e2e8f0",
+        background: isActive ? "#0f172a" : "#ffffff",
+        fontFamily: "var(--font-anton), Anton, sans-serif",
+        fontSize: 24, fontWeight: 400, lineHeight: 1,
+        color: value < 0
+          ? (isActive ? "rgba(188,255,0,0.5)" : "#e2e8f0")
+          : isActive ? "#bcff00"
+          : dimmed ? "#cbd5e1"
+          : "#0f172a",
+        cursor: "pointer", WebkitTapHighlightColor: "transparent",
+        transition: "border-color 120ms, background 120ms, color 120ms",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >
+      {value < 0 ? "–" : value}
+    </button>
   )
 }
 
@@ -351,21 +369,62 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar, isEditi
   onGuardar: (sets: SetScore[], ganador: "A" | "B") => void
   isEditing?: boolean
 }) {
-  const parseN = (v: string) => parseInt(v, 10) || 0
-  const init = partido.sets.length > 0
+  const parseN = (v: string) => { const n = parseInt(v, 10); return isNaN(n) || v === "" ? -1 : n }
+  const init: { a: number; b: number }[] = partido.sets.length > 0
     ? partido.sets.map(s => ({ a: parseN(s.a), b: parseN(s.b) }))
-    : [{ a: 0, b: 0 }]
-  const [sets, setSets] = useState<{ a: number; b: number }[]>(init)
+    : [{ a: -1, b: -1 }]
 
-  const updateSet = (i: number, side: "a" | "b", val: number) =>
-    setSets(prev => prev.map((s, idx) => idx === i ? { ...s, [side]: val } : s))
+  const [sets, setSets]   = useState(init)
+  const [active, setActive] = useState<{ i: number; side: "a" | "b" } | null>(() => {
+    for (let i = 0; i < init.length; i++) {
+      if (init[i].a < 0) return { i, side: "a" }
+      if (init[i].b < 0) return { i, side: "b" }
+    }
+    return { i: 0, side: "a" }
+  })
 
-  const addSet    = () => { if (sets.length < 3) setSets(prev => [...prev, { a: 0, b: 0 }]) }
-  const removeSet = (i: number) => { if (sets.length > 1) setSets(prev => prev.filter((_, idx) => idx !== i)) }
+  const addSet = () => {
+    if (sets.length >= 3) return
+    setSets(prev => [...prev, { a: -1, b: -1 }])
+    setActive({ i: sets.length, side: "a" })
+  }
 
-  const setsA = sets.filter(s => s.a > s.b).length
-  const setsB = sets.filter(s => s.b > s.a).length
+  const removeLastSet = () => {
+    if (sets.length <= 1) return
+    setSets(prev => prev.slice(0, -1))
+    setActive({ i: sets.length - 2, side: "a" })
+  }
+
+  const selectNumber = (n: number) => {
+    if (!active) return
+    const { i, side } = active
+    const newSets = sets.map((s, idx) => idx === i ? { ...s, [side]: n } : s)
+    setSets(newSets)
+    // Auto-avanzar a la siguiente celda vacía
+    const order: { i: number; side: "a" | "b" }[] = newSets.flatMap((_, si) => [
+      { i: si, side: "a" as const },
+      { i: si, side: "b" as const },
+    ])
+    const cur = order.findIndex(c => c.i === i && c.side === side)
+    const next = order.slice(cur + 1).find(c => newSets[c.i][c.side] < 0)
+    setActive(next ?? { i, side })
+  }
+
+  const toSetScores = () => sets.map(s => ({
+    a: String(Math.max(0, s.a)),
+    b: String(Math.max(0, s.b)),
+  }))
+
+  const completeSets = sets.filter(s => s.a >= 0 && s.b >= 0)
+  const setsA   = completeSets.filter(s => s.a > s.b).length
+  const setsB   = completeSets.filter(s => s.b > s.a).length
   const ganador: "A" | "B" | null = setsA > setsB ? "A" : setsB > setsA ? "B" : null
+  const allComplete = sets.length > 0 && sets.every(s => s.a >= 0 && s.b >= 0)
+
+  // gridTemplateColumns: nombre + celdas + botón "+"
+  const cellCols  = sets.map(() => "52px").join(" ")
+  const addCol    = sets.length < 3 ? " 36px" : ""
+  const gridCols  = `1fr ${cellCols}${addCol}`
 
   return (
     <AnimatePresence>
@@ -377,67 +436,136 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar, isEditi
         onClick={e => e.stopPropagation()}
         style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 301, background: "#ffffff", borderRadius: "20px 20px 0 0", paddingBottom: "env(safe-area-inset-bottom, 24px)" }}
       >
-        <div style={{ display: "flex", justifyContent: "center", padding: "14px 0 8px" }}>
+        {/* Handle */}
+        <div style={{ display: "flex", justifyContent: "center", padding: "14px 0 10px" }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0" }} />
         </div>
 
-        <div style={{ padding: "4px 20px 16px", borderBottom: "1px solid #f1f5f9" }}>
-          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 6px" }}>{partido.categoria} · C{partido.cancha} · Resultado</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#0f172a", lineHeight: 1.2 }}>{partido.pairA}</span>
-            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.08em" }}>VS</span>
-            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, color: "#0f172a", lineHeight: 1.2 }}>{partido.pairB}</span>
-          </div>
+        {/* Info */}
+        <div style={{ padding: "0 20px 12px", borderBottom: "1px solid #f1f5f9" }}>
+          <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em", margin: 0 }}>
+            {partido.categoria} · C{partido.cancha} · {isEditing ? "Editar resultado" : "Cargar resultado"}
+          </p>
         </div>
 
-        <div style={{ padding: "16px 20px 0" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {sets.map((s, i) => (
-              <div key={i} style={{ background: "#f8fafc", borderRadius: 14, padding: "12px 14px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em" }}>Set {i + 1}</span>
-                  {sets.length > 1 && (
-                    <button onClick={() => removeSet(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#cbd5e1", padding: 0, WebkitTapHighlightColor: "transparent" }}>
-                      <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, lineHeight: 1 }}>close</span>
-                    </button>
-                  )}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>{partido.pairA.split(" / ")[0]}</span>
-                  <Stepper value={s.a} onChange={v => updateSet(i, "a", v)} />
-                </div>
-                <div style={{ height: 1, background: "#e2e8f0", margin: "0 0 10px" }} />
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: "#0f172a", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>{partido.pairB.split(" / ")[0]}</span>
-                  <Stepper value={s.b} onChange={v => updateSet(i, "b", v)} />
-                </div>
+        {/* Scoreboard grid */}
+        <div style={{ padding: "16px 20px 12px" }}>
+          {/* Headers */}
+          <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 8, alignItems: "center", marginBottom: 8 }}>
+            <div />
+            {sets.map((_, i) => (
+              <div key={i} style={{ textAlign: "center" }}>
+                <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  S{i + 1}
+                </span>
               </div>
             ))}
+            {sets.length < 3 && (
+              <button onClick={addSet} style={{ width: 36, height: 28, borderRadius: 6, border: "1.5px dashed #e2e8f0", background: "transparent", color: "#94a3b8", fontSize: 18, lineHeight: 1, cursor: "pointer", WebkitTapHighlightColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+            )}
           </div>
 
-          {sets.length < 3 && (
-            <button onClick={addSet} style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 12, background: "none", border: "none", cursor: "pointer", padding: "6px 0", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent" }}>
-              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, lineHeight: 1 }}>add_circle</span>
-              Agregar set
+          {/* Fila A */}
+          <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 8, alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 800, color: ganador === "B" ? "#94a3b8" : "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 4, transition: "color 200ms" }}>
+              {partido.pairA}
+            </span>
+            {sets.map((s, i) => (
+              <ScoreCell
+                key={i} value={s.a}
+                isActive={active?.i === i && active?.side === "a"}
+                dimmed={ganador === "B" && s.a >= 0 && s.b >= 0 && s.a < s.b}
+                onClick={() => setActive({ i, side: "a" })}
+              />
+            ))}
+            {sets.length < 3 && <div />}
+          </div>
+
+          {/* Fila B */}
+          <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 8, alignItems: "center" }}>
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 800, color: ganador === "A" ? "#94a3b8" : "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 4, transition: "color 200ms" }}>
+              {partido.pairB}
+            </span>
+            {sets.map((s, i) => (
+              <ScoreCell
+                key={i} value={s.b}
+                isActive={active?.i === i && active?.side === "b"}
+                dimmed={ganador === "A" && s.a >= 0 && s.b >= 0 && s.b < s.a}
+                onClick={() => setActive({ i, side: "b" })}
+              />
+            ))}
+            {sets.length < 3 && <div />}
+          </div>
+
+          {/* Quitar último set */}
+          {sets.length > 1 && (
+            <button onClick={removeLastSet} style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 10, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.06em", WebkitTapHighlightColor: "transparent" }}>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1 }}>remove_circle</span>
+              Quitar set {sets.length}
             </button>
           )}
         </div>
 
-        <div style={{ padding: "12px 20px 8px", display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* Picker de números */}
+        <div style={{ padding: "10px 20px", borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>
+            {[0, 1, 2, 3, 4, 5, 6, 7].map(n => (
+              <button
+                key={n}
+                onClick={() => selectNumber(n)}
+                style={{
+                  width: 36, height: 42, borderRadius: 8,
+                  border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                  fontFamily: "var(--font-anton), Anton, sans-serif",
+                  fontSize: 20, fontWeight: 400, lineHeight: 1, color: "#0f172a",
+                  cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                  flexShrink: 0,
+                }}
+              >{n}</button>
+            ))}
+            <button
+              onClick={() => selectNumber(10)}
+              style={{
+                width: 36, height: 42, borderRadius: 8,
+                border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 10, fontWeight: 800, lineHeight: 1, color: "#94a3b8",
+                cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                flexShrink: 0,
+              }}
+            >10</button>
+          </div>
+        </div>
+
+        {/* Botones de acción */}
+        <div style={{ padding: "10px 20px 8px", display: "flex", flexDirection: "column", gap: 8 }}>
           {!isEditing && (
             <button
-              onClick={() => onGuardarParcial(sets.map(s => ({ a: String(s.a), b: String(s.b) })))}
+              onClick={() => onGuardarParcial(toSetScores())}
               style={{ width: "100%", padding: "12px 0", borderRadius: 12, border: "1.5px solid #e2e8f0", background: "transparent", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}
             >
-              Actualizar set
+              Guardar parcial
             </button>
           )}
           <button
-            onClick={() => ganador && onGuardar(sets.map(s => ({ a: String(s.a), b: String(s.b) })), ganador)}
-            disabled={!ganador}
-            style={{ width: "100%", padding: "16px 0", borderRadius: 14, border: "none", background: ganador ? "#0f172a" : "#f1f5f9", color: ganador ? "#bcff00" : "#94a3b8", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", cursor: ganador ? "pointer" : "default", WebkitTapHighlightColor: "transparent", transition: "background 200ms, color 200ms" }}
+            onClick={() => allComplete && ganador && onGuardar(toSetScores(), ganador)}
+            disabled={!allComplete || !ganador}
+            style={{
+              width: "100%", padding: "16px 0", borderRadius: 14, border: "none",
+              background: allComplete && ganador ? "#0f172a" : "#f1f5f9",
+              color: allComplete && ganador ? "#bcff00" : "#94a3b8",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em",
+              cursor: allComplete && ganador ? "pointer" : "default",
+              WebkitTapHighlightColor: "transparent",
+              transition: "background 200ms, color 200ms",
+            }}
           >
-            {ganador ? (isEditing ? "Actualizar resultado" : "Confirmar resultado") : "Ingresá todos los sets"}
+            {!allComplete
+              ? "Completá todos los scores"
+              : !ganador
+              ? "Resultado empatado"
+              : isEditing ? "Actualizar resultado" : "Confirmar resultado"}
           </button>
         </div>
       </motion.div>
