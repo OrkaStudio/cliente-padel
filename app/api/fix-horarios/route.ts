@@ -48,7 +48,8 @@ export async function POST() {
   // Según lo que devuelva GET, completar acá cuáles son los IDs a revertir
   // (los que NO deberían haberse movido)
   const idsToRevert: string[] = [
-    // completar después de ver GET
+    "1c7d8cd2-4bf3-4199-9788-27a5ab97662b", // Orlando/Canosa vs Barisoni
+    "f9c64d07-02dd-4781-ae62-5de23d105352", // Juárez/Griffits vs Correa
   ]
 
   if (!idsToRevert.length) return NextResponse.json({ error: "Sin IDs para revertir" })
