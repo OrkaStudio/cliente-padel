@@ -9,6 +9,9 @@ type AnyHref = any
 export function BottomNav() {
   const pathname = usePathname()
 
+  // Sin nav en la página raíz de torneos
+  if (pathname === "/torneos") return null
+
   // Detectar contexto: admin torneo, admin general, o torneo público
   const adminTorneoMatch = pathname.match(/^\/admin\/torneo\/([^/]+)/)
   const adminTorneoId = adminTorneoMatch?.[1]?.includes("[") ? undefined : adminTorneoMatch?.[1]
