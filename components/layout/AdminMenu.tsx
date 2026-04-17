@@ -20,13 +20,6 @@ const CLUBES = [
     href: "/veedor/mas-padel",
     sub: "Acceso veedor",
   },
-  {
-    slug: "organizador",
-    nombre: "Cristian",
-    logo: null,
-    href: "/veedor/organizador",
-    sub: "Organizador",
-  },
 ]
 
 export function AdminMenu() {
@@ -123,16 +116,8 @@ export function AdminMenu() {
               </p>
 
               {/* Veedores + Organizador */}
-              {CLUBES.map((club, i) => {
-                const isOrg = club.slug === "organizador"
-                const isLastVeedor = i === 1
-                return (
-                  <>
-                    {/* Separador antes del organizador */}
-                    {isOrg && (
-                      <div key="sep" style={{ height: 1, background: "#f1f5f9", margin: "6px 0" }} />
-                    )}
-                    <motion.button
+              {CLUBES.map((club, i) => (
+                  <motion.button
                       key={club.slug}
                       onClick={() => { setOpen(false); router.push(club.href) }}
                       initial={{ opacity: 0, x: 8 }}
@@ -146,26 +131,20 @@ export function AdminMenu() {
                         background: "transparent",
                         cursor: "pointer", WebkitTapHighlightColor: "transparent",
                         textAlign: "left",
-                        marginBottom: i < CLUBES.length - 1 && !isLastVeedor ? 2 : 0,
+                        marginBottom: i < CLUBES.length - 1 ? 2 : 0,
                       }}
                       onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
                       onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                     >
                       <div style={{
                         width: 36, height: 36, borderRadius: 8,
-                        background: isOrg ? "#0f172a" : "#f8fafc",
+                        background: "#f8fafc",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         overflow: "hidden", flexShrink: 0,
-                        border: isOrg ? "none" : "1px solid #e2e8f0",
+                        border: "1px solid #e2e8f0",
                       }}>
-                        {club.logo ? (
+                        {club.logo && (
                           <Image src={club.logo} alt={club.nombre} width={32} height={32} style={{ objectFit: "contain" }} />
-                        ) : (
-                          <span style={{
-                            fontFamily: "var(--font-space-grotesk), sans-serif",
-                            fontSize: 10, fontWeight: 900, color: "#bcff00",
-                            textTransform: "uppercase", letterSpacing: "0.06em",
-                          }}>ORG</span>
                         )}
                       </div>
                       <div>
@@ -191,9 +170,7 @@ export function AdminMenu() {
                         chevron_right
                       </span>
                     </motion.button>
-                  </>
-                )
-              })}
+              ))}
             </motion.div>
           </>
         )}
