@@ -6,16 +6,11 @@ import type { CategoriaInterclub, Club } from "./CategoriasInterclub"
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Partido = any
 
-const STATE_ORDER: Record<string, number> = { en_vivo: 0, pendiente: 1, finalizado: 2 }
-
 function sortPartidos(partidos: Partido[]) {
   return [...partidos].sort((a, b) => {
-    const s = (STATE_ORDER[a.estado] ?? 99) - (STATE_ORDER[b.estado] ?? 99)
-    if (s !== 0) return s
-    if (!a.horaInicio && !b.horaInicio) return 0
-    if (!a.horaInicio) return 1
-    if (!b.horaInicio) return -1
-    return a.horaInicio.localeCompare(b.horaInicio)
+    const fa = (a.fecha ?? "") + " " + (a.horaInicio ?? "")
+    const fb = (b.fecha ?? "") + " " + (b.horaInicio ?? "")
+    return fa.localeCompare(fb)
   })
 }
 
@@ -373,6 +368,7 @@ export function FixtureInterclubView({
 }) {
   const [selGenero, setSelGenero]     = useState<"masc" | "dam" | "mixto" | null>(null)
   const [selCat, setSelCat]           = useState<string | null>(null)
+  const [selDia, setSelDia]           = useState<string | null>(null)
   const [showFinalizados, setShowFin] = useState(false)
   const [search, setSearch]           = useState("")
   const [kbHeight, setKbHeight]       = useState(0)
@@ -395,9 +391,19 @@ export function FixtureInterclubView({
   }, [])
 
   const allPartidos = useMemo(() => categorias.flatMap(c => c.partidos), [categorias])
-  const liveCount   = allPartidos.filter(p => p.estado === "en_vivo").length
-  const pendCount   = allPartidos.filter(p => p.estado === "pendiente").length
-  const finCount    = allPartidos.filter(p => p.estado === "finalizado").length
+
+  // Días únicos ordenados
+  const diasUnicos = useMemo(() => {
+    const fechas = [...new Set(allPartidos.map(p => p.fecha).filter(Boolean))].sort()
+    return fechas.map(f => {
+      const d = new Date(f + "T12:00:00")
+      return { fecha: f, label: `${DIAS[d.getDay()]} ${d.getDate()}` }
+    })
+  }, [allPartidos])
+
+  const liveCount = allPartidos.filter(p => p.estado === "en_vivo").length
+  const pendCount = allPartidos.filter(p => p.estado === "pendiente").length
+  const finCount  = allPartidos.filter(p => p.estado === "finalizado").length
 
   const isSearching  = search.trim().length > 0
   const byGenero     = selGenero ? categorias.filter(c => c.genero === selGenero) : categorias
@@ -419,6 +425,16 @@ export function FixtureInterclubView({
         background: "#ffffff",
         borderBottom: "1px solid #e2e8f0",
       }}>
+        {/* Chips día */}
+        {diasUnicos.length > 1 && (
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "10px 16px 0", scrollbarWidth: "none" }}>
+            <Chip active={!selDia} onClick={() => setSelDia(null)}>Todos</Chip>
+            {diasUnicos.map(d => (
+              <Chip key={d.fecha} active={selDia === d.fecha} onClick={() => setSelDia(d.fecha)}>{d.label}</Chip>
+            ))}
+          </div>
+        )}
+
         {/* Chips género */}
         <div style={{
           display: "flex", gap: 6, overflowX: "auto",
@@ -553,7 +569,7 @@ export function FixtureInterclubView({
       <div style={{ padding: "12px 16px 0" }}>
         {filteredCats.map(cat => {
           const sorted  = sortPartidos(cat.partidos)
-          const matched = sorted.filter(p => matchSearch(p, search))
+          const matched = sorted.filter(p => matchSearch(p, search) && (!selDia || p.fecha === selDia))
           const visible = matched.filter(p => isSearching || showFinalizados || p.estado !== "finalizado")
           if (visible.length === 0) return null
 
