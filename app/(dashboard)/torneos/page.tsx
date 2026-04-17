@@ -180,13 +180,8 @@ function InterclubCard({ torneo }: {
           </div>
           <div style={{ position: "absolute", bottom: 12, left: 16, right: 16 }}>
             <div style={{ display: "flex", gap: 6, marginBottom: 5 }}>
-              {isLive && (
-                <span style={{ background: "#bcff00", color: "#0f172a", padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 900, fontFamily: "var(--font-space-grotesk), sans-serif", textTransform: "uppercase" }}>
-                  En Vivo
-                </span>
-              )}
-              <span style={{ background: "#0f172a", color: "#bcff00", padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 900, fontFamily: "var(--font-space-grotesk), sans-serif", textTransform: "uppercase" }}>
-                Interclubes
+              <span style={{ background: "rgba(15,23,42,0.08)", color: "#64748b", padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 900, fontFamily: "var(--font-space-grotesk), sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                En Vivo
               </span>
             </div>
             <h3 style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 20, color: "#0f172a", textTransform: "uppercase", lineHeight: 1, fontWeight: 400, margin: 0 }}>
