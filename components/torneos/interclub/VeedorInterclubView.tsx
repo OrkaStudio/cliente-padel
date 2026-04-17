@@ -101,7 +101,7 @@ function buildPartidos(club: string, liveRows: InterclubLiveRow[]): PartidoMock[
 
 // ─── LiveCard ─────────────────────────────────────────────────────────────────
 
-function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () => void }) {
+function LiveCard({ partido, onCargar, onRevertir }: { partido: PartidoMock; onCargar: () => void; onRevertir: () => void }) {
   return (
     <div style={{
       background: "#ffffff",
@@ -220,6 +220,19 @@ function LiveCard({ partido, onCargar }: { partido: PartidoMock; onCargar: () =>
           }}
         >
           Cargar resultado
+        </button>
+        <button
+          onClick={onRevertir}
+          style={{
+            width: "100%", marginTop: 6, padding: "6px 0",
+            borderRadius: 8, border: "none", background: "transparent",
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 9, fontWeight: 700, color: "#94a3b8",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            cursor: "pointer", WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          Volver a pendiente
         </button>
       </div>
     </div>
@@ -630,6 +643,15 @@ export function VeedorInterclubView({
     }
   }
 
+  const revertir = async (id: string) => {
+    setPartidos(prev => prev.map(p => p.id === id ? { ...p, estado: "pendiente" as const, sets: [], ganador: null } : p))
+    const [, err] = await guardarResultadoInterclubAction({ id, resultado: null, ganador: null, estado: "pendiente" })
+    if (err) {
+      setPartidos(prev => prev.map(p => p.id === id ? { ...p, estado: "en_vivo" as const } : p))
+      showError("Error al revertir el partido.")
+    }
+  }
+
   const guardarParcial = async (id: string, sets: SetScore[]) => {
     setPartidos(prev => prev.map(p => p.id === id ? { ...p, sets } : p))
     setSheetPartido(null)
@@ -739,7 +761,7 @@ export function VeedorInterclubView({
           <>
             <SectionLabel label="En cancha" count={live.length} />
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {live.map(p => <LiveCard key={p.id} partido={p} onCargar={() => setSheetPartido(p)} />)}
+              {live.map(p => <LiveCard key={p.id} partido={p} onCargar={() => setSheetPartido(p)} onRevertir={() => revertir(p.id)} />)}
             </div>
           </>
         )}
