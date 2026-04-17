@@ -637,8 +637,8 @@ export function VeedorInterclubView({
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora))
   const finalizados = partidos.filter(p => p.estado === "finalizado")
 
-  const disponibles    = Math.max(0, maxEnVivo - live.length)
-  const inicializables = new Set(proximos.slice(0, disponibles).map(p => p.id))
+  const disponibles    = live.length < maxEnVivo
+  const inicializables = new Set(proximos.slice(0, 4).map(p => p.id))
 
   const showError = (msg: string) => {
     setSaveError(msg)
@@ -782,7 +782,7 @@ export function VeedorInterclubView({
             <SectionLabel label="Próximos" count={proximos.length} />
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {proximos.map(p => (
-                <PartidoCard key={p.id} partido={p} onIniciar={inicializables.has(p.id) ? () => iniciar(p.id) : undefined} />
+                <PartidoCard key={p.id} partido={p} onIniciar={inicializables.has(p.id) && disponibles ? () => iniciar(p.id) : undefined} />
               ))}
             </div>
           </>
