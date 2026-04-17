@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { VeedorInterclubView } from "@/components/torneos/interclub/VeedorInterclubView"
+import { getCategorias } from "@/lib/interclub-data"
 
 const CLUB_INFO: Record<string, { nombre: string }> = {
   "voleando":  { nombre: "Voleando"  },
@@ -20,9 +21,17 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
   if (!pinOk) redirect(`/veedor/${club}/login`)
 
   const supabase = await createClient()
-  const { data: liveData } = await supabase
-    .from("interclub_partidos")
-    .select("id, resultado, ganador, estado, hora, cancha, fecha, sede")
+  const [categorias, { data: liveData }] = await Promise.all([
+    getCategorias("interclubes-abril-2026"),
+    supabase.from("interclub_partidos").select("id, resultado, ganador, estado, hora, cancha, fecha, sede"),
+  ])
 
-  return <VeedorInterclubView club={club} clubNombre={info.nombre} initialLiveData={liveData ?? []} />
+  return (
+    <VeedorInterclubView
+      club={club}
+      clubNombre={info.nombre}
+      initialCategorias={categorias}
+      initialLiveData={liveData ?? []}
+    />
+  )
 }

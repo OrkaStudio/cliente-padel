@@ -4,7 +4,8 @@ import { useState, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import Image from "next/image"
-import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "./interclub-mock"
+import { CLUB_A, CLUB_B } from "./interclub-mock"
+import type { CategoriaInterclub } from "./CategoriasInterclub"
 import { cerrarSesionVeedorAction, guardarResultadoInterclubAction } from "@/actions/partidos.actions"
 import { InterclubAutoRefresh } from "./InterclubAutoRefresh"
 
@@ -65,19 +66,16 @@ function setsToResultado(sets: SetScore[]): string {
   return sets.map(s => `${s.a}-${s.b}`).join(" ")
 }
 
-function buildPartidos(club: string, liveRows: InterclubLiveRow[]): PartidoMock[] {
-  const sede = CLUB_SEDE[club]
+function buildPartidos(categorias: CategoriaInterclub[], liveRows: InterclubLiveRow[]): PartidoMock[] {
   const liveMap = new Map(liveRows.map(r => [r.id, r]))
   const result: PartidoMock[] = []
 
-  for (const cat of MOCK_CATEGORIAS) {
+  for (const cat of categorias) {
     for (const p of cat.partidos) {
-      const live = liveMap.get(p.id)
-      const sedeActual = live?.sede ?? p.sede ?? sede
-      if (sedeActual !== sede) continue
-      const estado = (live?.estado ?? p.estado) as PartidoMock["estado"]
+      const live     = liveMap.get(p.id)
+      const estado   = (live?.estado ?? p.estado) as PartidoMock["estado"]
       const resultado = live?.resultado ?? p.resultado
-      const ganador  = (live?.ganador ?? p.ganador) as "A" | "B" | null
+      const ganador  = (live?.ganador  ?? p.ganador) as "A" | "B" | null
       result.push({
         id:        p.id,
         categoria: cat.nombre,
@@ -85,8 +83,8 @@ function buildPartidos(club: string, liveRows: InterclubLiveRow[]): PartidoMock[
         pairB:     p.pairB,
         hora:      live?.hora   ?? p.horaInicio ?? "",
         fecha:     live?.fecha  ?? p.fecha      ?? "",
-        cancha:    live?.cancha ?? p.cancha     ?? 1,
-        sede:      sedeActual,
+        cancha:    live?.cancha ?? p.cancha     ?? 0,
+        sede:      live?.sede   ?? p.sede       ?? "",
         sets:      parseResultado(resultado),
         estado,
         ganador,
@@ -590,14 +588,16 @@ function SectionLabel({ label, count }: { label: string; count: number }) {
 export function VeedorInterclubView({
   club,
   clubNombre,
+  initialCategorias = [],
   initialLiveData = [],
 }: {
   club: string
   clubNombre: string
+  initialCategorias?: CategoriaInterclub[]
   initialLiveData?: InterclubLiveRow[]
 }) {
   const router = useRouter()
-  const [partidos, setPartidos] = useState<PartidoMock[]>(() => buildPartidos(club, initialLiveData))
+  const [partidos, setPartidos] = useState<PartidoMock[]>(() => buildPartidos(initialCategorias, initialLiveData))
   const [sheetPartido, setSheetPartido]         = useState<PartidoMock | null>(null)
   const [siguienteDialog, setSiguienteDialog]   = useState<PartidoMock | null>(null)
   const [ultimoFinalizado, setUltimoFinalizado] = useState<PartidoMock | null>(null)
@@ -607,7 +607,7 @@ export function VeedorInterclubView({
   // Merge server data on refresh — mantiene optimistic state para en_vivo/finalizado
   useEffect(() => {
     if (!initialLiveData.length) return
-    const fresh    = buildPartidos(club, initialLiveData)
+    const fresh    = buildPartidos(initialCategorias, initialLiveData)
     const freshMap = new Map(fresh.map(p => [p.id, p]))
     setPartidos(prev => {
       const merged  = prev
@@ -618,7 +618,7 @@ export function VeedorInterclubView({
         a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora) || a.cancha - b.cancha
       )
     })
-  }, [initialLiveData, club])
+  }, [initialLiveData, initialCategorias])
 
   const live       = partidos.filter(p => p.estado === "en_vivo")
   const proximos   = partidos
