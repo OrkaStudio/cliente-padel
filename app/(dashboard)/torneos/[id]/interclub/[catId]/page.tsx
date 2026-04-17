@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { MOCK_CATEGORIAS, CLUB_A, CLUB_B } from "@/components/torneos/interclub/interclub-mock"
 import type { Club, CategoriaInterclub } from "@/components/torneos/interclub/CategoriasInterclub"
 import { InterclubAutoRefresh } from "@/components/torneos/interclub/InterclubAutoRefresh"
+import { HeroMarcador } from "@/components/torneos/interclub/HeroMarcador"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -298,6 +299,15 @@ export default async function CategoriaInterclubPage({
           </div>
         </div>
       </div>
+
+      {/* Mini hero marcador */}
+      <HeroMarcador
+        clubA={CLUB_A}
+        clubB={CLUB_B}
+        ptsA={cat.ptsA}
+        ptsB={cat.ptsB}
+        compact
+      />
 
       {/* Progress bar */}
       <div style={{
