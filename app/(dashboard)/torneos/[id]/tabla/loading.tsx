@@ -1,37 +1,19 @@
 export default function Loading() {
   return (
-    <div style={{ paddingBottom: 100 }}>
-      {/* Categorías chips skeleton */}
+    <div style={{
+      minHeight: "100dvh",
+      background: "radial-gradient(ellipse at 0% 100%, rgba(188,255,0,0.18) 0%, transparent 60%), radial-gradient(ellipse at 100% 0%, rgba(180,83,9,0.12) 0%, transparent 55%), #f8fafc",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div style={{
-        display: "flex", gap: 6, padding: "12px 16px",
-        borderBottom: "1px solid #e2e8f0", overflowX: "auto",
-      }}>
-        {[80, 90, 70, 85, 75].map((w, i) => (
-          <div key={i} style={{
-            width: w, height: 30, borderRadius: 20, background: "#e2e8f0",
-            flexShrink: 0,
-            animation: `skeletonPulse 1.4s ease-in-out ${i * 80}ms infinite`,
-          }} />
-        ))}
-      </div>
-
-      {/* Table skeleton */}
-      <div style={{ padding: "16px 16px 0" }}>
-        <div style={{ height: 28, width: 140, borderRadius: 4, background: "#e2e8f0", marginBottom: 12 }} />
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} style={{
-            height: 52, borderRadius: 8, background: "#f1f5f9", marginBottom: 6,
-            animation: `skeletonPulse 1.4s ease-in-out ${i * 80}ms infinite`,
-          }} />
-        ))}
-      </div>
-
-      <style>{`
-        @keyframes skeletonPulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
+        width: 36, height: 36, borderRadius: "50%",
+        border: "3px solid rgba(15,23,42,0.08)",
+        borderTopColor: "#0f172a",
+        animation: "spin 0.8s linear infinite",
+      }} />
     </div>
   )
 }

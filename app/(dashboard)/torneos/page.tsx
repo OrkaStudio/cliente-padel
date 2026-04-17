@@ -2,6 +2,13 @@ import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import Image from "next/image"
 
+const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+
+function fmtFecha(iso: string) {
+  const [, m, d] = iso.split("-")
+  return `${parseInt(d)} ${MESES[parseInt(m) - 1]}`
+}
+
 export default async function TorneosPage() {
   const supabase = await createClient()
 
@@ -194,7 +201,7 @@ function InterclubCard({ torneo }: {
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, color: "#64748b", lineHeight: 1 }}>calendar_today</span>
               <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "var(--font-space-grotesk), sans-serif", color: "#64748b" }}>
-                17 Abr → 19 Abr 2026
+                {fmtFecha(torneo.fecha_inicio)} → {fmtFecha(torneo.fecha_fin)} 2026
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
@@ -217,8 +224,8 @@ function InterclubCardFallback() {
       <InterclubCard torneo={{
         id: "123",
         nombre: "Torneo Interclubes Abril",
-        fecha_inicio: "17 Abr",
-        fecha_fin: "19 Abr 2026",
+        fecha_inicio: "2026-04-17",
+        fecha_fin: "2026-04-19",
         estado: "en_curso",
       }} />
     </section>
