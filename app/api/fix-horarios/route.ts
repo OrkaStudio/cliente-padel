@@ -2,60 +2,57 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 
-// Los 4 partidos mal movidos y sus IDs de pareja
-// Barisoni = e386f3f9, Correa = 8558bea4
-// Oponente A = caae177a, Oponente B = 03a6bfcd
-//
-// Partido 19a1766b: Barisoni vs caae177a
-// Partido 1c7d8cd2: 03a6bfcd  vs Barisoni
-// Partido f9c64d07: caae177a  vs Correa
-// Partido 2ec9d04c: Correa    vs 03a6bfcd
-//
-// Queremos mover:
-//   Barisoni vs Juárez/Griffits → Dom 14:00
-//   Correa   vs Orlando/Canosa  → Dom 19:00
-// Y revertir los otros dos.
-
+// Revertir Russo vs Brahin/Sachetti (movido por error a 22:00)
 export async function GET() {
   const supabase = createAdminClient()
 
-  // Ver quiénes son caae177a y 03a6bfcd
+  const { data: jugadores } = await supabase
+    .from("jugadores")
+    .select("id, nombre, apellido")
+    .in("apellido", ["Brahin", "Sachetti"])
+
+  if (!jugadores?.length) return NextResponse.json({ error: "Jugadores no encontrados" })
+
+  const jugIds = jugadores.map(j => j.id)
   const { data: parejas } = await supabase
     .from("parejas")
     .select("id, jugador1_id, jugador2_id")
-    .in("id", ["caae177a-7cda-4fdb-ab1b-45f1bb7cfe9d", "03a6bfcd-7217-4f16-b76c-5fbe551307d1"])
+    .or(jugIds.map(id => `jugador1_id.eq.${id},jugador2_id.eq.${id}`).join(","))
 
-  if (!parejas?.length) return NextResponse.json({ error: "Parejas no encontradas" })
+  if (!parejas?.length) return NextResponse.json({ error: "Pareja no encontrada", jugadores })
 
-  const jugIds = parejas.flatMap(p => [p.jugador1_id, p.jugador2_id]).filter(Boolean)
-  const { data: jugs } = await supabase
-    .from("jugadores").select("id, nombre, apellido").in("id", jugIds)
+  const pBrahinSachetti = parejas[0].id
 
-  const jugMap = new Map((jugs ?? []).map(j => [j.id, `${j.nombre[0]}.${j.apellido}`]))
+  // Buscar el partido Russo vs Brahin/Sachetti
+  const pRussoId = "e386f3f9-48c6-41c2-bed9-0ffc47f63c4e" // sabemos que es Russo de antes
+  // Buscar pareja de Russo
+  const { data: pRusso } = await supabase
+    .from("jugadores").select("id").ilike("apellido", "Russo").single()
 
-  const info = parejas.map(p => ({
-    pareja_id: p.id,
-    jugadores: `${jugMap.get(p.jugador1_id) ?? "?"} / ${jugMap.get(p.jugador2_id) ?? "?"}`,
-  }))
+  const { data: parejaRusso } = await supabase
+    .from("parejas").select("id")
+    .or(`jugador1_id.eq.${pRusso?.id},jugador2_id.eq.${pRusso?.id}`)
 
-  return NextResponse.json({ info })
-}
+  const russoIds = (parejaRusso ?? []).map(p => p.id)
 
-export async function POST() {
-  // Llamar una vez identificado cuáles revertir
-  const supabase = createAdminClient()
+  const { data: partido } = await supabase
+    .from("partidos")
+    .select("id, pareja1_id, pareja2_id")
+    .or(russoIds.map(id => `pareja1_id.eq.${id},pareja2_id.eq.${id}`).join(","))
+    .or(`pareja1_id.eq.${pBrahinSachetti},pareja2_id.eq.${pBrahinSachetti}`)
+    .limit(10)
 
-  // Según lo que devuelva GET, completar acá cuáles son los IDs a revertir
-  // (los que NO deberían haberse movido)
-  const idsToRevert: string[] = [
-    "1c7d8cd2-4bf3-4199-9788-27a5ab97662b", // Orlando/Canosa vs Barisoni
-    "f9c64d07-02dd-4781-ae62-5de23d105352", // Juárez/Griffits vs Correa
-  ]
+  // Encontrar el que tiene ambos: Russo Y Brahin/Sachetti
+  const target = (partido ?? []).find(p =>
+    (russoIds.includes(p.pareja1_id) || russoIds.includes(p.pareja2_id)) &&
+    (p.pareja1_id === pBrahinSachetti || p.pareja2_id === pBrahinSachetti)
+  )
 
-  if (!idsToRevert.length) return NextResponse.json({ error: "Sin IDs para revertir" })
+  if (!target) return NextResponse.json({ error: "Partido no encontrado", pBrahinSachetti, russoIds, partido })
 
-  const { error } = await supabase.from("interclub_partidos").delete().in("id", idsToRevert)
+  const { error } = await supabase.from("interclub_partidos").delete().eq("id", target.id)
   if (error) return NextResponse.json({ error: error.message })
+
   revalidatePath("/torneos/interclubes-abril-2026/interclub")
-  return NextResponse.json({ ok: true, revertidos: idsToRevert })
+  return NextResponse.json({ ok: true, revertido: target.id })
 }
