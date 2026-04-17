@@ -336,27 +336,27 @@ function SetStepper({ value, onChange, dimmed }: {
   dimmed: boolean
 }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
       <button
         onClick={() => onChange(Math.max(0, value - 1))}
-        style={{ background: "none", border: "none", cursor: "pointer", padding: "10px 8px", WebkitTapHighlightColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+        style={{ background: "none", border: "none", cursor: "pointer", padding: "10px 6px", WebkitTapHighlightColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
       >
-        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, lineHeight: 1, color: "#cbd5e1" }}>remove</span>
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, lineHeight: 1, color: "#64748b" }}>remove</span>
       </button>
       <span style={{
         fontFamily: "var(--font-anton), Anton, sans-serif",
-        fontSize: 32, fontWeight: 400, lineHeight: 1,
+        fontSize: 28, fontWeight: 400, lineHeight: 1,
         color: dimmed ? "#cbd5e1" : "#0f172a",
-        minWidth: 28, textAlign: "center",
+        minWidth: 26, textAlign: "center",
         transition: "color 200ms",
       }}>
         {value}
       </span>
       <button
         onClick={() => onChange(value + 1)}
-        style={{ background: "none", border: "none", cursor: "pointer", padding: "10px 8px", WebkitTapHighlightColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+        style={{ background: "none", border: "none", cursor: "pointer", padding: "10px 6px", WebkitTapHighlightColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
       >
-        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, lineHeight: 1, color: "#cbd5e1" }}>add</span>
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, lineHeight: 1, color: "#64748b" }}>add</span>
       </button>
     </div>
   )
@@ -427,41 +427,47 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar, isEditi
         </div>
 
         {/* Scores */}
-        <div style={{ padding: "16px 20px 8px" }}>
+        <div style={{ padding: "14px 20px 8px" }}>
 
           {/* Fila A */}
-          <div style={{ marginBottom: 4 }}>
-            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 800, color: ganador === "B" ? "#94a3b8" : "#0f172a", transition: "color 200ms" }}>
-              {partido.pairA}
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            {/* Club + nombre */}
+            <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 7, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: CLUB_A.color, border: "1px solid #e2e8f0", borderRadius: 3, padding: "1px 4px", flexShrink: 0 }}>{CLUB_A.abbr}</span>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: ganador === "B" ? "#94a3b8" : "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", transition: "color 200ms" }}>{partido.pairA}</span>
+            </div>
+            {/* Sets */}
+            <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
               {sets.map((s, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                  {i > 0 && <div style={{ width: 1, height: 24, background: "#f1f5f9", marginRight: 4 }} />}
+                  {i > 0 && <div style={{ width: 1, height: 20, background: "#e2e8f0", margin: "0 4px" }} />}
                   <SetStepper value={s.a} onChange={v => update(i, "a", v)} dimmed={ganador === "B" && s.a < s.b} />
                 </div>
               ))}
               {sets.length < 3 && (
-                <button onClick={addSet} style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: 8, background: "none", border: "none", cursor: "pointer", padding: "8px 0", WebkitTapHighlightColor: "transparent" }}>
-                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, lineHeight: 1, color: "#cbd5e1" }}>add_circle</span>
-                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.06em" }}>S{sets.length + 1}</span>
+                <button onClick={addSet} style={{ display: "flex", alignItems: "center", gap: 2, marginLeft: 6, background: "none", border: "none", cursor: "pointer", padding: "8px 2px", WebkitTapHighlightColor: "transparent" }}>
+                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1, color: "#64748b" }}>add_circle</span>
+                  <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>S{sets.length + 1}</span>
                 </button>
               )}
             </div>
           </div>
 
           {/* Separador */}
-          <div style={{ height: 1, background: "#f1f5f9", margin: "8px 0" }} />
+          <div style={{ height: 1, background: "#f1f5f9", margin: "6px 0" }} />
 
           {/* Fila B */}
-          <div>
-            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 800, color: ganador === "A" ? "#94a3b8" : "#0f172a", transition: "color 200ms" }}>
-              {partido.pairB}
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* Club + nombre */}
+            <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 7, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: CLUB_B.color, border: "1px solid #e2e8f0", borderRadius: 3, padding: "1px 4px", flexShrink: 0 }}>{CLUB_B.abbr}</span>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 800, color: ganador === "A" ? "#94a3b8" : "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", transition: "color 200ms" }}>{partido.pairB}</span>
+            </div>
+            {/* Sets */}
+            <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
               {sets.map((s, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                  {i > 0 && <div style={{ width: 1, height: 24, background: "#f1f5f9", marginRight: 4 }} />}
+                  {i > 0 && <div style={{ width: 1, height: 20, background: "#e2e8f0", margin: "0 4px" }} />}
                   <SetStepper value={s.b} onChange={v => update(i, "b", v)} dimmed={ganador === "A" && s.b < s.a} />
                 </div>
               ))}
@@ -470,9 +476,9 @@ function ResultadoSheet({ partido, onClose, onGuardarParcial, onGuardar, isEditi
 
           {/* Quitar último set */}
           {sets.length > 1 && (
-            <button onClick={removeLastSet} style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 8, background: "none", border: "none", cursor: "pointer", padding: "4px 0", WebkitTapHighlightColor: "transparent" }}>
-              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color: "#e2e8f0" }}>remove_circle</span>
-              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 700, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.06em" }}>Quitar set {sets.length}</span>
+            <button onClick={removeLastSet} style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 10, background: "none", border: "none", cursor: "pointer", padding: "4px 0", WebkitTapHighlightColor: "transparent" }}>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1, color: "#ef4444" }}>remove_circle</span>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em" }}>Quitar set {sets.length}</span>
             </button>
           )}
         </div>
