@@ -597,11 +597,13 @@ function SectionLabel({ label, count }: { label: string; count: number }) {
 export function VeedorInterclubView({
   club,
   clubNombre,
+  maxEnVivo = 1,
   initialCategorias = [],
   initialLiveData = [],
 }: {
   club: string
   clubNombre: string
+  maxEnVivo?: number
   initialCategorias?: CategoriaInterclub[]
   initialLiveData?: InterclubLiveRow[]
 }) {
@@ -635,8 +637,8 @@ export function VeedorInterclubView({
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora))
   const finalizados = partidos.filter(p => p.estado === "finalizado")
 
-  const nextPorCancha = (cancha: number) => proximos.find(p => p.cancha === cancha)
-  const canchaLibre   = (cancha: number) => !live.some(p => p.cancha === cancha)
+  const disponibles    = Math.max(0, maxEnVivo - live.length)
+  const inicializables = new Set(proximos.slice(0, disponibles).map(p => p.id))
 
   const showError = (msg: string) => {
     setSaveError(msg)
@@ -779,11 +781,9 @@ export function VeedorInterclubView({
           <>
             <SectionLabel label="Próximos" count={proximos.length} />
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {proximos.map(p => {
-                const esNext = p.id === nextPorCancha(p.cancha)?.id
-                const libre  = canchaLibre(p.cancha)
-                return <PartidoCard key={p.id} partido={p} onIniciar={esNext && libre ? () => iniciar(p.id) : undefined} />
-              })}
+              {proximos.map(p => (
+                <PartidoCard key={p.id} partido={p} onIniciar={inicializables.has(p.id) ? () => iniciar(p.id) : undefined} />
+              ))}
             </div>
           </>
         )}

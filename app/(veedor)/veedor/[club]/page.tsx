@@ -6,9 +6,9 @@ import { redirect } from "next/navigation"
 import { VeedorInterclubView } from "@/components/torneos/interclub/VeedorInterclubView"
 import { getCategorias } from "@/lib/interclub-data"
 
-const CLUB_INFO: Record<string, { nombre: string }> = {
-  "voleando":  { nombre: "Voleando"  },
-  "mas-padel": { nombre: "Más Pádel" },
+const CLUB_INFO: Record<string, { nombre: string; maxEnVivo: number }> = {
+  "voleando":  { nombre: "Voleando",  maxEnVivo: 1 },
+  "mas-padel": { nombre: "Más Pádel", maxEnVivo: 2 },
 }
 
 export default async function VeedorPage({ params }: { params: Promise<{ club: string }> }) {
@@ -30,6 +30,7 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
     <VeedorInterclubView
       club={club}
       clubNombre={info.nombre}
+      maxEnVivo={info.maxEnVivo}
       initialCategorias={categorias}
       initialLiveData={liveData ?? []}
     />
