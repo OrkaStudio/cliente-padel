@@ -162,7 +162,7 @@ function LiveCard({ partido: p, clubA, clubB }: { partido: Partido; clubA: Club;
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 13, fontWeight: 900, color: "#0f172a",
-            lineHeight: 1.2, textTransform: "uppercase",
+            lineHeight: 1.2,
             flex: 1, minWidth: 0,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{p.pairA}</span>
@@ -195,7 +195,7 @@ function LiveCard({ partido: p, clubA, clubB }: { partido: Partido; clubA: Club;
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
             fontSize: 13, fontWeight: 900, color: "#0f172a",
-            lineHeight: 1.2, textTransform: "uppercase",
+            lineHeight: 1.2,
             flex: 1, minWidth: 0,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>{p.pairB}</span>
