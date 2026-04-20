@@ -37,6 +37,8 @@ create table torneos (
   costo_inscripcion numeric(10,2) not null default 0,
   estado text not null default 'borrador'
     check (estado in ('borrador', 'inscripcion', 'en_curso', 'finalizado')),
+  tipo text not null default 'regular'
+    check (tipo in ('regular', 'interclub')),
   created_by uuid not null references auth.users(id),
   created_at timestamptz not null default now()
 );

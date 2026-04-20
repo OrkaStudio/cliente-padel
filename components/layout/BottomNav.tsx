@@ -19,6 +19,9 @@ export function BottomNav() {
   const torneoMatch = pathname.match(/\/torneos\/([^/]+)/)
   const torneoId = torneoMatch?.[1]?.includes("[") ? undefined : torneoMatch?.[1]
 
+  // TorneoBottomNav (en [id]/layout.tsx) maneja la nav dentro de un torneo
+  if (torneoId && torneoId !== "nuevo") return null
+
   const items = adminTorneoId
     ? [
         { href: `/admin/torneo/${adminTorneoId}`,             icon: "sports_tennis", label: "Monitor"       },
@@ -27,13 +30,8 @@ export function BottomNav() {
       ]
     : pathname.startsWith("/admin")
     ? [
-        { href: "/admin",          icon: "dashboard", label: "Panel"    },
-        { href: "/admin/jugadores", icon: "group",    label: "Jugadores" },
-      ]
-    : torneoId
-    ? [
-        { href: `/torneos/${torneoId}/interclub`, icon: "home",           label: "Torneo"  },
-        { href: `/torneos/${torneoId}/fixture`,   icon: "calendar_today", label: "Fixture" },
+        { href: "/admin",           icon: "dashboard", label: "Panel"    },
+        { href: "/admin/jugadores", icon: "group",     label: "Jugadores" },
       ]
     : [
         { href: "/torneos", icon: "home", label: "Torneos" },

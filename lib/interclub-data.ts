@@ -43,19 +43,10 @@ export async function getCategorias(torneoId: string): Promise<CategoriaInterclu
   try {
     const supabase = await createClient()
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(torneoId)
-    let realId = torneoId
-    if (!isUuid) {
-      const { data: t } = await supabase
-        .from("torneos").select("id").ilike("nombre", "%interclub%").limit(1).single()
-      if (!t) return MOCK_CATEGORIAS
-      realId = t.id
-    }
-
     const { data: partidos, error: errPart } = await supabase
       .from("partidos")
       .select("id, horario, cancha, estado, resultado, sede_id, categoria_id, pareja1_id, pareja2_id")
-      .eq("torneo_id", realId)
+      .eq("torneo_id", torneoId)
       .order("horario")
 
     if (errPart || !partidos?.length) return MOCK_CATEGORIAS

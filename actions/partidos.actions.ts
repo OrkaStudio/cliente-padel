@@ -204,7 +204,8 @@ export const moverPartidoInterclubAction = createServerAction()
       .from("interclub_partidos")
       .upsert({ id: input.id, hora: input.hora, cancha: input.cancha, fecha: input.fecha, sede: input.sede, updated_at: new Date().toISOString() }, { onConflict: "id" })
     if (error) throw error
-    revalidatePath("/torneos/interclubes-abril-2026/interclub")
+    const { data: p } = await supabase.from("partidos").select("torneo_id").eq("id", input.id).maybeSingle()
+    if (p?.torneo_id) revalidatePath(`/torneos/${p.torneo_id}/interclub`)
     return { ok: true }
   })
 
@@ -224,7 +225,8 @@ export const swapPartidosInterclubAction = createServerAction()
         { id: input.idB, hora: input.horaB, cancha: input.canchaB, fecha: input.fechaB, sede: input.sedeB, updated_at: new Date().toISOString() },
       ], { onConflict: "id" })
     if (error) throw error
-    revalidatePath("/torneos/interclubes-abril-2026/interclub")
+    const { data: p } = await supabase.from("partidos").select("torneo_id").eq("id", input.idA).maybeSingle()
+    if (p?.torneo_id) revalidatePath(`/torneos/${p.torneo_id}/interclub`)
     return { ok: true }
   })
 
