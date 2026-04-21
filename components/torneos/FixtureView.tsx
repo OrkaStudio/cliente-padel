@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,6 +83,13 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
   useEffect(() => {
     setFavoritoId(localStorage.getItem("padel_favorite"))
   }, [])
+
+  // Scroll to top cuando cambia filtro de día, sede o categoría (no en search para no interrumpir el tipeo)
+  const mounted = useRef(false)
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return }
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })
+  }, [selDay, selSede, selCat])
 
   const toggleFavorito = (id: string, e: React.MouseEvent) => {
     e.preventDefault()
@@ -194,14 +201,52 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
         position: "sticky", top: 48, zIndex: 40,
         background: "rgba(248,250,252,0.97)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid #e2e8f0",
-        paddingTop: 10,
+        paddingTop: 12,
       }}>
+
+        {/* Search — primera fila, acción principal */}
+        <div style={{ padding: "0 16px", marginBottom: 10 }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            background: "#fff",
+            border: `1.5px solid ${search ? "#0f172a" : "#e2e8f0"}`,
+            borderRadius: 14, padding: "11px 14px",
+            boxShadow: search ? "0 0 0 3px rgba(15,23,42,0.06)" : "none",
+            transition: "border-color 160ms, box-shadow 160ms",
+          }}>
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, color: search ? "#0f172a" : "#94a3b8", lineHeight: 1 }}>
+              search
+            </span>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="¿Quién juega? Buscá por apellido..."
+              style={{
+                flex: 1, border: "none", background: "transparent", outline: "none",
+                fontSize: 14, color: "#0f172a", fontWeight: 600,
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+              }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}
+              >
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#94a3b8", lineHeight: 1 }}>
+                  close
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Tabs de días */}
         {days.length > 1 && (
           <div style={{
             display: "flex", gap: 8, overflowX: "auto",
             padding: "0 16px 10px", scrollbarWidth: "none",
+            WebkitMaskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
+            maskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
           }}>
             {days.map(([key, d]) => (
               <DayTab
@@ -218,43 +263,12 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
           </div>
         )}
 
-        {/* Search */}
-        <div style={{ padding: "0 16px", marginBottom: 10 }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8,
-            background: "#fff", border: "1px solid #e2e8f0",
-            borderRadius: 10, padding: "9px 12px",
-          }}>
-            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#94a3b8", lineHeight: 1 }}>
-              search
-            </span>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por nombre o apellido..."
-              style={{
-                flex: 1, border: "none", background: "transparent", outline: "none",
-                fontSize: 13, color: "#0f172a",
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-              }}
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}
-              >
-                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, color: "#94a3b8", lineHeight: 1 }}>
-                  close
-                </span>
-              </button>
-            )}
-          </div>
-        </div>
-
         {/* Chips: sedes + categorías */}
         <div style={{
           display: "flex", gap: 6, overflowX: "auto",
           padding: "0 16px 10px", scrollbarWidth: "none", alignItems: "center",
+          WebkitMaskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
+          maskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
         }}>
           <FilterChip active={!selSede} onClick={() => selectSede(null)}>Todas las sedes</FilterChip>
           {sedes.map(s => (
@@ -471,6 +485,7 @@ function DayTab({ active, hasLive, shortDay, num, jugados, total, onClick }: {
   return (
     <button
       onClick={onClick}
+      data-pressable="true"
       style={{
         flexShrink: 0,
         display: "flex", flexDirection: "column", alignItems: "center",
@@ -478,7 +493,6 @@ function DayTab({ active, hasLive, shortDay, num, jugados, total, onClick }: {
         border: `1.5px solid ${active ? "#0f172a" : "#e2e8f0"}`,
         background: active ? "#0f172a" : "#fff",
         cursor: "pointer", minWidth: 56, position: "relative",
-        transition: "all 160ms cubic-bezier(0.23,1,0.32,1)",
         WebkitTapHighlightColor: "transparent",
       }}
     >
@@ -626,7 +640,7 @@ function PartidoCard({
   const detalle = res?.sets?.map((s: { p1: number; p2: number }) => `${s.p1}-${s.p2}`).join(" · ") ?? null
 
   return (
-    <div style={{
+    <div data-pressable="true" style={{
       background: "#fff",
       border: "1px solid #e2e8f0",
       boxShadow: `inset 4px 0 0 ${color}, 0 2px 12px ${color}10`,

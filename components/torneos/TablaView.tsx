@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Chip } from "@/components/ui/padel/Chip"
 
 interface Categoria { id: string; nombre: string; tipo: string; tcId: string }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -12,9 +11,9 @@ interface Partido { id: string; pareja1_id: string; pareja2_id: string; resultad
 
 function formatPareja(pareja: { jugador1: { nombre: string; apellido: string } | null; jugador2: { nombre: string; apellido: string } | null } | null) {
   if (!pareja) return "—"
-  const j1 = pareja.jugador1 ? `${pareja.jugador1.apellido} / ` : ""
+  const j1 = pareja.jugador1 ? `${pareja.jugador1.apellido}` : ""
   const j2 = pareja.jugador2 ? pareja.jugador2.apellido : ""
-  return `${j1}${j2}` || "—"
+  return j1 && j2 ? `${j1} / ${j2}` : j1 || j2 || "—"
 }
 
 function calcStats(parejaId: string, partidos: Partido[]) {
@@ -24,10 +23,9 @@ function calcStats(parejaId: string, partidos: Partido[]) {
     if (!p.resultado || typeof p.resultado.sets_pareja1 !== "number" || typeof p.resultado.sets_pareja2 !== "number") return
     mp++
     const soy1 = p.pareja1_id === parejaId
-    const sets1 = p.resultado.sets_pareja1
-    const sets2 = p.resultado.sets_pareja2
-    if (soy1) { gf += sets1; gc += sets2; if (sets1 > sets2) w++; else l++ }
-    else { gf += sets2; gc += sets1; if (sets2 > sets1) w++; else l++ }
+    const s1 = p.resultado.sets_pareja1, s2 = p.resultado.sets_pareja2
+    if (soy1) { gf += s1; gc += s2; if (s1 > s2) w++; else l++ }
+    else       { gf += s2; gc += s1; if (s2 > s1) w++; else l++ }
   })
   return { mp, w, l, sd: gf - gc, pts: w * 3 }
 }
@@ -49,47 +47,64 @@ export function TablaView({ categorias, grupos, partidos }: {
     router.replace(url as any, { scroll: false })
   }
 
+  const mounted = useRef(false)
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return }
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })
+  }, [selCatId])
+
   const activeCats = selCatId ? categorias.filter(c => c.id === selCatId) : categorias
 
   return (
-    <div style={{ paddingBottom: 100 }}>
+    <div style={{ paddingBottom: 100, background: "#f8fafc", minHeight: "100vh" }}>
+
       {/* Chips sticky */}
       <div style={{
         position: "sticky", top: 48, zIndex: 40,
         background: "rgba(248,250,252,0.97)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid #cbd5e1", padding: "8px 0",
+        borderBottom: "1px solid #e2e8f0", padding: "10px 0",
       }}>
-        <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 16px" }}>
-          <Chip small active={!selCatId} onClick={() => selectCat(null)}>Todas</Chip>
+        <div style={{
+          display: "flex", gap: 6, overflowX: "auto", padding: "0 16px", scrollbarWidth: "none",
+          WebkitMaskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
+          maskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
+        }}>
+          <CatChip active={!selCatId} onClick={() => selectCat(null)}>Todas</CatChip>
           {categorias.map(c => (
-            <Chip key={c.id} small active={selCatId === c.id} onClick={() => selectCat(c.id)}>
+            <CatChip key={c.id} active={selCatId === c.id} onClick={() => selectCat(c.id)}>
               {c.nombre}
-            </Chip>
+            </CatChip>
           ))}
         </div>
       </div>
 
-      <div style={{ padding: "14px 16px 0" }}>
+      <div style={{ padding: "16px 16px 0" }}>
         {activeCats.map(cat => {
           const catGrupos = grupos.filter(g => g.torneo_categoria_id === cat.tcId)
-          if (catGrupos.length === 0) return (
-            <div key={cat.id} style={{ marginBottom: 28 }}>
-              <CatHeader cat={cat} />
-              <p style={{ fontSize: 12, color: "#94a3b8", fontFamily: "var(--font-space-grotesk), sans-serif", padding: "12px 0" }}>
-                Sin grupos generados aún
-              </p>
-            </div>
-          )
           return (
-            <div key={cat.id} style={{ marginBottom: 28 }}>
+            <div key={cat.id} style={{ marginBottom: 32 }}>
               <CatHeader cat={cat} />
-              {catGrupos.map(grupo => (
-                <GrupoTable
-                  key={grupo.id}
-                  grupo={grupo}
-                  partidos={partidos.filter(p => p.categoria_id === cat.id)}
-                />
-              ))}
+              {catGrupos.length === 0 ? (
+                <div style={{
+                  background: "#fff", border: "1px solid #e2e8f0",
+                  borderRadius: 16, padding: "24px", textAlign: "center",
+                }}>
+                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 28, color: "#e2e8f0", display: "block" }}>
+                    hourglass_empty
+                  </span>
+                  <p style={{ fontSize: 12, color: "#94a3b8", fontFamily: "var(--font-space-grotesk), sans-serif", margin: "8px 0 0" }}>
+                    Sin grupos generados aún
+                  </p>
+                </div>
+              ) : (
+                catGrupos.map(grupo => (
+                  <GrupoTable
+                    key={grupo.id}
+                    grupo={grupo}
+                    partidos={partidos.filter(p => p.categoria_id === cat.id)}
+                  />
+                ))
+              )}
             </div>
           )
         })}
@@ -97,7 +112,9 @@ export function TablaView({ categorias, grupos, partidos }: {
         {activeCats.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8" }}>
             <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 40, display: "block" }}>leaderboard</span>
-            <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, marginTop: 8 }}>Sin datos de tabla todavía</p>
+            <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, marginTop: 8 }}>
+              Sin datos de tabla todavía
+            </p>
           </div>
         )}
       </div>
@@ -105,138 +122,252 @@ export function TablaView({ categorias, grupos, partidos }: {
   )
 }
 
-function CatHeader({ cat }: { cat: Categoria }) {
-  const TAG: Record<string, string> = { caballeros: "MASC", damas: "FEM", especial: "ESP" }
+// ── Chips ─────────────────────────────────────────────────────────────────────
+
+function CatChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-      <span style={{
+    <button onClick={onClick} data-pressable="true" style={{
+      flexShrink: 0, padding: "5px 14px", borderRadius: 20,
+      border: `1.5px solid ${active ? "#0f172a" : "#e2e8f0"}`,
+      background: active ? "#0f172a" : "#fff",
+      color: active ? "#fff" : "#64748b",
+      fontFamily: "var(--font-space-grotesk), sans-serif",
+      fontSize: 11, fontWeight: 700, cursor: "pointer",
+      textTransform: "uppercase", letterSpacing: "0.04em",
+      WebkitTapHighlightColor: "transparent",
+    }}>
+      {children}
+    </button>
+  )
+}
+
+// ── Cat Header ────────────────────────────────────────────────────────────────
+
+function CatHeader({ cat }: { cat: Categoria }) {
+  const TAG: Record<string, { label: string; color: string; bg: string }> = {
+    caballeros: { label: "MASC", color: "#1d4ed8", bg: "#dbeafe" },
+    damas:      { label: "FEM",  color: "#9333ea", bg: "#f3e8ff" },
+    especial:   { label: "ESP",  color: "#d97706", bg: "#fef3c7" },
+  }
+  const tag = TAG[cat.tipo] ?? { label: "CAT", color: "#64748b", bg: "#f1f5f9" }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+      <h2 style={{
         fontFamily: "var(--font-anton), Anton, sans-serif",
-        fontSize: 20, fontWeight: 400, color: "#0f172a",
-        textTransform: "uppercase", letterSpacing: "0.02em",
+        fontSize: 22, fontWeight: 400, color: "#0f172a",
+        textTransform: "uppercase", letterSpacing: "0.02em", margin: 0,
       }}>
         {cat.nombre}
-      </span>
+      </h2>
       <span style={{
-        background: "#f1f5f9", border: "1px solid #e2e8f0",
-        padding: "2px 10px", borderRadius: 4,
-        fontSize: 9, fontWeight: 900, color: "#64748b",
+        background: tag.bg, color: tag.color,
+        padding: "2px 8px", borderRadius: 6,
+        fontSize: 9, fontWeight: 900,
         fontFamily: "var(--font-space-grotesk), sans-serif",
+        letterSpacing: "0.06em",
       }}>
-        {TAG[cat.tipo] ?? "CAT"}
+        {tag.label}
       </span>
     </div>
   )
 }
 
-function TableRow({ r, index }: { r: any, index: number }) {
-  const [showDetail, setShowDetail] = useState(false)
-  const isTop = index < 2
-  
+// ── Grupo Table ───────────────────────────────────────────────────────────────
+
+function GrupoTable({ grupo, partidos }: { grupo: Grupo; partidos: Partido[] }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = (grupo.grupo_parejas ?? []).map((gp: any) => ({
+    pareja: gp.parejas,
+    ...calcStats(gp.parejas?.id, partidos),
+  })).sort((a, b) => b.pts - a.pts || b.w - a.w || b.sd - a.sd)
+
+  const totalPartidos  = partidos.length
+  const jugados = partidos.filter(p => p.estado === "finalizado").length
+  const pct = totalPartidos > 0 ? Math.round((jugados / totalPartidos) * 100) : 0
+
   return (
-    <div onClick={() => setShowDetail(!showDetail)} style={{
-      position: "relative",
-      padding: "12px 14px",
-      display: "flex", alignItems: "center", gap: 12,
-      background: isTop ? "linear-gradient(90deg, rgba(188,255,0,0.12) 0%, rgba(255,255,255,1) 60%)" : index % 2 === 0 ? "#fff" : "#f8fafc",
-      borderBottom: "1px solid #e2e8f0",
-      cursor: "pointer",
-      WebkitTapHighlightColor: "transparent",
-      height: 48,
-    }}>
-      {/* Indicador Izquierdo de Nivel */}
+    <div style={{ marginBottom: 16 }}>
+      {/* Group header */}
       <div style={{
-        position: "absolute", left: 0, top: 0, bottom: 0, width: 4,
-        background: isTop ? "#22c55e" : "transparent"
-      }} />
-      
-      <span style={{ 
-        width: 16, fontFamily: "var(--font-anton), Anton, sans-serif", fontWeight: 400, fontSize: 16, 
-        color: isTop ? "#0f172a" : "#94a3b8", textAlign: "center" 
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 8, padding: "0 2px",
       }}>
-        {index + 1}
-      </span>
-      <span style={{ 
-        flex: 1, fontWeight: 700, fontSize: 12, color: "#0f172a", 
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" 
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 3, height: 16, background: "#0f172a", borderRadius: 2 }} />
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 11, fontWeight: 900, color: "#0f172a",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+          }}>
+            Grupo {grupo.nombre}
+          </span>
+        </div>
+        <span style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 10, fontWeight: 700, color: "#94a3b8",
+          textTransform: "uppercase", letterSpacing: "0.05em",
+        }}>
+          Top 2 clasifican
+        </span>
+      </div>
+
+      {/* Table card */}
+      <div style={{
+        background: "#fff", borderRadius: 16, overflow: "hidden",
+        border: "1px solid #e2e8f0",
+      }}>
+        {/* Column headers */}
+        <div style={{
+          display: "flex", alignItems: "center",
+          padding: "8px 14px 8px 42px",
+          background: "#f8fafc", borderBottom: "1px solid #e2e8f0",
+        }}>
+          <span style={{ flex: 1 }} />
+          <div style={{ display: "flex", gap: 0, alignItems: "center" }}>
+            {["PJ", "G", "P", "DS", "PTS"].map(h => (
+              <span key={h} style={{
+                width: h === "PTS" ? 40 : 28,
+                textAlign: "center",
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 8, fontWeight: 900, color: "#94a3b8",
+                textTransform: "uppercase", letterSpacing: "0.08em",
+              }}>
+                {h}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {rows.length === 0 ? (
+          <div style={{ padding: "20px", textAlign: "center" }}>
+            <span style={{ fontSize: 11, color: "#94a3b8", fontFamily: "var(--font-space-grotesk), sans-serif" }}>
+              Sin parejas asignadas
+            </span>
+          </div>
+        ) : (
+          rows.map((r, i) => <TableRow key={i} index={i} r={r} total={rows.length} />)
+        )}
+
+        {/* Progress footer */}
+        {totalPartidos > 0 && (
+          <div style={{ padding: "8px 14px", borderTop: "1px solid #f1f5f9", background: "#f8fafc" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 9, fontWeight: 700, color: "#94a3b8",
+                textTransform: "uppercase", letterSpacing: "0.06em",
+              }}>
+                {jugados} / {totalPartidos} partidos
+              </span>
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 9, fontWeight: 900,
+                color: pct === 100 ? "#15803d" : "#64748b",
+              }}>
+                {pct}%
+              </span>
+            </div>
+            <div style={{ height: 3, background: "#e2e8f0", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{
+                height: "100%", width: `${pct}%`,
+                background: pct === 100 ? "#22c55e" : "#bcff00",
+                borderRadius: 2,
+                transition: "width 600ms cubic-bezier(0.23, 1, 0.32, 1)",
+              }} />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Table Row ─────────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function TableRow({ r, index, total }: { r: any; index: number; total: number }) {
+  const isTop    = index < 2
+  const isLast   = index === total - 1
+  const posColors = ["#f59e0b", "#94a3b8", "#cbd5e1"]
+  const posColor  = posColors[index] ?? "#e2e8f0"
+
+  return (
+    <div data-pressable="true" style={{
+      display: "flex", alignItems: "center",
+      padding: "11px 14px",
+      borderBottom: isLast ? "none" : "1px solid #f1f5f9",
+      background: isTop ? `linear-gradient(90deg, ${posColor}10 0%, transparent 50%)` : "#fff",
+      position: "relative",
+    }}>
+      {/* Left accent bar for top 2 */}
+      {isTop && (
+        <div style={{
+          position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+          background: posColor, borderRadius: "0 0 0 0",
+        }} />
+      )}
+
+      {/* Position */}
+      <div style={{
+        width: 22, height: 22, borderRadius: "50%",
+        background: isTop ? posColor : "#f1f5f9",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        marginRight: 10, flexShrink: 0,
+      }}>
+        <span style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 10, fontWeight: 900,
+          color: isTop ? "#fff" : "#94a3b8",
+          lineHeight: 1,
+        }}>
+          {index + 1}
+        </span>
+      </div>
+
+      {/* Name */}
+      <span style={{
+        flex: 1,
+        fontFamily: "var(--font-space-grotesk), sans-serif",
+        fontSize: 12, fontWeight: isTop ? 800 : 700,
+        color: isTop ? "#0f172a" : "#334155",
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        minWidth: 0,
       }}>
         {formatPareja(r.pareja)}
       </span>
 
-      <div style={{ position: "relative", width: 120, height: 28 }}>
-        {/* Basic Stats */}
+      {/* Stats */}
+      <div style={{ display: "flex", alignItems: "center", gap: 0, flexShrink: 0 }}>
+        {[
+          { val: r.mp,                   color: "#64748b" },
+          { val: r.w,                    color: "#16a34a" },
+          { val: r.l,                    color: r.l > 0 ? "#ef4444" : "#64748b" },
+          { val: r.sd > 0 ? `+${r.sd}` : r.sd, color: r.sd > 0 ? "#16a34a" : r.sd < 0 ? "#ef4444" : "#64748b" },
+        ].map((s, i) => (
+          <span key={i} style={{
+            width: 28, textAlign: "center",
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 11, fontWeight: 700, color: s.color,
+          }}>
+            {s.val}
+          </span>
+        ))}
+        {/* PTS — destacado */}
         <div style={{
-          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyItems: "flex-end", justifyContent: "flex-end", gap: 16,
-          opacity: showDetail ? 0 : 1, transform: showDetail ? "translateY(-4px)" : "translateY(0)", transition: "all 300ms cubic-bezier(0.23,1,0.32,1)", pointerEvents: "none"
+          width: 40, textAlign: "center",
+          background: isTop ? posColor : "#f1f5f9",
+          borderRadius: 8, padding: "3px 0", marginLeft: 2,
         }}>
-          <div style={{ textAlign: "center", minWidth: 20 }}>
-            <span style={{ display: "block", fontSize: 8, color: "#94a3b8", fontWeight: 800, textTransform: "uppercase", lineHeight: 1, marginBottom: 2 }}>PJ</span>
-            <span style={{ fontSize: 13, color: "#64748b", fontFamily: "var(--font-space-grotesk), sans-serif", fontWeight: 700 }}>{r.mp}</span>
-          </div>
-          <div style={{ textAlign: "center", minWidth: 28 }}>
-            <span style={{ display: "block", fontSize: 8, color: "#94a3b8", fontWeight: 800, textTransform: "uppercase", lineHeight: 1, marginBottom: 2 }}>PTS</span>
-            <span style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 18, color: "#0f172a", lineHeight: 0.9 }}>{r.pts}</span>
-          </div>
+          <span style={{
+            fontFamily: "var(--font-anton), Anton, sans-serif",
+            fontSize: 15, fontWeight: 400,
+            color: isTop ? "#fff" : "#64748b",
+            lineHeight: 1,
+          }}>
+            {r.pts}
+          </span>
         </div>
-
-        {/* Detail Stats */}
-        <div style={{
-          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10,
-          opacity: showDetail ? 1 : 0, transform: showDetail ? "translateY(0)" : "translateY(4px)", transition: "all 300ms cubic-bezier(0.23,1,0.32,1)", pointerEvents: "none"
-        }}>
-          <div style={{ textAlign: "center", minWidth: 16 }}>
-            <span style={{ display: "block", fontSize: 8, color: "#94a3b8", fontWeight: 800, lineHeight: 1, marginBottom: 2 }}>G</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", fontFamily: "var(--font-space-grotesk), sans-serif", lineHeight: 1 }}>{r.w}</span>
-          </div>
-          <div style={{ textAlign: "center", minWidth: 16 }}>
-            <span style={{ display: "block", fontSize: 8, color: "#94a3b8", fontWeight: 800, lineHeight: 1, marginBottom: 2 }}>P</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: r.l > 0 ? "#ef4444" : "#64748b", fontFamily: "var(--font-space-grotesk), sans-serif", lineHeight: 1 }}>{r.l}</span>
-          </div>
-          <div style={{ textAlign: "center", minWidth: 24 }}>
-            <span style={{ display: "block", fontSize: 8, color: "#94a3b8", fontWeight: 800, lineHeight: 1, marginBottom: 2 }}>DS</span>
-            <span style={{ fontSize: 12, fontWeight: 900, color: r.sd >= 0 ? "#16a34a" : "#ef4444", fontFamily: "var(--font-space-grotesk), sans-serif", lineHeight: 1 }}>
-              {r.sd > 0 ? `+${r.sd}` : r.sd}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function GrupoTable({ grupo, partidos }: { grupo: Grupo; partidos: Partido[] }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows = (grupo.grupo_parejas ?? []).map((gp: any) => {
-    const stats = calcStats(gp.parejas?.id, partidos)
-    return {
-      pareja: gp.parejas,
-      ...stats,
-    }
-  }).sort((a, b) => b.pts - a.pts || b.w - a.w)
-
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <div style={{ width: 4, height: 18, background: "#0f172a", borderRadius: 2 }} />
-        <h3 style={{
-          fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: 14, fontWeight: 400, textTransform: "uppercase", letterSpacing: "0.05em", margin: 0,
-        }}>
-          GRUPO {grupo.nombre}
-        </h3>
-        <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
-        <span style={{ fontSize: 9, fontWeight: 900, color: "#64748b", fontFamily: "var(--font-space-grotesk), sans-serif", textTransform: "uppercase" }}>
-          Top 2 avanzan →
-        </span>
-      </div>
-
-      <div style={{ background: "#fff", borderRadius: 8, overflow: "hidden", border: "1px solid #e2e8f0" }}>
-        {rows.length === 0 ? (
-          <div style={{ padding: "16px 12px", textAlign: "center" }}>
-            <span style={{ fontSize: 11, color: "#94a3b8", fontFamily: "var(--font-space-grotesk), sans-serif" }}>Sin parejas asignadas</span>
-          </div>
-        ) : (
-          rows.map((r, i) => <TableRow key={i} index={i} r={r} />)
-        )}
       </div>
     </div>
   )

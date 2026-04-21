@@ -137,6 +137,27 @@
   }
 }
 
+/* ── Press states — Emil: scale(0.97) on interactive elements ── */
+[data-pressable] {
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+[data-pressable]:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  [data-pressable]:hover {
+    transform: scale(0.99);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-pressable]:active,
+  [data-pressable]:hover {
+    transform: none;
+  }
+}
+
 /* ── Live dot pulse ── */
 @keyframes live-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
