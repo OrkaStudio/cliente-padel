@@ -170,8 +170,6 @@ function TorneoCard({ torneo }: {
     </div>
   )
 
-  if (isProximo) return inner
-
   return (
     <Link href={`/torneos/${torneo.id}` as never} style={{ textDecoration: "none" }}>
       {inner}
