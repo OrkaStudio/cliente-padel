@@ -11,10 +11,12 @@ function fmtFecha(iso: string) {
 
 export default async function TorneosPage() {
   const supabase = await createClient()
+  const isDev = process.env.NODE_ENV === "development"
 
   const { data: torneos } = await supabase
     .from("torneos")
-    .select("id, nombre, fecha_inicio, fecha_fin, estado, tipo")
+    .select("id, nombre, fecha_inicio, fecha_fin, estado, tipo, oculto")
+    .neq("estado", "borrador")
     .order("created_at", { ascending: false })
 
   const all    = torneos ?? []
@@ -50,7 +52,7 @@ export default async function TorneosPage() {
       {live.length > 0 && (
         <section style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {live.map(t => <TorneoCard key={t.id} torneo={t} />)}
+            {live.map(t => <TorneoCard key={t.id} torneo={t} isDev={isDev} />)}
           </div>
         </section>
       )}
@@ -69,7 +71,7 @@ export default async function TorneosPage() {
             {live.length > 0 ? "Otros Torneos" : "Torneos"}
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {others.map(t => <TorneoCard key={t.id} torneo={t} />)}
+            {others.map(t => <TorneoCard key={t.id} torneo={t} isDev={isDev} />)}
           </div>
         </section>
       )}
@@ -79,16 +81,21 @@ export default async function TorneosPage() {
   )
 }
 
-function TorneoCard({ torneo }: {
-  torneo: { id: string; nombre: string; fecha_inicio: string; fecha_fin: string; estado: string; tipo: string }
+function TorneoCard({ torneo, isDev }: {
+  torneo: { id: string; nombre: string; fecha_inicio: string; fecha_fin: string; estado: string; tipo: string; oculto: boolean }
+  isDev: boolean
 }) {
   if (torneo.tipo === "interclub") {
     return <InterclubCard torneo={torneo} />
   }
 
-  const isLive        = torneo.estado === "en_curso"
-  const isInscripcion = torneo.estado === "inscripcion"
-  const isProximo     = torneo.estado === "borrador"
+  const today          = new Date().toISOString().split("T")[0]
+  const isFuture       = torneo.fecha_inicio > today
+  const isLive         = torneo.estado === "en_curso" && !isFuture
+  const isInscripcion  = torneo.estado === "inscripcion"
+  const isProximo      = torneo.estado === "borrador"
+  const isOculto       = torneo.oculto && !isDev
+  const showProximamente = isProximo || isOculto || isFuture
 
   const inner = (
     <div style={{
@@ -97,33 +104,46 @@ function TorneoCard({ torneo }: {
       borderRadius: 20,
       overflow: "hidden",
       border: "1px solid #e2e8f0",
-      cursor: isProximo ? "default" : "pointer",
+      cursor: (showProximamente && !isDev) ? "default" : "pointer",
       position: "relative",
       display: "block",
-      opacity: isProximo ? 0.75 : 1,
+      opacity: isOculto ? 0.82 : 1,
     }}>
       <div style={{
-        height: 140,
+        height: 160,
         position: "relative",
-        background: isLive
-          ? "linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%)"
-          : "linear-gradient(135deg, #1e293b 0%, #334155 60%, #1e293b 100%)",
         overflow: "hidden",
       }}>
+        <Image
+          src="/clubes/torneo-campeones-bg.jpg"
+          alt=""
+          fill
+          style={{ objectFit: "cover", objectPosition: "center 30%" }}
+        />
+        {/* Overlay — semi-transparente para que las pelotitas se vean */}
+        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.42)" }} />
+        {/* Acento verde lima en esquina superior derecha */}
         <div style={{
-          position: "absolute", right: -10, bottom: -20,
-          fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: 90, color: "rgba(255,255,255,0.05)",
-          lineHeight: 1, userSelect: "none", pointerEvents: "none",
-          transform: "rotate(-8deg)", fontWeight: 400,
-        }}>
-          2026
-        </div>
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75), transparent)" }} />
+          position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse at 85% 10%, rgba(188,255,0,0.28) 0%, transparent 55%)",
+        }} />
+        {/* Degradado bottom para legibilidad del texto */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)" }} />
         <div style={{ position: "absolute", bottom: 12, left: 16, right: 16 }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-            {isProximo && (
-              <span style={{ background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 900, fontFamily: "var(--font-space-grotesk), sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            {showProximamente && (
+              <span style={{
+                background: "rgba(255,255,255,0.15)", color: "#fff",
+                padding: "2px 8px", borderRadius: 4,
+                fontSize: 9, fontWeight: 900,
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                textTransform: "uppercase", letterSpacing: "0.06em",
+                display: "inline-flex", alignItems: "center", gap: 4,
+                backdropFilter: "blur(4px)",
+              }}>
+                {isOculto && (
+                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1 }}>lock</span>
+                )}
                 Próximamente
               </span>
             )}
@@ -132,14 +152,9 @@ function TorneoCard({ torneo }: {
                 En Vivo
               </span>
             )}
-            {isInscripcion && (
+            {isInscripcion && !showProximamente && (
               <span style={{ background: "#3b82f6", color: "#fff", padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 900, fontFamily: "var(--font-space-grotesk), sans-serif", textTransform: "uppercase" }}>
                 Inscripciones Abiertas
-              </span>
-            )}
-            {!isProximo && (
-              <span style={{ background: "rgba(255,255,255,0.18)", color: "#fff", padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 900, fontFamily: "var(--font-space-grotesk), sans-serif", textTransform: "uppercase" }}>
-                Open
               </span>
             )}
           </div>
@@ -163,12 +178,14 @@ function TorneoCard({ torneo }: {
             </span>
           </div>
         </div>
-        {!isProximo && (
+        {(!showProximamente || isDev) && (
           <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#cbd5e1", lineHeight: 1 }}>chevron_right</span>
         )}
       </div>
     </div>
   )
+
+  if (showProximamente && !isDev) return inner
 
   return (
     <Link href={`/torneos/${torneo.id}` as never} style={{ textDecoration: "none" }}>
@@ -186,7 +203,7 @@ function InterclubCard({ torneo }: {
     <Link href={`/torneos/${torneo.id}/interclub`} style={{ textDecoration: "none" }}>
       <div style={{ background: "#ffffff", borderRadius: 20, overflow: "hidden", border: "1px solid #e2e8f0", cursor: "pointer" }}>
         <div style={{
-          height: 106, position: "relative", overflow: "hidden",
+          height: 160, position: "relative", overflow: "hidden",
           background: "radial-gradient(ellipse at 0% 100%, rgba(188,255,0,0.18) 0%, transparent 60%), radial-gradient(ellipse at 100% 0%, rgba(180,83,9,0.13) 0%, transparent 55%), #f8fafc",
           borderBottom: "1px solid #e2e8f0",
         }}>

@@ -182,10 +182,6 @@ function GrupoTable({ grupo, partidos }: { grupo: Grupo; partidos: Partido[] }) 
     ...calcStats(gp.parejas?.id, partidos),
   })).sort((a, b) => b.pts - a.pts || b.w - a.w || b.sd - a.sd)
 
-  const totalPartidos  = partidos.length
-  const jugados = partidos.filter(p => p.estado === "finalizado").length
-  const pct = totalPartidos > 0 ? Math.round((jugados / totalPartidos) * 100) : 0
-
   return (
     <div style={{ marginBottom: 16 }}>
       {/* Group header */}
@@ -249,35 +245,6 @@ function GrupoTable({ grupo, partidos }: { grupo: Grupo; partidos: Partido[] }) 
           rows.map((r, i) => <TableRow key={i} index={i} r={r} total={rows.length} />)
         )}
 
-        {/* Progress footer */}
-        {totalPartidos > 0 && (
-          <div style={{ padding: "8px 14px", borderTop: "1px solid #f1f5f9", background: "#f8fafc" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
-              <span style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 9, fontWeight: 700, color: "#94a3b8",
-                textTransform: "uppercase", letterSpacing: "0.06em",
-              }}>
-                {jugados} / {totalPartidos} partidos
-              </span>
-              <span style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 9, fontWeight: 900,
-                color: pct === 100 ? "#15803d" : "#64748b",
-              }}>
-                {pct}%
-              </span>
-            </div>
-            <div style={{ height: 3, background: "#e2e8f0", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{
-                height: "100%", width: `${pct}%`,
-                background: pct === 100 ? "#22c55e" : "#bcff00",
-                borderRadius: 2,
-                transition: "width 600ms cubic-bezier(0.23, 1, 0.32, 1)",
-              }} />
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -289,8 +256,9 @@ function GrupoTable({ grupo, partidos }: { grupo: Grupo; partidos: Partido[] }) 
 function TableRow({ r, index, total }: { r: any; index: number; total: number }) {
   const isTop    = index < 2
   const isLast   = index === total - 1
-  const posColors = ["#f59e0b", "#94a3b8", "#cbd5e1"]
+  const posColors = ["#bcff00", "#94a3b8", "#cbd5e1"]
   const posColor  = posColors[index] ?? "#e2e8f0"
+  const textOnPos = index === 0 ? "#000" : "#fff"
 
   return (
     <div data-pressable="true" style={{
@@ -318,7 +286,7 @@ function TableRow({ r, index, total }: { r: any; index: number; total: number })
         <span style={{
           fontFamily: "var(--font-space-grotesk), sans-serif",
           fontSize: 10, fontWeight: 900,
-          color: isTop ? "#fff" : "#94a3b8",
+          color: isTop ? textOnPos : "#94a3b8",
           lineHeight: 1,
         }}>
           {index + 1}
@@ -362,7 +330,7 @@ function TableRow({ r, index, total }: { r: any; index: number; total: number })
           <span style={{
             fontFamily: "var(--font-anton), Anton, sans-serif",
             fontSize: 15, fontWeight: 400,
-            color: isTop ? "#fff" : "#64748b",
+            color: isTop ? textOnPos : "#64748b",
             lineHeight: 1,
           }}>
             {r.pts}

@@ -44,7 +44,6 @@ function formatPareja(pareja: {
   return j1 || j2 || "—"
 }
 
-// Busca por nombre y/o apellido, soporta múltiples términos ("Juan García" → ["juan","garcía"])
 function matchesSearch(p: Partido, query: string) {
   if (!query.trim()) return true
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
@@ -68,12 +67,15 @@ interface DayData {
   hasLive: boolean
 }
 
+// ── Main View ─────────────────────────────────────────────────────────────────
+
 export function FixtureView({ partidos }: { partidos: Partido[] }) {
   const [search, setSearch]           = useState("")
   const [showFinalizados, setShowFin] = useState(false)
   const [selDay, setSelDay]           = useState<string | null>(null)
   const [selCat, setSelCat]           = useState<string | null>(null)
   const [favoritoId, setFavoritoId]   = useState<string | null>(null)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const router       = useRouter()
   const pathname     = usePathname()
@@ -84,7 +86,6 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
     setFavoritoId(localStorage.getItem("padel_favorite"))
   }, [])
 
-  // Scroll to top cuando cambia filtro de día, sede o categoría (no en search para no interrumpir el tipeo)
   const mounted = useRef(false)
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return }
@@ -114,7 +115,6 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
     setShowFin(false)
   }
 
-  // ── Sedes únicas ──
   const sedes = useMemo(() => {
     const map = new Map<string, string>()
     partidos.forEach((p: Partido) => {
@@ -123,7 +123,6 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
     return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }))
   }, [partidos])
 
-  // ── Categorías únicas ──
   const categorias = useMemo(() => {
     const set = new Set<string>()
     partidos.forEach((p: Partido) => {
@@ -132,7 +131,6 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
     return Array.from(set).sort()
   }, [partidos])
 
-  // ── Tabs de días con stats ──
   const days = useMemo(() => {
     const map = new Map<string, DayData>()
     partidos.forEach((p: Partido) => {
@@ -158,7 +156,6 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
   }, [partidos])
 
-  // ── Partidos filtrados ──
   const filtered = useMemo(() => {
     let list = partidos
     if (selSede) list = list.filter((p: Partido) => p.sedes?.id === selSede)
@@ -175,11 +172,10 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
     return list
   }, [partidos, selSede, selCat, selDay, search, favoritoId])
 
-  const live       = filtered.filter((p: Partido) => p.estado === "en_vivo")
-  const pendientes = filtered.filter((p: Partido) => p.estado === "pendiente")
+  const live        = filtered.filter((p: Partido) => p.estado === "en_vivo")
+  const pendientes  = filtered.filter((p: Partido) => p.estado === "pendiente")
   const finalizados = filtered.filter((p: Partido) => p.estado === "finalizado")
 
-  // ── Pendientes agrupados por día (solo si no hay día seleccionado) ──
   const byDay = useMemo(() => {
     if (selDay) return []
     const map = new Map<string, { label: string; partidos: Partido[] }>()
@@ -194,59 +190,22 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
   const hasFilters = !!selSede || !!selCat || !!selDay || !!search.trim()
 
   return (
-    <div style={{ paddingBottom: 100 }}>
+    <div style={{ paddingBottom: 100, background: "#f8fafc", minHeight: "100vh" }}>
 
       {/* ── Sticky header ── */}
       <div style={{
         position: "sticky", top: 48, zIndex: 40,
-        background: "rgba(248,250,252,0.97)", backdropFilter: "blur(12px)",
+        background: "#ffffff",
         borderBottom: "1px solid #e2e8f0",
-        paddingTop: 12,
       }}>
 
-        {/* Search — primera fila, acción principal */}
-        <div style={{ padding: "0 16px", marginBottom: 10 }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            background: "#fff",
-            border: `1.5px solid ${search ? "#0f172a" : "#e2e8f0"}`,
-            borderRadius: 14, padding: "11px 14px",
-            boxShadow: search ? "0 0 0 3px rgba(15,23,42,0.06)" : "none",
-            transition: "border-color 160ms, box-shadow 160ms",
-          }}>
-            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 18, color: search ? "#0f172a" : "#94a3b8", lineHeight: 1 }}>
-              search
-            </span>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="¿Quién juega? Buscá por apellido..."
-              style={{
-                flex: 1, border: "none", background: "transparent", outline: "none",
-                fontSize: 14, color: "#0f172a", fontWeight: 600,
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-              }}
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}
-              >
-                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#94a3b8", lineHeight: 1 }}>
-                  close
-                </span>
-              </button>
-            )}
-          </div>
-        </div>
-
         {/* Tabs de días */}
-        {days.length > 1 && (
+        {days.length > 0 && (
           <div style={{
-            display: "flex", gap: 8, overflowX: "auto",
-            padding: "0 16px 10px", scrollbarWidth: "none",
-            WebkitMaskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
-            maskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
+            display: "flex", gap: 6, overflowX: "auto",
+            padding: "10px 12px 0", scrollbarWidth: "none",
+            WebkitMaskImage: "linear-gradient(to right, black calc(100% - 36px), transparent 100%)",
+            maskImage: "linear-gradient(to right, black calc(100% - 36px), transparent 100%)",
           }}>
             {days.map(([key, d]) => (
               <DayTab
@@ -255,55 +214,149 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
                 hasLive={d.hasLive}
                 shortDay={d.shortDay}
                 num={d.num}
-                jugados={d.jugados}
-                total={d.total}
                 onClick={() => toggleDay(key)}
               />
             ))}
           </div>
         )}
 
-        {/* Chips: sedes + categorías */}
-        <div style={{
-          display: "flex", gap: 6, overflowX: "auto",
-          padding: "0 16px 10px", scrollbarWidth: "none", alignItems: "center",
-          WebkitMaskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
-          maskImage: "linear-gradient(to right, black calc(100% - 40px), transparent 100%)",
-        }}>
-          <FilterChip active={!selSede} onClick={() => selectSede(null)}>Todas las sedes</FilterChip>
-          {sedes.map(s => (
-            <FilterChip key={s.id} active={selSede === s.id} onClick={() => selectSede(s.id)} color={sedeColor(s.nombre)}>
-              {s.nombre}
-            </FilterChip>
-          ))}
-
-          {categorias.length > 1 && (
+        {/* Filtros: toggle + panel colapsable */}
+        {(sedes.length > 0 || categorias.length > 1) && (() => {
+          const activeCount = [selSede, selCat].filter(Boolean).length
+          return (
             <>
-              <div style={{ width: 1, alignSelf: "stretch", background: "#e2e8f0", flexShrink: 0, margin: "2px 4px" }} />
-              <FilterChip active={!selCat} onClick={() => setSelCat(null)}>Todas</FilterChip>
-              {categorias.map(cat => (
-                <FilterChip key={cat} active={selCat === cat} onClick={() => setSelCat(cat)}>
-                  {cat}
-                </FilterChip>
-              ))}
+              <button
+                onClick={() => setFiltersOpen(v => !v)}
+                data-pressable="true"
+                style={{
+                  display: "flex", alignItems: "center", gap: 7,
+                  margin: "8px 12px 0", width: "calc(100% - 24px)",
+                  padding: "8px 12px",
+                  background: filtersOpen ? "#0f172a" : (activeCount > 0 ? "#f8fafc" : "#f8fafc"),
+                  border: `1px solid ${filtersOpen ? "#0f172a" : activeCount > 0 ? "#0f172a" : "#e2e8f0"}`,
+                  borderRadius: 10, cursor: "pointer",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 15, lineHeight: 1, color: filtersOpen ? "#bcff00" : "#64748b" }}>tune</span>
+                <span style={{
+                  flex: 1, textAlign: "left",
+                  fontFamily: "var(--font-space-grotesk), sans-serif",
+                  fontSize: 11, fontWeight: 700,
+                  color: filtersOpen ? "#fff" : "#64748b",
+                }}>
+                  Filtros{activeCount > 0 && !filtersOpen ? ` · ${activeCount} activo${activeCount > 1 ? "s" : ""}` : ""}
+                </span>
+                {activeCount > 0 && (
+                  <span style={{
+                    background: "#bcff00", color: "#000",
+                    width: 17, height: 17, borderRadius: "50%",
+                    fontFamily: "var(--font-space-grotesk), sans-serif",
+                    fontSize: 9, fontWeight: 900,
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>
+                    {activeCount}
+                  </span>
+                )}
+                <span style={{
+                  fontFamily: "'Material Symbols Outlined'", fontSize: 17, lineHeight: 1,
+                  color: filtersOpen ? "#bcff00" : "#94a3b8",
+                  transform: filtersOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 200ms cubic-bezier(0.23,1,0.32,1)",
+                }}>
+                  expand_more
+                </span>
+              </button>
+
+              {filtersOpen && (
+                <div style={{
+                  margin: "6px 12px 0",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 12, overflow: "hidden",
+                  animation: "filterIn 180ms cubic-bezier(0.23,1,0.32,1) both",
+                }}>
+                  {sedes.length > 0 && (
+                    <div style={{
+                      padding: "8px 12px",
+                      borderBottom: categorias.length > 1 ? "1px solid #e2e8f0" : "none",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, color: "#94a3b8", lineHeight: 1 }}>location_on</span>
+                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>Sede</span>
+                      </div>
+                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                        <FilterChip active={!selSede} onClick={() => selectSede(null)}>Todas</FilterChip>
+                        {sedes.map(s => (
+                          <FilterChip key={s.id} active={selSede === s.id} onClick={() => selectSede(s.id)} color={sedeColor(s.nombre)}>
+                            {s.nombre}
+                          </FilterChip>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {categorias.length > 1 && (
+                    <div style={{ padding: "8px 12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, color: "#94a3b8", lineHeight: 1 }}>category</span>
+                        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>Categoría</span>
+                      </div>
+                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                        <FilterChip active={!selCat} onClick={() => setSelCat(null)}>Todas</FilterChip>
+                        {categorias.map(cat => (
+                          <FilterChip key={cat} active={selCat === cat} onClick={() => setSelCat(cat)}>
+                            {cat}
+                          </FilterChip>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
-          )}
+          )
+        })()}
+
+        {/* Search */}
+        <div style={{ padding: "8px 12px 10px" }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            background: search ? "#fff" : "#f8fafc",
+            border: `1.5px solid ${search ? "#0f172a" : "#e2e8f0"}`,
+            borderRadius: 10, padding: "10px 14px",
+            transition: "border-color 160ms, background 160ms",
+          }}>
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: search ? "#0f172a" : "#94a3b8", lineHeight: 1 }}>search</span>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar jugador..."
+              style={{
+                flex: 1, border: "none", background: "transparent", outline: "none",
+                fontSize: 16, color: "#0f172a", fontWeight: 600,
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+              }}
+            />
+            {search && (
+              <button onClick={() => setSearch("")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", WebkitTapHighlightColor: "transparent" }}>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 16, color: "#94a3b8", lineHeight: 1 }}>close</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ── Status bar ── */}
       {(live.length > 0 || pendientes.length > 0 || finalizados.length > 0) && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
-          padding: "10px 16px 0",
-        }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "10px 16px 0" }}>
           {live.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{
-                width: 7, height: 7, borderRadius: "50%", background: "#22c55e",
-                animation: "pulseLive 2s infinite ease-in-out",
-              }} />
-              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: "#15803d" }}>
+              <div style={{ position: "relative", width: 6, height: 6, flexShrink: 0 }}>
+                <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#bcff00", animation: "pingLive 1.5s cubic-bezier(0,0,0.2,1) infinite" }} />
+                <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#bcff00" }} />
+              </div>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 700, color: "#5a7a00" }}>
                 {live.length} en vivo
               </span>
             </div>
@@ -319,20 +372,10 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
               <span style={{ color: "#cbd5e1", fontSize: 11 }}>·</span>
               <button
                 onClick={() => setShowFin(v => !v)}
-                style={{
-                  background: "none", border: "none", padding: 0, cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 3,
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 11, color: "#64748b",
-                }}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 3, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, color: "#64748b", WebkitTapHighlightColor: "transparent" }}
               >
                 {showFinalizados ? "Ocultar" : "Ver"} {finalizados.length} finalizados
-                <span style={{
-                  fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1,
-                  display: "inline-block",
-                  transform: showFinalizados ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 200ms cubic-bezier(0.23, 1, 0.32, 1)",
-                }}>expand_more</span>
+                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, lineHeight: 1, display: "inline-block", transform: showFinalizados ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 200ms cubic-bezier(0.23, 1, 0.32, 1)" }}>expand_more</span>
               </button>
             </>
           )}
@@ -345,23 +388,22 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
         {live.length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", animation: "pulseLive 2s infinite ease-in-out", flexShrink: 0 }} />
-              <span style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 11, fontWeight: 900, color: "#15803d",
-                letterSpacing: "0.08em", textTransform: "uppercase",
-              }}>EN VIVO</span>
-              <div style={{ flex: 1, height: 1.5, background: "#22c55e", opacity: 0.3 }} />
+              <div style={{ position: "relative", width: 7, height: 7, flexShrink: 0 }}>
+                <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#bcff00", animation: "pingLive 1.5s cubic-bezier(0,0,0.2,1) infinite" }} />
+                <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#bcff00" }} />
+              </div>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 900, color: "#5a7a00", letterSpacing: "0.08em", textTransform: "uppercase" }}>EN VIVO · {live.length}</span>
+              <div style={{ flex: 1, height: 1.5, background: "#bcff00", opacity: 0.5 }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {live.map((p: Partido, i: number) => (
-                <PartidoCard key={p.id} partido={p} index={i} favoritoId={favoritoId} toggleFavorito={toggleFavorito} />
+              {live.map((p: Partido) => (
+                <LiveCard key={p.id} partido={p} />
               ))}
             </div>
           </div>
         )}
 
-        {/* ── Por día (cuando no hay día seleccionado) ── */}
+        {/* ── Por día ── */}
         {!selDay && byDay.map(([dayKey, { label, partidos: dayP }]) => {
           const dayRaw = days.find(([k]) => k === dayKey)?.[1]
           return (
@@ -376,7 +418,7 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
           )
         })}
 
-        {/* ── Pendientes (cuando hay día seleccionado) ── */}
+        {/* ── Pendientes (con día seleccionado) ── */}
         {selDay && pendientes.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
             {pendientes.map((p: Partido, i: number) => (
@@ -385,16 +427,12 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
           </div>
         )}
 
-        {/* ── Finalizados (expandible) ── */}
+        {/* ── Finalizados expandible ── */}
         {finalizados.length > 0 && showFinalizados && (
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <div style={{ width: 20, height: 1, background: "#e2e8f0" }} />
-              <span style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 11, fontWeight: 900, color: "#94a3b8",
-                letterSpacing: "0.06em", textTransform: "uppercase",
-              }}>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 900, color: "#94a3b8", letterSpacing: "0.06em", textTransform: "uppercase" }}>
                 Finalizados · {finalizados.length}
               </span>
               <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
@@ -410,13 +448,7 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
         {finalizados.length > 0 && !showFinalizados && (
           <button
             onClick={() => setShowFin(true)}
-            style={{
-              width: "100%", padding: "14px", background: "none", border: "none",
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 12, fontWeight: 700, color: "#94a3b8",
-              borderTop: "1px solid #f1f5f9", marginTop: 8,
-            }}
+            style={{ width: "100%", padding: "14px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#94a3b8", borderTop: "1px solid #f1f5f9", marginTop: 8 }}
           >
             <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, lineHeight: 1 }}>expand_more</span>
             Finalizados · {finalizados.length}
@@ -426,25 +458,16 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
         {/* ── Empty state ── */}
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
-            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 40, color: "#cbd5e1", display: "block" }}>
-              sports_tennis
-            </span>
+            <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 40, color: "#cbd5e1", display: "block" }}>sports_tennis</span>
             <p style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, color: "#94a3b8", marginTop: 8 }}>
               {search.trim()
                 ? `No encontramos a "${search}"`
-                : hasFilters
-                  ? "Sin partidos con estos filtros"
-                  : "Fixture no disponible aún"}
+                : hasFilters ? "Sin partidos con estos filtros" : "Fixture no disponible aún"}
             </p>
             {hasFilters && (
               <button
                 onClick={() => { setSearch(""); setSelCat(null); setSelDay(null); selectSede(null) }}
-                style={{
-                  marginTop: 12, background: "none", border: "1px solid #e2e8f0",
-                  borderRadius: 8, padding: "8px 16px", cursor: "pointer",
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  fontSize: 12, fontWeight: 700, color: "#64748b",
-                }}
+                style={{ marginTop: 12, background: "none", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 12, fontWeight: 700, color: "#64748b" }}
               >
                 Limpiar filtros
               </button>
@@ -455,13 +478,15 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
 
       <style>{`
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(6px); }
+          from { opacity: 0; transform: translateY(5px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulseLive {
-          0%   { opacity: 1; transform: scale(1); box-shadow: 0 0 0 2px rgba(34,197,94,0.25); }
-          50%  { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 0 6px rgba(34,197,94,0.1); }
-          100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 2px rgba(34,197,94,0.25); }
+        @keyframes pingLive {
+          75%, 100% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes filterIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
         div::-webkit-scrollbar { display: none; }
       `}</style>
@@ -469,19 +494,15 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
   )
 }
 
-// ── Day Tab ────────────────────────────────────────────────────────────────
+// ── Day Tab ───────────────────────────────────────────────────────────────────
 
-function DayTab({ active, hasLive, shortDay, num, jugados, total, onClick }: {
+function DayTab({ active, hasLive, shortDay, num, onClick }: {
   active: boolean
   hasLive?: boolean
   shortDay: string
   num: number
-  jugados: number
-  total: number
   onClick: () => void
 }) {
-  const pct = total > 0 ? Math.round((jugados / total) * 100) : 0
-
   return (
     <button
       onClick={onClick}
@@ -489,23 +510,20 @@ function DayTab({ active, hasLive, shortDay, num, jugados, total, onClick }: {
       style={{
         flexShrink: 0,
         display: "flex", flexDirection: "column", alignItems: "center",
-        gap: 2, padding: "8px 14px", borderRadius: 12,
+        gap: 3, padding: "9px 16px", borderRadius: 12,
         border: `1.5px solid ${active ? "#0f172a" : "#e2e8f0"}`,
         background: active ? "#0f172a" : "#fff",
-        cursor: "pointer", minWidth: 56, position: "relative",
+        cursor: "pointer", minWidth: 52, position: "relative",
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      {/* Dot live */}
       {hasLive && (
         <div style={{
           position: "absolute", top: -3, right: -3,
           width: 9, height: 9, borderRadius: "50%",
-          background: "#22c55e", border: "2px solid #f8fafc",
+          background: "#bcff00", border: "2px solid #fff",
         }} />
       )}
-
-      {/* Short day name */}
       <span style={{
         fontSize: 9, fontWeight: 900, letterSpacing: "0.08em",
         textTransform: "uppercase", lineHeight: 1,
@@ -514,44 +532,21 @@ function DayTab({ active, hasLive, shortDay, num, jugados, total, onClick }: {
       }}>
         {shortDay}
       </span>
-
-      {/* Day number */}
       <span style={{
         fontFamily: "var(--font-anton), Anton, sans-serif",
-        fontSize: 20, lineHeight: 1,
+        fontSize: 22, lineHeight: 1,
         color: active ? "#fff" : "#0f172a",
       }}>
         {num}
-      </span>
-
-      {/* Progress bar */}
-      <div style={{
-        width: "100%", height: 3, background: active ? "rgba(255,255,255,0.15)" : "#f1f5f9",
-        borderRadius: 2, overflow: "hidden", marginTop: 3,
-      }}>
-        <div style={{
-          height: "100%", width: `${pct}%`,
-          background: active ? (pct === 100 ? "#22c55e" : "#bcff00") : (pct === 100 ? "#22c55e" : "#bcff00"),
-          borderRadius: 2,
-        }} />
-      </div>
-
-      {/* Count */}
-      <span style={{
-        fontSize: 8, fontWeight: 700, lineHeight: 1,
-        fontFamily: "var(--font-space-grotesk), sans-serif",
-        color: active ? "rgba(255,255,255,0.35)" : "#cbd5e1",
-      }}>
-        {jugados}/{total}
       </span>
     </button>
   )
 }
 
-// ── Day Header (sección por día en vista "todos") ─────────────────────────
+// ── Day Header ────────────────────────────────────────────────────────────────
 
 function DayHeader({ label, jugados, total }: { label: string; jugados: number; total: number }) {
-  const pct = total > 0 ? (jugados / total) * 100 : 0
+  const pct  = total > 0 ? (jugados / total) * 100 : 0
   const done = pct === 100
 
   return (
@@ -559,43 +554,25 @@ function DayHeader({ label, jugados, total }: { label: string; jugados: number; 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 20, height: 1, background: "#e2e8f0" }} />
-          <span style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 11, fontWeight: 900, color: "#64748b",
-            letterSpacing: "0.06em", textTransform: "uppercase",
-          }}>
+          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, fontWeight: 900, color: "#64748b", letterSpacing: "0.06em", textTransform: "uppercase" }}>
             {label}
           </span>
           <div style={{ width: 20, height: 1, background: "#e2e8f0" }} />
         </div>
-        <span style={{
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 10,
-          color: done ? "#15803d" : "#94a3b8",
-          fontWeight: done ? 700 : 400,
-        }}>
+        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, color: done ? "#5a7a00" : "#94a3b8", fontWeight: done ? 700 : 400 }}>
           {jugados}/{total} jugados
         </span>
       </div>
-
-      {/* Progress bar */}
       <div style={{ height: 2, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
-        <div style={{
-          height: "100%", width: `${pct}%`,
-          background: done ? "#22c55e" : "#bcff00",
-          borderRadius: 2,
-          transition: "width 600ms cubic-bezier(0.23, 1, 0.32, 1)",
-        }} />
+        <div style={{ height: "100%", width: `${pct}%`, background: "#bcff00", borderRadius: 2, transition: "width 600ms cubic-bezier(0.23, 1, 0.32, 1)" }} />
       </div>
     </div>
   )
 }
 
-// ── Filter Chip ───────────────────────────────────────────────────────────
+// ── Filter Chip ───────────────────────────────────────────────────────────────
 
-function FilterChip({
-  active, onClick, color, children,
-}: {
+function FilterChip({ active, onClick, color, children }: {
   active: boolean
   onClick: () => void
   color?: string
@@ -622,7 +599,70 @@ function FilterChip({
   )
 }
 
-// ── Partido Card ──────────────────────────────────────────────────────────
+// ── Live Card ─────────────────────────────────────────────────────────────────
+
+function LiveCard({ partido: p }: { partido: Partido }) {
+  const sets: { p1: number; p2: number }[] = p.resultado?.sets ?? []
+  const sede   = p.sedes?.nombre ?? ""
+  const cancha = p.cancha ?? null
+  const hora   = formatHora(p.horario)
+  const meta   = [sede, cancha ? `Cancha ${cancha}` : null, hora !== "--:--" ? hora : null].filter(Boolean).join("  ·  ")
+
+  return (
+    <div style={{
+      background: "#bcff00",
+      borderRadius: 14, padding: "14px 16px",
+      position: "relative", overflow: "hidden",
+      animation: "fadeUp 220ms cubic-bezier(0.23,1,0.32,1) both",
+    }}>
+      {/* Ghost VIVO */}
+      <span aria-hidden style={{
+        position: "absolute", zIndex: 0, right: -4, bottom: -10,
+        fontFamily: "var(--font-anton), Anton, sans-serif",
+        fontSize: 58, fontWeight: 400, lineHeight: 1,
+        color: "rgba(0,0,0,0.07)", letterSpacing: "-0.02em",
+        pointerEvents: "none", userSelect: "none", textTransform: "uppercase",
+      }}>VIVO</span>
+
+      {/* Top meta row */}
+      <div style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", gap: 5, marginBottom: 12 }}>
+        <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1, color: "rgba(0,0,0,0.45)" }}>location_on</span>
+        <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          {meta || "En cancha"}
+        </span>
+      </div>
+
+      {/* Scoreboard */}
+      <div style={{ position: "relative", zIndex: 2 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 8 }}>
+          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 900, color: "#0f172a", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {formatPareja(p.pareja1)}
+          </span>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            {sets.map((s, i) => (
+              <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 22, lineHeight: 1, color: "#0f172a", minWidth: 16, textAlign: "center" }}>{s.p1}</span>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ height: 1, background: "rgba(0,0,0,0.1)", margin: "0 0 8px 0" }} />
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 13, fontWeight: 900, color: "#0f172a", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {formatPareja(p.pareja2)}
+          </span>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            {sets.map((s, i) => (
+              <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 22, lineHeight: 1, color: "#0f172a", minWidth: 16, textAlign: "center" }}>{s.p2}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Partido Card ──────────────────────────────────────────────────────────────
 
 function PartidoCard({
   partido: p, index, favoritoId, toggleFavorito,
@@ -632,132 +672,111 @@ function PartidoCard({
   favoritoId?: string | null
   toggleFavorito?: (id: string, e: React.MouseEvent) => void
 }) {
-  const color  = sedeColor(p.sedes?.nombre)
-  const isLive = p.estado === "en_vivo"
-  const isFin  = p.estado === "finalizado"
-  const res    = p.resultado
-  const score  = res ? `${res.sets_pareja1} – ${res.sets_pareja2}` : null
-  const detalle = res?.sets?.map((s: { p1: number; p2: number }) => `${s.p1}-${s.p2}`).join(" · ") ?? null
+  const isFin    = p.estado === "finalizado"
+  const color    = sedeColor(p.sedes?.nombre)
+  const res      = p.resultado
+  const sets: { p1: number; p2: number }[] = res?.sets ?? []
+  const ganadorA = isFin && res && Number(res.sets_pareja1) > Number(res.sets_pareja2)
+  const ganadorB = isFin && res && Number(res.sets_pareja2) > Number(res.sets_pareja1)
 
   return (
-    <div data-pressable="true" style={{
-      background: "#fff",
-      border: "1px solid #e2e8f0",
-      boxShadow: `inset 4px 0 0 ${color}, 0 2px 12px ${color}10`,
-      borderRadius: 12,
-      padding: "12px 14px",
-      display: "flex", alignItems: "center", gap: 14,
-      position: "relative",
-      animation: "fadeUp 250ms cubic-bezier(0.23,1,0.32,1) both",
-      animationDelay: `${Math.min(index, 8) * 40}ms`,
+    <div style={{
+      background: "#ffffff",
+      border: "1px solid #f1f5f9",
+      borderRadius: 12, padding: "12px 14px",
+      animation: "fadeUp 220ms cubic-bezier(0.23,1,0.32,1) both",
+      animationDelay: `${Math.min(index, 8) * 35}ms`,
     }}>
-      {p.categorias?.nombre && (
-        <span style={{
-          position: "absolute", top: 10, right: 12,
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 8, fontWeight: 900, letterSpacing: "0.06em",
-          textTransform: "uppercase",
-          background: `${color}15`, color,
-          padding: "3px 8px", borderRadius: 100,
-        }}>
-          {p.categorias.nombre}
-        </span>
-      )}
 
-      {/* Hora + cancha + sede */}
-      <div style={{ flexShrink: 0, width: 68 }}>
-        <p style={{
-          fontFamily: "var(--font-anton), Anton, sans-serif",
-          fontSize: 16, fontWeight: 400,
-          color: isLive ? color : "#0f172a",
-          margin: 0, lineHeight: 1,
-        }}>
-          {formatHora(p.horario)}
-        </p>
-        {p.cancha && (
-          <p style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 9, fontWeight: 700, color: "#94a3b8",
-            textTransform: "uppercase", margin: "4px 0 3px", letterSpacing: "0.04em",
-          }}>
-            Cancha {p.cancha}
-          </p>
-        )}
-        {p.sedes?.nombre && (
-          <span style={{
-            fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 9, color: "#fff", fontWeight: 700, background: color,
-            textTransform: "uppercase", letterSpacing: "0.05em",
-            padding: "2px 6px", borderRadius: "4px", display: "inline-block",
-          }}>
-            {p.sedes.nombre}
-          </span>
-        )}
+      {/* Top row: estado + hora/sede/cat */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: isFin ? 900 : 600, color: isFin ? "#64748b" : "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: isFin ? "#cbd5e1" : "#e2e8f0", display: "inline-block", flexShrink: 0 }} />
+          {isFin ? "Finalizado" : "Pendiente"}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: "auto" }}>
+          {p.horario && (
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 600, color: "#64748b" }}>
+              {formatHora(p.horario)}
+            </span>
+          )}
+          {p.cancha && (
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, color: "#94a3b8" }}>· C{p.cancha}</span>
+          )}
+          {p.sedes?.nombre && (
+            <>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color }}>location_on</span>
+              <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, fontWeight: 700, color }}>{p.sedes.nombre}</span>
+            </>
+          )}
+          {p.categorias?.nombre && (
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, letterSpacing: "0.06em", textTransform: "uppercase", background: `${color}15`, color, padding: "2px 6px", borderRadius: 4 }}>
+              {p.categorias.nombre}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Teams */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, minWidth: 0 }}>
-          <span
-            onClick={e => toggleFavorito && p.pareja1_id && toggleFavorito(p.pareja1_id, e)}
-            style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 12, fontWeight: 700, color: "#0f172a",
-              textAlign: "right",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              width: "100%", cursor: toggleFavorito ? "pointer" : "default",
-              WebkitTapHighlightColor: "transparent",
-            }}
-          >
-            {favoritoId === p.pareja1_id && <span style={{ color: "#22c55e", marginRight: 4 }}>★</span>}
-            {formatPareja(p.pareja1)}
-          </span>
-          <span
-            onClick={e => toggleFavorito && p.pareja2_id && toggleFavorito(p.pareja2_id, e)}
-            style={{
-              fontFamily: "var(--font-space-grotesk), sans-serif",
-              fontSize: 12, fontWeight: 700, color: "#0f172a",
-              textAlign: "right",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              width: "100%", cursor: toggleFavorito ? "pointer" : "default",
-              WebkitTapHighlightColor: "transparent",
-            }}
-          >
-            {favoritoId === p.pareja2_id && <span style={{ color: "#22c55e", marginRight: 4 }}>★</span>}
-            {formatPareja(p.pareja2)}
-          </span>
-        </div>
-
-        {score ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 2 }}>
-            <span style={{
-              fontFamily: "var(--font-anton), Anton, sans-serif",
-              fontSize: 14, fontWeight: 400,
-              color: isLive ? "#0f172a" : "#64748b",
-              background: isLive ? "#bcff00" : isFin ? "#f1f5f9" : "transparent",
-              padding: "1px 7px", borderRadius: 4,
-            }}>
-              {score}
-            </span>
-            {detalle && (
-              <span style={{
-                fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 8, color: "#94a3b8", fontWeight: 600,
-                letterSpacing: "0.02em", whiteSpace: "nowrap",
-              }}>
-                {detalle}
-              </span>
-            )}
-          </div>
-        ) : (
-          <span style={{
+      {/* Pareja 1 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 8 }}>
+        <span
+          onClick={e => toggleFavorito && p.pareja1_id && toggleFavorito(p.pareja1_id, e)}
+          style={{
+            flex: 1, minWidth: 0,
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 9, fontWeight: 900, color: "#94a3b8",
-            letterSpacing: "0.08em", flexShrink: 0,
-          }}>
-            vs
-          </span>
-        )}
+            fontSize: 12, fontWeight: ganadorA ? 800 : 600,
+            color: isFin && ganadorB ? "#94a3b8" : "#0f172a",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            opacity: isFin && ganadorB ? 0.5 : 1,
+            cursor: toggleFavorito ? "pointer" : "default",
+            WebkitTapHighlightColor: "transparent",
+            transition: "opacity 160ms",
+          }}
+        >
+          {favoritoId === p.pareja1_id && <span style={{ color: "#22c55e", marginRight: 4 }}>★</span>}
+          {formatPareja(p.pareja1)}
+        </span>
+        <div style={{ display: "flex", gap: 8, flexShrink: 0, minWidth: 14 }}>
+          {sets.length > 0 ? sets.map((s, i) => (
+            <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorA ? "#0f172a" : ganadorB ? "#cbd5e1" : "#64748b", minWidth: 14, textAlign: "center" }}>
+              {s.p1}
+            </span>
+          )) : (
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, color: "#e2e8f0", fontWeight: 700 }}>—</span>
+          )}
+        </div>
+      </div>
+
+      <div style={{ height: 1, background: "#f1f5f9", margin: "0 0 8px 0" }} />
+
+      {/* Pareja 2 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span
+          onClick={e => toggleFavorito && p.pareja2_id && toggleFavorito(p.pareja2_id, e)}
+          style={{
+            flex: 1, minWidth: 0,
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 12, fontWeight: ganadorB ? 800 : 600,
+            color: isFin && ganadorA ? "#94a3b8" : "#0f172a",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            opacity: isFin && ganadorA ? 0.5 : 1,
+            cursor: toggleFavorito ? "pointer" : "default",
+            WebkitTapHighlightColor: "transparent",
+            transition: "opacity 160ms",
+          }}
+        >
+          {favoritoId === p.pareja2_id && <span style={{ color: "#22c55e", marginRight: 4 }}>★</span>}
+          {formatPareja(p.pareja2)}
+        </span>
+        <div style={{ display: "flex", gap: 8, flexShrink: 0, minWidth: 14 }}>
+          {sets.length > 0 ? sets.map((s, i) => (
+            <span key={i} style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontSize: 16, lineHeight: 1, color: ganadorB ? "#0f172a" : ganadorA ? "#cbd5e1" : "#64748b", minWidth: 14, textAlign: "center" }}>
+              {s.p2}
+            </span>
+          )) : (
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 11, color: "#e2e8f0", fontWeight: 700 }}>—</span>
+          )}
+        </div>
       </div>
     </div>
   )
