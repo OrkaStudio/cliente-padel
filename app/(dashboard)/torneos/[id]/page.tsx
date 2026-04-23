@@ -120,7 +120,7 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
   const live = livePartidos ?? []
 
   return (
-    <div style={{ paddingBottom: 100, background: "#f8fafc", minHeight: "100vh" }}>
+    <div style={{ background: "#f8fafc" }}>
 
       {/* ── Hero ── */}
       <div style={{
@@ -179,9 +179,9 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
 
       {/* ── En Vivo — carousel ── */}
       {live.length > 0 && (
-        <div style={{ margin: "20px 0 0" }}>
+        <div style={{ margin: "20px 0 0", padding: "0 16px" }}>
           {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ position: "relative", width: 8, height: 8, flexShrink: 0 }}>
                 <div style={{
@@ -211,17 +211,17 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
             </Link>
           </div>
 
-          {/* Carousel */}
+          {/* Carousel — el padding lo da el outer; el carousel solo scrollea */}
           <div style={{
             display: "flex", gap: 10,
             overflowX: "auto", scrollSnapType: "x mandatory",
-            padding: "0 16px 4px",
+            padding: "0 0 4px",
             scrollbarWidth: "none",
             WebkitMaskImage: live.length > 1
-              ? "linear-gradient(to right, black calc(100% - 44px), transparent 100%)"
+              ? "linear-gradient(to right, black calc(100% - 32px), transparent 100%)"
               : undefined,
             maskImage: live.length > 1
-              ? "linear-gradient(to right, black calc(100% - 44px), transparent 100%)"
+              ? "linear-gradient(to right, black calc(100% - 32px), transparent 100%)"
               : undefined,
           }}>
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -498,14 +498,14 @@ export function LiveCard({ partido: p, hora }: {
         {/* Pareja 1 */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 8 }}>
           <span style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 16, fontWeight: 400, color: "#000",
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 13, fontWeight: 800, color: "#000",
             flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            textTransform: "uppercase", lineHeight: 1,
+            lineHeight: 1,
           }}>
             {fmtPareja(p.pareja1)}
           </span>
-          {hasSets ? (
+          {hasSets && (
             <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
               {sets.map((s, i) => (
                 <span key={i} style={{
@@ -517,8 +517,6 @@ export function LiveCard({ partido: p, hora }: {
                 </span>
               ))}
             </div>
-          ) : (
-            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 9, fontWeight: 900, color: "rgba(0,0,0,0.3)", flexShrink: 0 }}>VS</span>
           )}
         </div>
 
@@ -527,10 +525,10 @@ export function LiveCard({ partido: p, hora }: {
         {/* Pareja 2 */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 16, fontWeight: 400, color: "#000",
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 13, fontWeight: 800, color: "#000",
             flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            textTransform: "uppercase", lineHeight: 1,
+            lineHeight: 1,
           }}>
             {fmtPareja(p.pareja2)}
           </span>

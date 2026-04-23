@@ -44,16 +44,20 @@ function formatPareja(pareja: {
   return j1 || j2 || "—"
 }
 
+function normalize(s: string) {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+}
+
 function matchesSearch(p: Partido, query: string) {
   if (!query.trim()) return true
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
+  const terms = normalize(query).split(/\s+/).filter(Boolean)
   const jugadores = [
     p.pareja1?.jugador1, p.pareja1?.jugador2,
     p.pareja2?.jugador1, p.pareja2?.jugador2,
   ]
   return jugadores.some(j => {
     if (!j) return false
-    const full = `${j.nombre} ${j.apellido}`.toLowerCase()
+    const full = normalize(`${j.nombre} ${j.apellido}`)
     return terms.every(t => full.includes(t))
   })
 }
@@ -190,7 +194,7 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
   const hasFilters = !!selSede || !!selCat || !!selDay || !!search.trim()
 
   return (
-    <div style={{ paddingBottom: 100, background: "#f8fafc", minHeight: "100vh" }}>
+    <div style={{ background: "#f8fafc" }}>
 
       {/* ── Sticky header ── */}
       <div style={{

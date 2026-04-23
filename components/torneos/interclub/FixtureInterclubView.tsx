@@ -417,7 +417,7 @@ export function FixtureInterclubView({
   }
 
   return (
-    <div style={{ paddingBottom: extraPad, background: "#f8fafc", minHeight: "100vh" }}>
+    <div style={{ paddingBottom: extraPad, background: "#f8fafc" }}>
 
       {/* ── Sticky: chips (colapsados al buscar) + search ── */}
       <div style={{

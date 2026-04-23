@@ -4,7 +4,7 @@ import { AdminMenu } from "@/components/layout/AdminMenu"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#f0f4f8", maxWidth: 430, margin: "0 auto", position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: "#f0f4f8", maxWidth: 430, margin: "0 auto", position: "relative", overflowX: "hidden" }}>
       <header style={{
         position: "sticky",
         top: 0,

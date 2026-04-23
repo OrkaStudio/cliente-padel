@@ -56,7 +56,7 @@ export function TablaView({ categorias, grupos, partidos }: {
   const activeCats = selCatId ? categorias.filter(c => c.id === selCatId) : categorias
 
   return (
-    <div style={{ paddingBottom: 100, background: "#f8fafc", minHeight: "100vh" }}>
+    <div style={{ background: "#f8fafc" }}>
 
       {/* Chips sticky */}
       <div style={{
@@ -97,11 +97,12 @@ export function TablaView({ categorias, grupos, partidos }: {
                   </p>
                 </div>
               ) : (
-                catGrupos.map(grupo => (
+                catGrupos.map((grupo, i) => (
                   <GrupoTable
                     key={grupo.id}
                     grupo={grupo}
                     partidos={partidos.filter(p => p.categoria_id === cat.id)}
+                    showClassify={i === 0}
                   />
                 ))
               )}
@@ -175,7 +176,7 @@ function CatHeader({ cat }: { cat: Categoria }) {
 
 // ── Grupo Table ───────────────────────────────────────────────────────────────
 
-function GrupoTable({ grupo, partidos }: { grupo: Grupo; partidos: Partido[] }) {
+function GrupoTable({ grupo, partidos, showClassify }: { grupo: Grupo; partidos: Partido[]; showClassify: boolean }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rows = (grupo.grupo_parejas ?? []).map((gp: any) => ({
     pareja: gp.parejas,
@@ -199,13 +200,15 @@ function GrupoTable({ grupo, partidos }: { grupo: Grupo; partidos: Partido[] }) 
             Grupo {grupo.nombre}
           </span>
         </div>
-        <span style={{
-          fontFamily: "var(--font-space-grotesk), sans-serif",
-          fontSize: 10, fontWeight: 700, color: "#94a3b8",
-          textTransform: "uppercase", letterSpacing: "0.05em",
-        }}>
-          Top 2 clasifican
-        </span>
+        {showClassify && (
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 10, fontWeight: 700, color: "#94a3b8",
+            textTransform: "uppercase", letterSpacing: "0.05em",
+          }}>
+            Top 2 clasifican
+          </span>
+        )}
       </div>
 
       {/* Table card */}
