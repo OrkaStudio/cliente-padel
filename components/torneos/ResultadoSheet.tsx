@@ -148,7 +148,7 @@ export function ResultadoSheet({
   onSuccess,
   tercerSet = "super_tie_break",
 }: {
-  partido: { id: string; pareja1: Pareja | null; pareja2: Pareja | null } | null
+  partido: { id: string; pareja1: Pareja | null; pareja2: Pareja | null; resultado?: { sets?: Array<{ p1: number; p2: number }> } | null } | null
   onClose: () => void
   onSuccess?: () => void
   tercerSet?: "completo" | "tie_break" | "super_tie_break"
@@ -164,9 +164,10 @@ export function ResultadoSheet({
 
   useEffect(() => {
     if (partido) {
-      setSet1({ p1: 0, p2: 0 })
-      setSet2({ p1: 0, p2: 0 })
-      setSet3(null)
+      const s = partido.resultado?.sets
+      setSet1(s?.[0] ?? { p1: 0, p2: 0 })
+      setSet2(s?.[1] ?? { p1: 0, p2: 0 })
+      setSet3(s?.[2] ?? null)
       setError(null)
     }
   }, [partido?.id])

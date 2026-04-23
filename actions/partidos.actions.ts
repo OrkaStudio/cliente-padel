@@ -278,7 +278,7 @@ export const guardarResultadoInterclubAction = createServerAction()
       new Date(new Date(iso).getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
     const hora   = existing?.hora   ?? (base?.horario ? arHour(base.horario) : null)
-    const cancha = existing?.cancha ?? (base?.cancha  > 0 ? base.cancha : null)
+    const cancha = existing?.cancha ?? ((base?.cancha ?? 0) > 0 ? base!.cancha : null)
     const fecha  = existing?.fecha  ?? (base?.horario ? arDate(base.horario) : null)
     const sede   = existing?.sede   ?? (base?.sede as any)?.nombre ?? null
 
@@ -301,6 +301,48 @@ export const guardarResultadoInterclubAction = createServerAction()
       revalidatePath(`/torneos/${partido.torneo_id}/interclub/${partido.categoria_id}`)
     }
     return { ok: true }
+  })
+
+// ─── Revertir partido de en_vivo a pendiente ─────────────────────────────────
+
+export const revertirAPendienteAction = createServerAction()
+  .input(z.object({ partidoId: z.string().uuid() }))
+  .handler(async ({ input }) => {
+    const supabase = createAdminClient()
+    const { data: partido } = await supabase
+      .from("partidos")
+      .select("estado")
+      .eq("id", input.partidoId)
+      .single()
+    if (partido?.estado !== "en_vivo") throw new Error("El partido no está en vivo")
+    const { error } = await supabase
+      .from("partidos")
+      .update({ estado: "pendiente" })
+      .eq("id", input.partidoId)
+    if (error) throw error
+  })
+
+// ─── Actualizar cancha de un partido (veedor) ─────────────────────────────────
+
+export const actualizarCanchaAction = createServerAction()
+  .input(z.object({
+    partidoId: z.string().uuid(),
+    cancha:    z.number().int().min(1).max(20),
+  }))
+  .handler(async ({ input }) => {
+    const supabase = createAdminClient()
+    const { data: partido } = await supabase
+      .from("partidos")
+      .select("sede_id")
+      .eq("id", input.partidoId)
+      .single()
+    if (!partido) throw new Error("Partido no encontrado")
+    const { error } = await supabase
+      .from("partidos")
+      .update({ cancha: input.cancha })
+      .eq("id", input.partidoId)
+    if (error) throw error
+    await revalidarFixture(supabase, partido.sede_id)
   })
 
 // ─── Cerrar sesión veedor ─────────────────────────────────────────────────────
