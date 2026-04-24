@@ -622,7 +622,7 @@ function ProximoCard({ partido: p, hora }: {
 
   return (
     <div style={{
-      background: "#1e293b",
+      background: "#1e1a3e",
       borderRadius: 14, padding: "14px 16px",
       position: "relative", overflow: "hidden",
       border: "1px solid rgba(255,255,255,0.06)",
@@ -642,9 +642,9 @@ function ProximoCard({ partido: p, hora }: {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, position: "relative", zIndex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{
-            fontFamily: "var(--font-anton), Anton, sans-serif",
-            fontSize: 15, color: "#ffffff", lineHeight: 1,
-            letterSpacing: "0.01em",
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.75)",
+            letterSpacing: "0.04em",
           }}>
             {hora}
           </span>
