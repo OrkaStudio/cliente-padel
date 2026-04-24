@@ -622,38 +622,38 @@ function ProximoCard({ partido: p, hora }: {
 
   return (
     <div style={{
-      background: "#1e1a3e",
+      background: "#e0e7ff",
       borderRadius: 14, padding: "14px 16px",
       position: "relative", overflow: "hidden",
-      border: "1px solid rgba(255,255,255,0.06)",
+      border: "1px solid #c7d2fe",
     }}>
       {/* Ghost hora */}
       <span aria-hidden style={{
         position: "absolute", right: -6, bottom: -14,
         fontFamily: "var(--font-anton), Anton, sans-serif",
         fontSize: 70, fontWeight: 400, lineHeight: 1,
-        color: "rgba(255,255,255,0.04)", letterSpacing: "-0.02em",
+        color: "rgba(99,102,241,0.1)", letterSpacing: "-0.02em",
         pointerEvents: "none", userSelect: "none",
       }}>
         {hora}
       </span>
 
-      {/* Top: hora destacada + sede + cat badge */}
+      {/* Top: hora + sede + cat badge */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, position: "relative", zIndex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.75)",
+            fontSize: 10, fontWeight: 800, color: "#4338ca",
             letterSpacing: "0.04em",
           }}>
             {hora}
           </span>
           {sede && (
             <>
-              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10 }}>·</span>
+              <span style={{ color: "#a5b4fc", fontSize: 10 }}>·</span>
               <span style={{
                 fontFamily: "var(--font-space-grotesk), sans-serif",
-                fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.55)",
+                fontSize: 10, fontWeight: 700, color: "#6366f1",
                 display: "flex", alignItems: "center", gap: 2,
               }}>
                 <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1 }}>location_on</span>
@@ -665,9 +665,9 @@ function ProximoCard({ partido: p, hora }: {
         {cat && (
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.3)",
+            fontSize: 8, fontWeight: 900, color: "#6366f1",
             textTransform: "uppercase", letterSpacing: "0.08em",
-            background: "rgba(255,255,255,0.07)", padding: "2px 7px", borderRadius: 4,
+            background: "rgba(99,102,241,0.12)", padding: "2px 7px", borderRadius: 4,
           }}>
             {cat}
           </span>
@@ -679,7 +679,7 @@ function ProximoCard({ partido: p, hora }: {
         <div style={{ paddingBottom: 8 }}>
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)",
+            fontSize: 13, fontWeight: 700, color: "#1e1b4b",
             display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             lineHeight: 1,
           }}>
@@ -687,12 +687,12 @@ function ProximoCard({ partido: p, hora }: {
           </span>
         </div>
 
-        <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "0 0 8px 0" }} />
+        <div style={{ height: 1, background: "rgba(99,102,241,0.15)", margin: "0 0 8px 0" }} />
 
         <div>
           <span style={{
             fontFamily: "var(--font-space-grotesk), sans-serif",
-            fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)",
+            fontSize: 13, fontWeight: 700, color: "#1e1b4b",
             display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             lineHeight: 1,
           }}>
