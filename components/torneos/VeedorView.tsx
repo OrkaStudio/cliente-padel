@@ -577,14 +577,16 @@ function CanchaSheet({ partido, canchaVal, onCanchaChange, onSave, onClose, savi
               </div>
 
               <button
-                onClick={() => onCanchaChange(canchaVal + 1)}
+                onClick={() => onCanchaChange(Math.min(2, canchaVal + 1))}
+                disabled={canchaVal >= 2}
                 style={{
                   width: 64, height: 52, borderRadius: 14,
                   border: "none", background: "#0f172a",
-                  cursor: "pointer",
+                  cursor: canchaVal >= 2 ? "default" : "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   WebkitTapHighlightColor: "transparent",
                   boxShadow: "0 4px 12px rgba(15,23,42,0.15)",
+                  opacity: canchaVal >= 2 ? 0.35 : 1,
                 }}
               >
                 <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 32, color: "#bcff00", lineHeight: 1 }}>add</span>

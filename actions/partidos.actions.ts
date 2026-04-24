@@ -14,7 +14,7 @@ export const marcarEnVivoAction = createServerAction()
     const supabase = createAdminClient()
     const { data: partido } = await supabase
       .from("partidos")
-      .select("estado")
+      .select("estado, sede_id")
       .eq("id", input.partidoId)
       .single()
     if (partido?.estado !== "pendiente") throw new Error("El partido no está pendiente")
@@ -23,6 +23,7 @@ export const marcarEnVivoAction = createServerAction()
       .update({ estado: "en_vivo" })
       .eq("id", input.partidoId)
     if (error) throw error
+    if (partido?.sede_id) await revalidarFixture(supabase, partido.sede_id)
   })
 
 // ─── Actualizar resultado ─────────────────────────────────────────────────────
@@ -43,6 +44,12 @@ export const actualizarResultadoAction = createServerAction()
     const nuevoEstado = hayGanador ? "finalizado" : "en_vivo"
 
     const supabase = createAdminClient()
+    const { data: partido } = await supabase
+      .from("partidos")
+      .select("sede_id")
+      .eq("id", input.partidoId)
+      .single()
+
     const { error } = await supabase
       .from("partidos")
       .update({
@@ -51,6 +58,8 @@ export const actualizarResultadoAction = createServerAction()
       })
       .eq("id", input.partidoId)
     if (error) throw error
+
+    if (partido?.sede_id) await revalidarFixture(supabase, partido.sede_id)
   })
 
 // ─── Mover partido (con detección de conflicto y swap opcional) ───────────────
@@ -139,6 +148,8 @@ async function revalidarFixture(
   const tid = sede.torneo_id
   revalidatePath(`/torneos/${tid}/fixture`)
   revalidatePath(`/torneos/${tid}/llaves`)
+  revalidatePath(`/torneos/${tid}/tabla`)
+  revalidatePath(`/torneos/${tid}`)
   revalidatePath(`/admin/torneo/${tid}`)
   revalidatePath(`/admin/torneo/${tid}/fixture`)
 }
@@ -311,7 +322,7 @@ export const revertirAPendienteAction = createServerAction()
     const supabase = createAdminClient()
     const { data: partido } = await supabase
       .from("partidos")
-      .select("estado")
+      .select("estado, sede_id")
       .eq("id", input.partidoId)
       .single()
     if (partido?.estado !== "en_vivo") throw new Error("El partido no está en vivo")
@@ -320,6 +331,7 @@ export const revertirAPendienteAction = createServerAction()
       .update({ estado: "pendiente", resultado: null })
       .eq("id", input.partidoId)
     if (error) throw error
+    if (partido?.sede_id) await revalidarFixture(supabase, partido.sede_id)
   })
 
 // ─── Actualizar cancha de un partido (veedor) ─────────────────────────────────
@@ -327,7 +339,7 @@ export const revertirAPendienteAction = createServerAction()
 export const actualizarCanchaAction = createServerAction()
   .input(z.object({
     partidoId: z.string().uuid(),
-    cancha:    z.number().int().min(1).max(20),
+    cancha:    z.number().int().min(1).max(2),
   }))
   .handler(async ({ input }) => {
     const supabase = createAdminClient()

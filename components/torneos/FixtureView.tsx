@@ -81,7 +81,6 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
   const [showFinalizados, setShowFin] = useState(false)
   const [selDay, setSelDay]           = useState<string | null>(null)
   const [selCat, setSelCat]           = useState<string | null>(null)
-  const [favoritoId, setFavoritoId]   = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   const router       = useRouter()
@@ -89,27 +88,12 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
   const searchParams = useSearchParams()
   const selSede      = searchParams.get("sede")
 
-  useEffect(() => {
-    setFavoritoId(localStorage.getItem("padel_favorite"))
-  }, [])
 
   const mounted = useRef(false)
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return }
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })
   }, [selDay, selSede, selCat])
-
-  const toggleFavorito = (id: string, e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (favoritoId === id) {
-      localStorage.removeItem("padel_favorite")
-      setFavoritoId(null)
-    } else {
-      localStorage.setItem("padel_favorite", id)
-      setFavoritoId(id)
-    }
-  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectSede = (id: string | null) => {
@@ -178,15 +162,8 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
     if (selCat)  list = list.filter((p: Partido) => p.categorias?.nombre === selCat)
     if (selDay)  list = list.filter((p: Partido) => getDayKey(p.horario) === selDay)
     if (search.trim()) list = list.filter((p: Partido) => matchesSearch(p, search))
-    if (favoritoId) {
-      list = [...list].sort((a, b) => {
-        const af = a.pareja1_id === favoritoId || a.pareja2_id === favoritoId
-        const bf = b.pareja1_id === favoritoId || b.pareja2_id === favoritoId
-        return (af === bf) ? 0 : af ? -1 : 1
-      })
-    }
     return list
-  }, [partidos, selSede, selCat, selDay, search, favoritoId])
+  }, [partidos, selSede, selCat, selDay, search])
 
   const live        = filtered.filter((p: Partido) => p.estado === "en_vivo")
   const pendientes  = filtered.filter((p: Partido) => p.estado === "pendiente")
@@ -427,7 +404,7 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
               <DayHeader label={label} jugados={dayRaw?.jugados ?? 0} total={dayRaw?.total ?? 0} />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {dayP.map((p: Partido, i: number) => (
-                  <PartidoCard key={p.id} partido={p} index={i} favoritoId={favoritoId} toggleFavorito={toggleFavorito} />
+                  <PartidoCard key={p.id} partido={p} index={i} />
                 ))}
               </div>
             </div>
@@ -438,7 +415,7 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
         {selDay && pendientes.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
             {pendientes.map((p: Partido, i: number) => (
-              <PartidoCard key={p.id} partido={p} index={i} favoritoId={favoritoId} toggleFavorito={toggleFavorito} />
+              <PartidoCard key={p.id} partido={p} index={i} />
             ))}
           </div>
         )}
@@ -455,7 +432,7 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {finalizados.map((p: Partido, i: number) => (
-                <PartidoCard key={p.id} partido={p} index={i} favoritoId={favoritoId} toggleFavorito={toggleFavorito} />
+                <PartidoCard key={p.id} partido={p} index={i} />
               ))}
             </div>
           </div>
@@ -681,12 +658,10 @@ function LiveCard({ partido: p }: { partido: Partido }) {
 // ── Partido Card ──────────────────────────────────────────────────────────────
 
 function PartidoCard({
-  partido: p, index, favoritoId, toggleFavorito,
+  partido: p, index,
 }: {
   partido: Partido
   index: number
-  favoritoId?: string | null
-  toggleFavorito?: (id: string, e: React.MouseEvent) => void
 }) {
   const isFin    = p.estado === "finalizado"
   const color    = sedeColor(p.sedes?.nombre)
@@ -737,7 +712,6 @@ function PartidoCard({
       {/* Pareja 1 */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 8 }}>
         <span
-          onClick={e => toggleFavorito && p.pareja1_id && toggleFavorito(p.pareja1_id, e)}
           style={{
             flex: 1, minWidth: 0,
             fontFamily: "var(--font-space-grotesk), sans-serif",
@@ -745,12 +719,8 @@ function PartidoCard({
             color: isFin && ganadorB ? "#94a3b8" : "#0f172a",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             opacity: isFin && ganadorB ? 0.5 : 1,
-            cursor: toggleFavorito ? "pointer" : "default",
-            WebkitTapHighlightColor: "transparent",
-            transition: "opacity 160ms",
           }}
         >
-          {favoritoId === p.pareja1_id && <span style={{ color: "#22c55e", marginRight: 4 }}>★</span>}
           {formatPareja(p.pareja1)}
         </span>
         <div style={{ display: "flex", gap: 8, flexShrink: 0, minWidth: 14 }}>
@@ -769,7 +739,6 @@ function PartidoCard({
       {/* Pareja 2 */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span
-          onClick={e => toggleFavorito && p.pareja2_id && toggleFavorito(p.pareja2_id, e)}
           style={{
             flex: 1, minWidth: 0,
             fontFamily: "var(--font-space-grotesk), sans-serif",
@@ -777,12 +746,8 @@ function PartidoCard({
             color: isFin && ganadorA ? "#94a3b8" : "#0f172a",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             opacity: isFin && ganadorA ? 0.5 : 1,
-            cursor: toggleFavorito ? "pointer" : "default",
-            WebkitTapHighlightColor: "transparent",
-            transition: "opacity 160ms",
           }}
         >
-          {favoritoId === p.pareja2_id && <span style={{ color: "#22c55e", marginRight: 4 }}>★</span>}
           {formatPareja(p.pareja2)}
         </span>
         <div style={{ display: "flex", gap: 8, flexShrink: 0, minWidth: 14 }}>

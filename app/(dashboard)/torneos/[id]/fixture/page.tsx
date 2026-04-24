@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic"
 import { createClient } from "@/lib/supabase/server"
 import { FixtureInterclubView } from "@/components/torneos/interclub/FixtureInterclubView"
 import { FixtureView } from "@/components/torneos/FixtureView"
+import { TorneoAutoRefresh } from "@/components/torneos/TorneoAutoRefresh"
 import { CLUB_A, CLUB_B } from "@/components/torneos/interclub/interclub-mock"
 import { getCategorias } from "@/lib/interclub-data"
 
@@ -35,7 +36,10 @@ export default async function FixturePage({ params }: { params: Promise<{ id: st
       .eq("torneo_id", id)
       .order("horario")
 
-    return <FixtureView partidos={partidos ?? []} />
+    return <>
+      <TorneoAutoRefresh torneoId={id} />
+      <FixtureView partidos={partidos ?? []} />
+    </>
   }
 
   // Interclub

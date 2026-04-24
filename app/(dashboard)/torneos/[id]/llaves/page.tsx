@@ -1,8 +1,7 @@
-export const revalidate = 15
-
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { LlavesView } from "@/components/torneos/LlavesView"
+import { TorneoAutoRefresh } from "@/components/torneos/TorneoAutoRefresh"
 
 export default async function LlavesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -38,5 +37,8 @@ export default async function LlavesPage({ params }: { params: Promise<{ id: str
     nombre: (tc.categorias as any)?.nombre ?? "",
   }))
 
-  return <LlavesView partidos={partidos ?? []} categorias={categorias} initialCatId={null} />
+  return <>
+    <TorneoAutoRefresh torneoId={id} />
+    <LlavesView partidos={partidos ?? []} categorias={categorias} initialCatId={null} />
+  </>
 }

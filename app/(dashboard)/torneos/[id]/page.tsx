@@ -1,12 +1,11 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyHref = any
 
-export const revalidate = 15
-
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { TorneoAutoRefresh } from "@/components/torneos/TorneoAutoRefresh"
 
 const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
 
@@ -130,6 +129,7 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div style={{ background: "#f8fafc" }}>
+      <TorneoAutoRefresh torneoId={id} />
 
       {/* ── Hero ── */}
       <div style={{

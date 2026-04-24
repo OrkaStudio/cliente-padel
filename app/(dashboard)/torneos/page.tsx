@@ -11,11 +11,10 @@ function fmtFecha(iso: string) {
 
 export default async function TorneosPage() {
   const supabase = await createClient()
-  const isDev = process.env.NODE_ENV === "development"
 
-  const { data: torneos } = await supabase
+  const { data: torneos, error } = await supabase
     .from("torneos")
-    .select("id, nombre, fecha_inicio, fecha_fin, estado, tipo, oculto")
+    .select("id, nombre, fecha_inicio, fecha_fin, estado, tipo")
     .neq("estado", "borrador")
     .order("created_at", { ascending: false })
 
@@ -52,7 +51,7 @@ export default async function TorneosPage() {
       {live.length > 0 && (
         <section style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {live.map(t => <TorneoCard key={t.id} torneo={t} isDev={isDev} />)}
+            {live.map(t => <TorneoCard key={t.id} torneo={t} isDev={false} />)}
           </div>
         </section>
       )}
@@ -71,7 +70,7 @@ export default async function TorneosPage() {
             {live.length > 0 ? "Otros Torneos" : "Torneos"}
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {others.map(t => <TorneoCard key={t.id} torneo={t} isDev={isDev} />)}
+            {others.map(t => <TorneoCard key={t.id} torneo={t} isDev={false} />)}
           </div>
         </section>
       )}
@@ -82,7 +81,7 @@ export default async function TorneosPage() {
 }
 
 function TorneoCard({ torneo, isDev }: {
-  torneo: { id: string; nombre: string; fecha_inicio: string; fecha_fin: string; estado: string; tipo: string; oculto: boolean }
+  torneo: { id: string; nombre: string; fecha_inicio: string; fecha_fin: string; estado: string; tipo: string }
   isDev: boolean
 }) {
   if (torneo.tipo === "interclub") {
@@ -94,8 +93,7 @@ function TorneoCard({ torneo, isDev }: {
   const isLive         = torneo.estado === "en_curso" && !isFuture
   const isInscripcion  = torneo.estado === "inscripcion"
   const isProximo      = torneo.estado === "borrador"
-  const isOculto       = torneo.oculto && !isDev
-  const showProximamente = isProximo || isOculto || isFuture
+  const showProximamente = isProximo || isFuture
 
   const inner = (
     <div style={{
@@ -107,7 +105,7 @@ function TorneoCard({ torneo, isDev }: {
       cursor: (showProximamente && !isDev) ? "default" : "pointer",
       position: "relative",
       display: "block",
-      opacity: isOculto ? 0.82 : 1,
+      opacity: 1,
     }}>
       <div style={{
         height: 160,
@@ -138,12 +136,8 @@ function TorneoCard({ torneo, isDev }: {
                 fontSize: 9, fontWeight: 900,
                 fontFamily: "var(--font-space-grotesk), sans-serif",
                 textTransform: "uppercase", letterSpacing: "0.06em",
-                display: "inline-flex", alignItems: "center", gap: 4,
                 backdropFilter: "blur(4px)",
               }}>
-                {isOculto && (
-                  <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1 }}>lock</span>
-                )}
                 Próximamente
               </span>
             )}

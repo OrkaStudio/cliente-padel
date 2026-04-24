@@ -3,6 +3,7 @@ export const revalidate = 15
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { TablaView } from "@/components/torneos/TablaView"
+import { TorneoAutoRefresh } from "@/components/torneos/TorneoAutoRefresh"
 
 export default async function TablaPage({
   params,
@@ -51,11 +52,14 @@ export default async function TablaPage({
   }))
 
   return (
-    <TablaView
-      categorias={categorias}
-      grupos={grupos ?? []}
-      partidos={partidos ?? []}
-      initialCatId={null}
-    />
+    <>
+      <TorneoAutoRefresh torneoId={id} />
+      <TablaView
+        categorias={categorias}
+        grupos={grupos ?? []}
+        partidos={partidos ?? []}
+        initialCatId={null}
+      />
+    </>
   )
 }

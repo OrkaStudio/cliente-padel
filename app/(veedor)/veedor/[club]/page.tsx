@@ -33,14 +33,14 @@ export default async function VeedorPage({ params }: { params: Promise<{ club: s
 
   // ── Torneo regular activo: mostrar VeedorView por sede ──
   if (regularTorneo) {
-    const sedePattern = club === "mas-padel" ? "%ádel%" : "Voleando"
-    const { data: sede } = await supabase
+    const { data: todasSedes } = await supabase
       .from("sedes")
       .select("id, nombre")
       .eq("torneo_id", regularTorneo.id)
-      .ilike("nombre", sedePattern)
-      .limit(1)
-      .single()
+
+    const sede = club === "voleando"
+      ? todasSedes?.find(s => s.nombre.toLowerCase().includes("oleando")) ?? null
+      : todasSedes?.find(s => !s.nombre.toLowerCase().includes("oleando")) ?? null
 
     if (sede) {
       const { data: partidos } = await supabase
