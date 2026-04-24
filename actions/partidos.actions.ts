@@ -317,7 +317,7 @@ export const revertirAPendienteAction = createServerAction()
     if (partido?.estado !== "en_vivo") throw new Error("El partido no está en vivo")
     const { error } = await supabase
       .from("partidos")
-      .update({ estado: "pendiente" })
+      .update({ estado: "pendiente", resultado: null })
       .eq("id", input.partidoId)
     if (error) throw error
   })
