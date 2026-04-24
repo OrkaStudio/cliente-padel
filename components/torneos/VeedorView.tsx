@@ -102,6 +102,35 @@ export function VeedorView({ partidos, sedeName }: { partidos: Partido[]; sedeNa
 
   return (
     <div style={{ padding: "0 0 100px" }}>
+      {/* Header con back */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "12px 16px",
+        borderBottom: "1px solid #f1f5f9",
+        background: "#fff",
+      }}>
+        <motion.button
+          onClick={() => router.back()}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.16, type: "spring", stiffness: 300, damping: 20 }}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 34, height: 34, borderRadius: 10,
+            border: "1px solid #e2e8f0", background: "#f8fafc",
+            cursor: "pointer", WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 20, color: "#0f172a", lineHeight: 1 }}>arrow_back</span>
+        </motion.button>
+        <span style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 13, fontWeight: 900, color: "#0f172a",
+          textTransform: "uppercase", letterSpacing: "0.05em",
+        }}>
+          {sedeName}
+        </span>
+      </div>
+
       {/* Tabs Hoy / Todos */}
       <div style={{
         display: "flex", gap: 0,
