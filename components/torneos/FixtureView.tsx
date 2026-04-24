@@ -7,9 +7,9 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 type Partido = any
 
 const SEDE_COLORS: Record<string, string> = {
-  "Voleando":  "#22c55e",
-  "Más Pádel": "#f97316",
-  "Por Tres":  "#a855f7",
+  "Voleando": "#22c55e",
+  "+Pádel":   "#f97316",
+  "Por Tres": "#a855f7",
 }
 const DEFAULT_COLOR = "#94a3b8"
 
@@ -18,19 +18,22 @@ function sedeColor(nombre?: string) {
   return SEDE_COLORS[nombre] ?? DEFAULT_COLOR
 }
 
+const TZ = "America/Argentina/Buenos_Aires"
+
 function formatHora(horario: string | null) {
   if (!horario) return "--:--"
-  return new Date(horario).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
+  return new Date(horario).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: TZ })
 }
 
 function formatDia(horario: string | null) {
   if (!horario) return "Sin fecha"
-  return new Date(horario).toLocaleDateString("es-AR", { weekday: "long", day: "numeric" })
+  return new Date(horario).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", timeZone: TZ })
 }
 
 function getDayKey(horario: string | null) {
   if (!horario) return "sin-fecha"
-  return new Date(horario).toISOString().slice(0, 10)
+  // en-CA gives YYYY-MM-DD, forced to AR timezone so late-night matches don't bleed into the next UTC day
+  return new Date(horario).toLocaleDateString("en-CA", { timeZone: TZ })
 }
 
 function formatPareja(pareja: {
@@ -128,11 +131,19 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
   }, [partidos])
 
   const categorias = useMemo(() => {
+    const CAT_ORDER = ["4ta Caballeros", "6ta Caballeros", "8va Caballeros", "Senior +30"]
     const set = new Set<string>()
     partidos.forEach((p: Partido) => {
       if (p.categorias?.nombre) set.add(p.categorias.nombre)
     })
-    return Array.from(set).sort()
+    return Array.from(set).sort((a, b) => {
+      const ai = CAT_ORDER.indexOf(a)
+      const bi = CAT_ORDER.indexOf(b)
+      if (ai !== -1 && bi !== -1) return ai - bi
+      if (ai !== -1) return -1
+      if (bi !== -1) return 1
+      return a.localeCompare(b)
+    })
   }, [partidos])
 
   const days = useMemo(() => {
@@ -143,12 +154,13 @@ export function FixtureView({ partidos }: { partidos: Partido[] }) {
         const d = new Date(p.horario ?? "")
         const valid = !isNaN(d.getTime())
         const shortDay = valid
-          ? d.toLocaleDateString("es-AR", { weekday: "short" }).replace(".", "").toUpperCase().slice(0, 3)
+          ? d.toLocaleDateString("es-AR", { weekday: "short", timeZone: TZ }).replace(".", "").toUpperCase().slice(0, 3)
           : "—"
+        const dayNum = valid ? parseInt(new Date(p.horario ?? "").toLocaleDateString("en-CA", { timeZone: TZ }).split("-")[2]) : 0
         map.set(key, {
           label: formatDia(p.horario),
           shortDay,
-          num: valid ? d.getDate() : 0,
+          num: dayNum,
           total: 0, jugados: 0, hasLive: false,
         })
       }
@@ -610,7 +622,7 @@ function LiveCard({ partido: p }: { partido: Partido }) {
   const sede   = p.sedes?.nombre ?? ""
   const cancha = p.cancha ?? null
   const hora   = formatHora(p.horario)
-  const meta   = [sede, cancha ? `Cancha ${cancha}` : null, hora !== "--:--" ? hora : null].filter(Boolean).join("  ·  ")
+  const meta   = [sede, cancha != null ? (cancha > 0 ? `Cancha ${cancha}` : "Cancha -") : null, hora !== "--:--" ? hora : null].filter(Boolean).join("  ·  ")
 
   return (
     <div style={{
@@ -688,6 +700,7 @@ function PartidoCard({
       background: "#ffffff",
       border: "1px solid #f1f5f9",
       borderRadius: 12, padding: "12px 14px",
+      boxShadow: `inset 3px 0 0 0 ${color}`,
       animation: "fadeUp 220ms cubic-bezier(0.23,1,0.32,1) both",
       animationDelay: `${Math.min(index, 8) * 35}ms`,
     }}>
@@ -704,9 +717,9 @@ function PartidoCard({
               {formatHora(p.horario)}
             </span>
           )}
-          {p.cancha && (
-            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, color: "#94a3b8" }}>· C{p.cancha}</span>
-          )}
+          <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 10, color: "#94a3b8" }}>
+            · {p.cancha > 0 ? `C${p.cancha}` : "C -"}
+          </span>
           {p.sedes?.nombre && (
             <>
               <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 12, lineHeight: 1, color }}>location_on</span>
@@ -714,7 +727,7 @@ function PartidoCard({
             </>
           )}
           {p.categorias?.nombre && (
-            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, letterSpacing: "0.06em", textTransform: "uppercase", background: `${color}15`, color, padding: "2px 6px", borderRadius: 4 }}>
+            <span style={{ fontFamily: "var(--font-space-grotesk), sans-serif", fontSize: 8, fontWeight: 900, letterSpacing: "0.06em", textTransform: "uppercase", background: "#f1f5f9", color: "#94a3b8", padding: "2px 6px", borderRadius: 4 }}>
               {p.categorias.nombre}
             </span>
           )}
