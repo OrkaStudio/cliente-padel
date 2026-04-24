@@ -14,7 +14,7 @@ const TZ = "America/Argentina/Buenos_Aires"
 
 function formatHora(horario: string | null) {
   if (!horario) return "--:--"
-  return new Date(horario).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: TZ })
+  return new Date(horario).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: TZ })
 }
 
 function nombrePareja(p: { jugador1: { nombre: string; apellido: string } | null; jugador2: { nombre: string; apellido: string } | null } | null) {

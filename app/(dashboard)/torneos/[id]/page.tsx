@@ -16,7 +16,7 @@ function fmtFecha(iso: string) {
 }
 
 function fmtHora(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+  return new Date(iso).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Argentina/Buenos_Aires" })
 }
 
 function fmtPareja(pareja: {
