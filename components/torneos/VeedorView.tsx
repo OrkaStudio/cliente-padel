@@ -10,9 +10,11 @@ import { Toast } from "@/components/ui/Toast"
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Partido = any
 
+const TZ = "America/Argentina/Buenos_Aires"
+
 function formatHora(horario: string | null) {
   if (!horario) return "--:--"
-  return new Date(horario).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+  return new Date(horario).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: TZ })
 }
 
 function nombrePareja(p: { jugador1: { nombre: string; apellido: string } | null; jugador2: { nombre: string; apellido: string } | null } | null) {
@@ -70,12 +72,12 @@ export function VeedorView({ partidos, sedeName }: { partidos: Partido[]; sedeNa
     })
   }
 
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: TZ })
 
   const filtrados = useMemo(() => {
     if (tab === "hoy") {
       return partidos.filter((p: Partido) =>
-        p.horario && new Date(p.horario).toISOString().slice(0, 10) === hoy
+        p.horario && new Date(p.horario).toLocaleDateString("en-CA", { timeZone: TZ }) === hoy
       )
     }
     return partidos
@@ -320,35 +322,33 @@ function PartidoCard({ partido: p, index, accion, finalizado, onEditCancha }: {
           }}>
             {formatHora(p.horario)}
           </span>
-          {p.cancha && (
-            onEditCancha ? (
-              <button
-                onClick={onEditCancha}
-                style={{
-                  display: "flex", alignItems: "center", gap: 3,
-                  fontSize: 10, fontWeight: 700,
-                  color: isLive ? "#0f172a" : "#64748b",
-                  fontFamily: "var(--font-space-grotesk), sans-serif",
-                  background: isLive ? "#bcff00" : "#f1f5f9",
-                  padding: "2px 6px", borderRadius: 3,
-                  border: "none", cursor: "pointer",
-                  WebkitTapHighlightColor: "transparent",
-                }}
-              >
-                C{p.cancha}
-                <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1 }}>edit</span>
-              </button>
-            ) : (
-              <span style={{
+          {onEditCancha ? (
+            <button
+              onClick={onEditCancha}
+              style={{
+                display: "flex", alignItems: "center", gap: 3,
                 fontSize: 10, fontWeight: 700,
                 color: isLive ? "#0f172a" : "#64748b",
                 fontFamily: "var(--font-space-grotesk), sans-serif",
                 background: isLive ? "#bcff00" : "#f1f5f9",
                 padding: "2px 6px", borderRadius: 3,
-              }}>
-                C{p.cancha}
-              </span>
-            )
+                border: "none", cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              {p.cancha > 0 ? `C${p.cancha}` : "C -"}
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 10, lineHeight: 1 }}>edit</span>
+            </button>
+          ) : (
+            <span style={{
+              fontSize: 10, fontWeight: 700,
+              color: isLive ? "#0f172a" : "#64748b",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              background: isLive ? "#bcff00" : "#f1f5f9",
+              padding: "2px 6px", borderRadius: 3,
+            }}>
+              {p.cancha > 0 ? `C${p.cancha}` : "C -"}
+            </span>
           )}
         </div>
         {p.categorias?.nombre && (

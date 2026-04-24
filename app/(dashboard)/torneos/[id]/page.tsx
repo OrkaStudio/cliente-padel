@@ -62,26 +62,34 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
     .eq("torneo_id", id)
     .order("categorias(orden)")
 
+  const PARTIDOS_SELECT = `
+    id, horario, cancha, resultado,
+    sedes:sede_id ( nombre ),
+    categorias:categoria_id ( id, nombre, tipo ),
+    pareja1:parejas!pareja1_id (
+      jugador1:jugadores!jugador1_id ( apellido ),
+      jugador2:jugadores!jugador2_id ( apellido )
+    ),
+    pareja2:parejas!pareja2_id (
+      jugador1:jugadores!jugador1_id ( apellido ),
+      jugador2:jugadores!jugador2_id ( apellido )
+    )
+  `
+
   const [
     { data: sedes },
     { data: livePartidos },
+    { data: proximosPartidos },
     { data: allStats },
   ] = await Promise.all([
     supabase.from("sedes").select("id, nombre").eq("torneo_id", id),
 
-    supabase.from("partidos").select(`
-      id, horario, cancha, resultado,
-      sedes:sede_id ( nombre ),
-      categorias:categoria_id ( id, nombre, tipo ),
-      pareja1:parejas!pareja1_id (
-        jugador1:jugadores!jugador1_id ( apellido ),
-        jugador2:jugadores!jugador2_id ( apellido )
-      ),
-      pareja2:parejas!pareja2_id (
-        jugador1:jugadores!jugador1_id ( apellido ),
-        jugador2:jugadores!jugador2_id ( apellido )
-      )
-    `).eq("torneo_id", id).eq("estado", "en_vivo"),
+    supabase.from("partidos").select(PARTIDOS_SELECT)
+      .eq("torneo_id", id).eq("estado", "en_vivo"),
+
+    supabase.from("partidos").select(PARTIDOS_SELECT)
+      .eq("torneo_id", id).eq("estado", "pendiente")
+      .order("horario").limit(4),
 
     supabase.from("partidos")
       .select("estado, categoria_id")
@@ -117,7 +125,8 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
     }))
     .filter(g => g.cats.length > 0)
 
-  const live = livePartidos ?? []
+  const live    = livePartidos    ?? []
+  const proximos = proximosPartidos ?? []
 
   return (
     <div style={{ background: "#f8fafc" }}>
@@ -231,6 +240,56 @@ export default async function TorneoDetailPage({ params }: { params: Promise<{ i
                 width: live.length > 1 ? "calc(88% - 10px)" : "100%",
               }}>
                 <LiveCard partido={p} hora={fmtHora(p.horario)} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Próximos partidos (solo cuando no hay nada en vivo) ── */}
+      {live.length === 0 && proximos.length > 0 && (
+        <div style={{ margin: "20px 0 0", padding: "0 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 13, color: "#64748b", lineHeight: 1 }}>schedule</span>
+              <span style={{
+                fontFamily: "var(--font-space-grotesk), sans-serif",
+                fontSize: 11, fontWeight: 900, color: "#64748b",
+                textTransform: "uppercase", letterSpacing: "0.1em",
+              }}>
+                Próximos partidos
+              </span>
+            </div>
+            <Link href={`/torneos/${id}/fixture` as AnyHref} style={{
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontSize: 10, fontWeight: 800, color: "#64748b",
+              textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.05em",
+              display: "inline-flex", alignItems: "center", gap: 2,
+              WebkitTapHighlightColor: "transparent",
+            }}>
+              Ver fixture
+              <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 14, lineHeight: 1 }}>chevron_right</span>
+            </Link>
+          </div>
+
+          <div style={{
+            display: "flex", gap: 10,
+            overflowX: "auto", scrollSnapType: "x mandatory",
+            padding: "0 0 4px", scrollbarWidth: "none",
+            WebkitMaskImage: proximos.length > 1
+              ? "linear-gradient(to right, black calc(100% - 32px), transparent 100%)"
+              : undefined,
+            maskImage: proximos.length > 1
+              ? "linear-gradient(to right, black calc(100% - 32px), transparent 100%)"
+              : undefined,
+          }}>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {proximos.map((p: any) => (
+              <div key={p.id} style={{
+                scrollSnapAlign: "start", flexShrink: 0,
+                width: proximos.length > 1 ? "calc(88% - 10px)" : "100%",
+              }}>
+                <ProximoCard partido={p} hora={fmtHora(p.horario)} />
               </div>
             ))}
           </div>
@@ -545,6 +604,85 @@ export function LiveCard({ partido: p, hora }: {
               ))}
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Proximo Card ──────────────────────────────────────────────────────────────
+
+function ProximoCard({ partido: p, hora }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  partido: any
+  hora: string
+}) {
+  const sede = p.sedes?.nombre ?? ""
+  const cat  = p.categorias?.nombre ?? ""
+
+  return (
+    <div style={{
+      background: "#1a3a5c",
+      borderRadius: 14, padding: "14px 16px",
+      position: "relative", overflow: "hidden",
+    }}>
+      {/* Ghost hora */}
+      <span aria-hidden style={{
+        position: "absolute", right: -6, bottom: -14,
+        fontFamily: "var(--font-anton), Anton, sans-serif",
+        fontSize: 70, fontWeight: 400, lineHeight: 1,
+        color: "rgba(255,255,255,0.05)", letterSpacing: "-0.02em",
+        pointerEvents: "none", userSelect: "none",
+      }}>
+        {hora}
+      </span>
+
+      {/* Top: sede + hora · cat badge */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, position: "relative", zIndex: 1 }}>
+        <span style={{
+          fontFamily: "var(--font-space-grotesk), sans-serif",
+          fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.4)",
+          display: "flex", alignItems: "center", gap: 3,
+        }}>
+          <span style={{ fontFamily: "'Material Symbols Outlined'", fontSize: 11, lineHeight: 1 }}>location_on</span>
+          {[sede, hora].filter(Boolean).join("  ·  ")}
+        </span>
+        {cat && (
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.35)",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            background: "rgba(255,255,255,0.08)", padding: "2px 7px", borderRadius: 4,
+          }}>
+            {cat}
+          </span>
+        )}
+      </div>
+
+      {/* Parejas */}
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <div style={{ paddingBottom: 8 }}>
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 13, fontWeight: 800, color: "#ffffff",
+            display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            lineHeight: 1,
+          }}>
+            {fmtPareja(p.pareja1)}
+          </span>
+        </div>
+
+        <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0 0 8px 0" }} />
+
+        <div>
+          <span style={{
+            fontFamily: "var(--font-space-grotesk), sans-serif",
+            fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.55)",
+            display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            lineHeight: 1,
+          }}>
+            {fmtPareja(p.pareja2)}
+          </span>
         </div>
       </div>
     </div>
