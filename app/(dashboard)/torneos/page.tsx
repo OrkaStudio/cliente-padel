@@ -91,6 +91,7 @@ function TorneoCard({ torneo, isDev }: {
   const today          = new Date().toISOString().split("T")[0]
   const isFuture       = torneo.fecha_inicio > today
   const isLive         = torneo.estado === "en_curso" && !isFuture
+  const isFinalizado   = torneo.estado === "finalizado"
   const isInscripcion  = torneo.estado === "inscripcion"
   const isProximo      = torneo.estado === "borrador"
   const showProximamente = isProximo || isFuture
@@ -144,6 +145,11 @@ function TorneoCard({ torneo, isDev }: {
             {isLive && (
               <span style={{ background: "#bcff00", color: "#0f172a", padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 900, fontFamily: "var(--font-space-grotesk), sans-serif", textTransform: "uppercase" }}>
                 En Vivo
+              </span>
+            )}
+            {isFinalizado && (
+              <span style={{ background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 900, fontFamily: "var(--font-space-grotesk), sans-serif", textTransform: "uppercase", letterSpacing: "0.06em", backdropFilter: "blur(4px)" }}>
+                Finalizado
               </span>
             )}
             {isInscripcion && !showProximamente && (
